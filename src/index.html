@@ -1,0 +1,1386 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<title>Läxmotorn</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Nunito:wght@400;600;700;800&display=swap">
+<style>
+:root{
+  --bg:#E8EBEF; --surface:#FBFCFD; --surface2:#F0F2F5; --ink:#161A21; --muted:#5A6170;
+  --line:#C9CFD8; --moss:#0F6A73; --moss-ink:#FFFFFF; --lingon:#C9343B; --lingon-soft:#F7DDDE;
+  --kant:#E3A400; --kant-soft:#FCEFC0; --ok:#1E7A46; --ok-soft:#D8EFE1; --bark:#161A21;
+  --grid:rgba(22,26,33,.05); --shadow:0 2px 0 rgba(22,26,33,.14);
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0F1217; --surface:#181C23; --surface2:#20252E; --ink:#E7EAF0; --muted:#9BA3B1;
+  --line:#313845; --moss:#6CC3CB; --moss-ink:#0B1517; --lingon:#F07A80; --lingon-soft:#3A1D20;
+  --kant:#F2C230; --kant-soft:#3A3112; --ok:#6FCB94; --ok-soft:#173424; --bark:#E7EAF0;
+  --grid:rgba(255,255,255,.035); --shadow:0 2px 0 rgba(0,0,0,.45);
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0F1217; --surface:#181C23; --surface2:#20252E; --ink:#E7EAF0; --muted:#9BA3B1;
+  --line:#313845; --moss:#6CC3CB; --moss-ink:#0B1517; --lingon:#F07A80; --lingon-soft:#3A1D20;
+  --kant:#F2C230; --kant-soft:#3A3112; --ok:#6FCB94; --ok-soft:#173424; --bark:#E7EAF0;
+  --grid:rgba(255,255,255,.035); --shadow:0 2px 0 rgba(0,0,0,.45);
+}
+/* Ämnesfärger */
+[data-subj="no"]{--moss:#2F6B32} [data-subj="so"]{--moss:#1F4E8C} [data-subj="sv"]{--moss:#A3324A}
+[data-subj="ma"]{--moss:#5B3FA0} [data-subj="en"]{--moss:#B04E14} [data-subj="annat"]{--moss:#0F6A73}
+@media (prefers-color-scheme:dark){
+  :root:not([data-theme="light"]) [data-subj="no"]{--moss:#7DB36B} :root:not([data-theme="light"]) [data-subj="so"]{--moss:#7FA9E6}
+  :root:not([data-theme="light"]) [data-subj="sv"]{--moss:#EE8AA0} :root:not([data-theme="light"]) [data-subj="ma"]{--moss:#AE97F0}
+  :root:not([data-theme="light"]) [data-subj="en"]{--moss:#F2A36B} :root:not([data-theme="light"]) [data-subj="annat"]{--moss:#6CC3CB}
+}
+:root[data-theme="dark"] [data-subj="no"]{--moss:#7DB36B} :root[data-theme="dark"] [data-subj="so"]{--moss:#7FA9E6}
+:root[data-theme="dark"] [data-subj="sv"]{--moss:#EE8AA0} :root[data-theme="dark"] [data-subj="ma"]{--moss:#AE97F0}
+:root[data-theme="dark"] [data-subj="en"]{--moss:#F2A36B} :root[data-theme="dark"] [data-subj="annat"]{--moss:#6CC3CB}
+
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+body{background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;color:var(--ink);font:16px/1.5 "Nunito",system-ui,sans-serif;padding-inline:16px;padding-block:16px 48px}
+.wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+section.wrap{padding:0;width:100%}
+h1,h2,h3,.disp{font-family:"Bricolage Grotesque","Nunito",system-ui,sans-serif;text-wrap:balance;margin:0;line-height:1.15}
+button{font:inherit;color:inherit;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.drop:focus-within{outline:3px solid var(--kant);outline-offset:2px}
+.btn{border:0;border-radius:14px;padding:14px 20px;font-weight:800;background:var(--moss);color:var(--moss-ink);box-shadow:var(--shadow);display:inline-flex;align-items:center;gap:8px;justify-content:center}
+.btn svg{width:20px;height:20px}
+.btn.ghost{background:transparent;color:var(--ink);border:2px solid var(--line);box-shadow:none}
+.btn.danger{background:var(--lingon);color:#fff}
+.btn.small{padding:8px 14px;border-radius:12px}
+.btn:disabled{opacity:.45;cursor:default}
+.row{display:flex;gap:10px;flex-wrap:wrap}
+.hint{font-size:14px;color:var(--muted);font-weight:600;margin:0}
+
+/* HUD */
+.hud{display:flex;align-items:center;gap:14px;background:var(--surface);border:2px solid var(--line);border-radius:18px;padding:12px 14px}
+.lvl{width:52px;height:52px;border-radius:50%;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center;font:700 22px "Bricolage Grotesque",sans-serif;flex:none}
+.hud-main{flex:1;min-width:0}
+.hud-top{display:flex;justify-content:space-between;gap:8px;align-items:baseline}
+.lvl-name{font:600 18px "Bricolage Grotesque",sans-serif}
+.xp{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:700;font-size:14px;white-space:nowrap}
+.bar{height:12px;background:var(--surface2);border-radius:99px;overflow:hidden;margin-top:6px;border:1px solid var(--line)}
+.bar>i{display:block;height:100%;background:linear-gradient(90deg,var(--moss),var(--kant));border-radius:99px;transition:width .5s}
+
+/* Intro */
+.intro h1{font-size:clamp(30px,8vw,42px);color:var(--moss);letter-spacing:-.01em}
+.intro p{margin:6px 0 0;color:var(--muted);font-weight:600;max-width:60ch}
+.chiprow{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.count{display:inline-block;background:var(--kant-soft);color:var(--ink);border-radius:99px;padding:4px 12px;font-weight:800;font-size:14px}
+.subj{display:inline-block;background:var(--moss);color:var(--moss-ink);border-radius:6px;padding:1px 8px;font-weight:800;font-size:12px;letter-spacing:.04em;text-transform:uppercase}
+
+/* Library */
+.lib-head{display:flex;justify-content:space-between;align-items:flex-end;gap:14px;flex-wrap:wrap}
+.lib-list{display:flex;flex-direction:column;gap:12px}
+.qz{display:flex;align-items:stretch;background:var(--surface);border:2px solid var(--line);border-radius:18px;overflow:hidden}
+.qz:hover{border-color:var(--moss)}
+.qz.past{opacity:.72}
+.qz-main{flex:1;display:flex;gap:14px;align-items:center;background:none;border:0;padding:14px;text-align:left;min-width:0}
+.qz-ic{width:52px;height:52px;flex:none;border-radius:14px;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center}
+.qz-ic svg{width:28px;height:28px}
+.qz-txt{flex:1;min-width:0;display:flex;flex-direction:column;gap:3px}
+.qz-txt h3{font-size:19px;font-weight:700;overflow-wrap:anywhere}
+.qz-meta{display:flex;gap:8px;align-items:center;flex-wrap:wrap;font-size:13px;color:var(--muted);font-weight:700}
+.qz-txt small{color:var(--muted);font-weight:600;font-size:13px}
+.qz-prog{flex:none;display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-weight:800;font-variant-numeric:tabular-nums;font-size:14px}
+.qz-prog .stars svg{width:16px;height:16px}
+.qz-side{display:flex;align-items:center;padding-right:8px}
+.icon-btn{width:40px;height:40px;border-radius:10px;border:0;background:transparent;color:var(--muted);display:grid;place-items:center;flex:none}
+.icon-btn:hover{background:var(--surface2);color:var(--lingon)}
+.icon-btn svg{width:20px;height:20px}
+.qz-confirm{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:10px 14px;background:var(--lingon-soft);border-top:2px solid var(--lingon)}
+.qz-wrap{display:flex;flex-direction:column}
+.empty{background:var(--surface);border:2px dashed var(--line);border-radius:18px;padding:22px;text-align:center;color:var(--muted);font-weight:700}
+.where{font-size:13px;color:var(--muted);font-weight:600}
+
+/* Create */
+.panel{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.panel h2{font-size:24px}
+.drop{position:relative;display:flex;flex-direction:column;align-items:center;gap:6px;text-align:center;border:2.5px dashed var(--line);border-radius:16px;padding:22px 16px;background:var(--surface2);cursor:pointer;transition:border-color .15s,background .15s}
+.drop:hover,.drop.over{border-color:var(--moss);background:var(--ok-soft)}
+.drop svg{width:34px;height:34px;color:var(--moss)}
+.drop b{font:700 18px "Bricolage Grotesque",sans-serif}
+.drop span{color:var(--muted);font-weight:600;font-size:14px}
+.cover{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:200px;z-index:2}
+.pickrow{display:flex;gap:10px;flex-wrap:wrap}
+.pick{position:relative;overflow:hidden;flex:1 1 140px;display:flex;align-items:center;justify-content:center;gap:8px;border:2px solid var(--line);border-radius:14px;padding:12px 14px;background:var(--surface);font-weight:800}
+.pick svg{width:20px;height:20px;color:var(--moss)}
+.pick:focus-within{outline:3px solid var(--kant);outline-offset:2px}
+.diag{background:var(--surface2);border:2px solid var(--line);border-radius:14px;padding:12px 14px;font-size:14px;font-weight:600}
+.diag b{display:block;margin-bottom:4px}
+.diag code{font-size:12px;overflow-wrap:anywhere}
+.mats{display:flex;flex-direction:column;gap:8px}
+.mat{display:flex;align-items:center;gap:12px;background:var(--surface2);border:2px solid var(--line);border-radius:14px;padding:8px 8px 8px 8px}
+.mat.err{border-color:var(--lingon);background:var(--lingon-soft)}
+.mat-th{width:48px;height:48px;border-radius:10px;overflow:hidden;flex:none;background:var(--surface);display:grid;place-items:center;color:var(--muted)}
+.mat-th img{width:100%;height:100%;object-fit:cover}
+.mat-th svg{width:24px;height:24px}
+.mat-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.mat-txt b{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mat-txt small{font-size:13px;color:var(--muted);font-weight:600}
+.mat.busy .mat-txt small{color:var(--moss)}
+.field{display:flex;flex-direction:column;gap:6px;min-width:0}
+.field>span,.lbl{font-size:13px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.inp{width:100%;font:600 16px "Nunito",sans-serif;padding:11px 12px;border-radius:12px;border:2px solid var(--line);background:var(--surface2);color:var(--ink)}
+textarea.inp{resize:vertical;min-height:90px;line-height:1.45}
+.grid2{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.seg{display:flex;border:2px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface2)}
+.seg label{flex:1;position:relative}
+.seg input{position:absolute;opacity:0;inset:0;margin:0;cursor:pointer}
+.seg span{display:block;text-align:center;padding:10px 8px;font-weight:800;font-size:15px}
+.seg input:checked+span{background:var(--moss);color:var(--moss-ink)}
+.seg input:focus-visible+span{outline:3px solid var(--kant);outline-offset:-3px}
+.gen{background:var(--surface);border:2px solid var(--moss);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.gen-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.gen h3{font-size:20px}
+.gen-time{font-variant-numeric:tabular-nums;color:var(--muted);font-weight:800}
+.gen-step{font-weight:700}
+.gen-bar{height:10px;border-radius:99px;background:var(--surface2);overflow:hidden;border:1px solid var(--line)}
+.gen-bar i{display:block;height:100%;width:30%;background:linear-gradient(90deg,var(--moss),var(--kant));border-radius:99px;animation:slide 1.4s ease-in-out infinite}
+@keyframes slide{0%{transform:translateX(-100%)}100%{transform:translateX(340%)}}
+.lchips{display:flex;flex-wrap:wrap;gap:6px}
+.lchip{display:inline-flex;align-items:center;gap:6px;background:var(--surface2);border:1.5px solid var(--line);border-radius:99px;padding:3px 10px 3px 6px;font-size:13px;font-weight:700;max-width:100%;min-width:0}
+.lchip svg{width:16px;height:16px;flex:none;color:var(--moss)}
+.lchip span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inp.sm{padding:6px 8px;font-size:14px;border-radius:8px}
+.mlist{display:flex;flex-direction:column;gap:8px}
+.mlink{display:flex;align-items:center;gap:12px;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:10px 10px 10px 12px}
+.mlink.done{border-color:var(--ok);background:var(--ok-soft)}
+.ml-ic{width:44px;height:44px;border-radius:12px;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center;flex:none}
+.ml-ic svg{width:24px;height:24px}
+.ml-txt{flex:1;min-width:0;display:flex;flex-direction:column}
+.ml-txt b{font-size:15px;line-height:1.25;overflow-wrap:anywhere}
+.ml-txt small{font-size:12px;color:var(--muted);font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.mlink a.btn{text-decoration:none;flex:none}
+.ml-check{border:2px solid var(--line)!important;border-radius:10px}
+.ml-check svg{width:18px;height:18px}
+.mlink.done .ml-check{background:var(--ok);border-color:var(--ok)!important;color:#fff}
+.hud-sub{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:12px;font-weight:700;color:var(--muted);flex-wrap:wrap}
+.streakc{display:inline-flex;align-items:center;gap:4px;color:var(--ink);font-weight:800}
+.streakc svg{width:14px;height:14px;color:var(--lingon)}
+.ready{background:var(--surface);border:2px solid var(--moss);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
+.ready-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.ready-top b{font:800 34px/1 "Bricolage Grotesque",sans-serif;color:var(--moss);font-variant-numeric:tabular-nums}
+.rbar{height:14px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);overflow:hidden;position:relative}
+.rbar i{display:block;height:100%;background:var(--moss);border-radius:99px;transition:width .6s}
+.rbar .mark90{position:absolute;top:0;bottom:0;left:90%;border-left:2px dashed var(--ink);opacity:.35}
+.ready-next{display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-top:1px solid var(--line);padding-top:10px}
+.ready-next>div{flex:1 1 220px;min-width:0}
+.ready-next b{display:block;font-size:17px}
+.ready-next small{color:var(--muted);font-weight:600;font-size:13px;display:block;max-width:52ch}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.mode{display:flex;flex-direction:column;align-items:flex-start;gap:4px;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:14px;text-align:left}
+.mode:not(:disabled):hover{border-color:var(--moss)}
+.mode svg{width:26px;height:26px;color:var(--moss)}
+.mode b{font:700 17px "Bricolage Grotesque",sans-serif}
+.mode small{color:var(--muted);font-weight:700;font-size:13px}
+.mode:disabled{opacity:.55;cursor:default}
+.mode.boss{background:var(--kant-soft);border-color:var(--kant)}
+.mode.boss svg{color:var(--bark)}
+.medal{flex:none;font-size:12px;font-weight:800;border-radius:99px;padding:3px 10px;background:var(--surface2);color:var(--muted);border:2px solid var(--line);white-space:nowrap}
+.medal.m1{background:#EBCFB2;border-color:#B87333;color:#4A2A10}
+.medal.m2{background:#E3E7EC;border-color:#8C96A3;color:#2A313B}
+.medal.m3{background:#FBE6A6;border-color:#D49A00;color:#4A3600}
+.medal.big{font-size:16px;padding:6px 18px}
+.miss-tag{color:var(--lingon);font-weight:800}
+.goals{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.goals li{display:flex;align-items:center;gap:12px;background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:10px 12px}
+.goals li.done{border-color:var(--ok);background:var(--ok-soft)}
+.gchk{width:26px;height:26px;border-radius:8px;border:2px solid var(--line);display:grid;place-items:center;flex:none}
+.goals li.done .gchk{background:var(--ok);border-color:var(--ok);color:#fff}
+.gchk svg{width:16px;height:16px}
+.gt{flex:1;min-width:0;display:flex;flex-direction:column;gap:5px}
+.gt b{font-size:15px}
+.gbar{height:6px;border-radius:99px;background:var(--surface2);overflow:hidden;border:1px solid var(--line)}
+.gbar i{display:block;height:100%;background:var(--moss)}
+.gx{flex:none;font-size:12px;font-weight:800;color:var(--muted);font-variant-numeric:tabular-nums;text-align:right;line-height:1.35}
+.qz-prog b{font:800 18px "Bricolage Grotesque",sans-serif;color:var(--moss)}
+.qz-prog small{font-size:11px;color:var(--muted);font-weight:700}
+.mini{width:64px;height:6px;border-radius:99px;background:var(--surface2);overflow:hidden;display:block;border:1px solid var(--line)}
+.mini i{display:block;height:100%;background:var(--moss)}
+.mdots{display:flex;gap:3px;justify-content:flex-end;flex-wrap:wrap;max-width:80px}
+.mdots i{width:9px;height:9px;border-radius:50%;background:transparent;border:1.5px solid var(--line)}
+.mdots i.m1{background:#B87333;border-color:#B87333}.mdots i.m2{background:#8C96A3;border-color:#8C96A3}.mdots i.m3{background:#D49A00;border-color:#D49A00}
+.daily{display:flex;align-items:center;gap:14px;background:var(--kant-soft);border:2px solid var(--kant);border-radius:18px;padding:14px;flex-wrap:wrap}
+.daily>svg{width:30px;height:30px;color:var(--bark);flex:none}
+.daily>div{flex:1 1 180px;min-width:0}
+.daily b{display:block;font:700 18px "Bricolage Grotesque",sans-serif}
+.daily small{display:block;color:var(--ink);opacity:.8;font-weight:700;font-size:13px}
+.kinds{display:flex;gap:8px;flex-wrap:wrap;justify-content:center}
+.kinds span{background:var(--surface2);border-radius:99px;padding:4px 12px;font-weight:800;font-size:13px}
+.review-list{width:100%;text-align:left;display:flex;flex-direction:column;gap:6px}
+.review-list>div{background:var(--surface2);border-radius:12px;padding:10px 12px}
+.review-list b{display:block;font-size:14px}
+.review-list>div span{color:var(--ok);font-weight:800;font-size:14px}
+.fb .sub{font-size:14px;color:var(--muted);font-weight:700}
+.pips i.sec{opacity:.55}
+.errbox{background:var(--lingon-soft);border:2px solid var(--lingon);border-radius:14px;padding:12px 14px;font-weight:700}
+
+/* Review */
+.notes{background:var(--kant-soft);border:2px solid var(--kant);border-radius:14px;padding:12px 14px}
+.notes b{display:block;margin-bottom:4px}
+.notes ul{margin:0;padding-left:20px;font-weight:600;font-size:15px}
+details.rv{background:var(--surface2);border:2px solid var(--line);border-radius:14px}
+details.rv>summary{cursor:pointer;padding:12px 14px;font-weight:800;display:flex;justify-content:space-between;gap:10px;list-style:none}
+details.rv>summary::-webkit-details-marker{display:none}
+details.rv>summary::after{content:"+";font-size:20px;line-height:1;color:var(--muted)}
+details.rv[open]>summary::after{content:"–"}
+.rv-list{list-style:none;margin:0;padding:0 8px 8px;display:flex;flex-direction:column;gap:6px}
+.rv-q{display:flex;gap:10px;align-items:flex-start;background:var(--surface);border-radius:10px;padding:10px 6px 10px 12px}
+.rv-q div{flex:1;min-width:0}
+.rv-q small{display:block;font-size:11px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.rv-q p{margin:2px 0 0;font-weight:700;font-size:15px}
+.rv-q .ans{color:var(--ok);font-weight:700;font-size:14px;margin-top:2px}
+.rv-q .icon-btn{width:34px;height:34px}
+.rv-sum{display:flex;gap:10px;flex-wrap:wrap}
+.rv-sum .subj{background:var(--moss);color:var(--moss-ink);padding:4px 12px;border-radius:99px;font-size:13px}
+.rv-sum span:not(.subj){background:var(--surface2);border-radius:99px;padding:4px 12px;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums}
+
+/* Trail */
+.trail{position:relative;display:flex;flex-direction:column;gap:14px}
+.trail::before{content:"";position:absolute;left:31px;top:30px;bottom:30px;border-left:4px dashed var(--line)}
+.node{position:relative;display:flex;align-items:center;gap:14px;background:none;border:0;padding:0;text-align:left;width:100%}
+.dot{width:66px;height:66px;flex:none;border-radius:50%;background:var(--surface);border:3px solid var(--line);display:grid;place-items:center;color:var(--moss);box-shadow:var(--shadow);z-index:1}
+.node.done .dot{border-color:var(--moss);background:var(--ok-soft)}
+.node.boss .dot{background:var(--kant-soft);border-color:var(--kant);color:var(--bark)}
+.node.cards .dot{color:var(--bark)}
+.dot svg{width:30px;height:30px}
+.card-n{flex:1;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:12px 14px;display:flex;justify-content:space-between;align-items:center;gap:10px;min-width:0}
+.node:hover .card-n{border-color:var(--moss)}
+.card-n h3{font-size:18px;font-weight:600}
+.card-n small{display:block;color:var(--muted);font-weight:600;font-size:13px}
+.stars{display:flex;gap:2px;flex:none}
+.stars svg{width:20px;height:20px}
+.star-on{fill:var(--kant)} .star-off{fill:var(--line)}
+
+/* Badges */
+.sect h2{font-size:20px;margin-bottom:10px}
+.badges{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
+.badge{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;gap:10px;align-items:center}
+.badge .b-ic{width:36px;height:36px;border-radius:50%;background:var(--kant);color:#161A21;display:grid;place-items:center;flex:none;font:700 16px "Bricolage Grotesque",sans-serif}
+.badge.locked{opacity:.45}
+.badge.locked .b-ic{background:var(--line);color:var(--muted)}
+.badge b{display:block;font-size:14px;line-height:1.2}
+.badge span{font-size:12px;color:var(--muted);line-height:1.25;display:block}
+.reset{align-self:flex-start;background:none;border:0;color:var(--muted);text-decoration:underline;font-size:14px;padding:4px 0}
+details.adult{background:var(--surface);border:2px solid var(--line);border-radius:14px;padding:10px 14px}
+details.adult summary{cursor:pointer;font-weight:800;color:var(--muted);font-size:14px}
+details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600}
+
+/* Quiz */
+.qtop{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.back{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:8px 12px;font-weight:800}
+.chips{display:flex;gap:8px;align-items:center}
+.chip{background:var(--surface);border:2px solid var(--line);border-radius:99px;padding:4px 12px;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
+.chip.hot{background:var(--kant-soft);border-color:var(--kant)}
+.hearts{color:var(--lingon);letter-spacing:2px}
+.pips{display:flex;gap:4px}
+.pips i{flex:1;height:8px;border-radius:99px;background:var(--line)}
+.pips i.ok{background:var(--ok)} .pips i.no{background:var(--lingon)} .pips i.now{background:var(--kant)}
+.qcard{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:16px}
+.qtype{text-transform:uppercase;letter-spacing:.08em;font-size:12px;font-weight:800;color:var(--muted)}
+.qtext{font:600 clamp(20px,5.5vw,26px)/1.25 "Bricolage Grotesque",sans-serif;overflow-wrap:anywhere}
+.opts{display:grid;gap:10px}
+.opts.two{grid-template-columns:1fr 1fr}
+.opt{background:var(--surface2);border:2px solid var(--line);border-radius:14px;padding:14px 16px;text-align:left;font-weight:700;display:flex;align-items:center;gap:10px;transition:transform .1s;overflow-wrap:anywhere}
+.opt:not(:disabled):hover{border-color:var(--moss)}
+.opt:not(:disabled):active{transform:scale(.98)}
+.opt .box{width:22px;height:22px;border-radius:6px;border:2px solid var(--muted);flex:none;display:grid;place-items:center;font-size:14px}
+.opt.sel{border-color:var(--moss);background:var(--ok-soft)}
+.opt.sel .box{background:var(--moss);border-color:var(--moss);color:var(--moss-ink)}
+.opt.correct{border-color:var(--ok);background:var(--ok-soft)}
+.opt.wrong{border-color:var(--lingon);background:var(--lingon-soft)}
+.opt.missed{border-style:dashed;border-color:var(--ok)}
+.opt.gone{visibility:hidden}
+.opts.two .opt{justify-content:center;font-size:18px}
+.slots{display:flex;flex-direction:column;gap:8px;counter-reset:s}
+.slot{border:2px dashed var(--line);border-radius:12px;min-height:50px;display:flex;align-items:center;gap:10px;padding:8px 12px;background:none;text-align:left;font-weight:700;width:100%}
+.slot::before{counter-increment:s;content:counter(s);width:26px;height:26px;border-radius:50%;background:var(--line);display:grid;place-items:center;font-size:13px;flex:none;color:var(--ink)}
+.slot.filled{border-style:solid;background:var(--surface2)}
+.slot.filled::before{background:var(--moss);color:var(--moss-ink)}
+.slot.correct{border-color:var(--ok);background:var(--ok-soft)}
+.slot.wrong{border-color:var(--lingon);background:var(--lingon-soft)}
+.winput{width:100%;font:700 20px "Nunito",sans-serif;padding:14px 16px;border-radius:14px;border:2px solid var(--line);background:var(--surface2);color:var(--ink)}
+.winput:focus{outline:none;border-color:var(--moss)}
+.winput.correct{border-color:var(--ok);background:var(--ok-soft)}.winput.wrong{border-color:var(--lingon);background:var(--lingon-soft)}
+.timer{height:6px;border-radius:99px;background:var(--line);overflow:hidden}.timer>i{display:block;height:100%;background:var(--kant);width:100%}
+.timer.low>i{background:var(--lingon)}
+.fb{border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;border:2px solid}
+.fb.ok{background:var(--ok-soft);border-color:var(--ok)}
+.fb.no{background:var(--lingon-soft);border-color:var(--lingon)}
+.fb h3{font-size:22px;display:flex;justify-content:space-between;gap:10px;align-items:baseline}
+.fb .pts{font-size:18px;color:var(--ok);font-variant-numeric:tabular-nums}
+.fb p{margin:0;font-weight:600}
+.fb ol{margin:0;padding-left:22px;font-weight:700}
+.pop{animation:pop .35s ease-out}
+@keyframes pop{0%{transform:scale(.94);opacity:.4}100%{transform:scale(1);opacity:1}}
+.shake{animation:shake .35s}
+@keyframes shake{25%{transform:translateX(-6px)}50%{transform:translateX(6px)}75%{transform:translateX(-3px)}}
+
+/* Result */
+.res{background:var(--surface);border:2px solid var(--line);border-radius:22px;padding:28px 20px;text-align:center;display:flex;flex-direction:column;gap:14px;align-items:center}
+.res h2{font-size:32px;color:var(--moss)}
+.bigstars{display:flex;gap:8px}
+.bigstars svg{width:56px;height:56px}
+.bigstars svg.star-on{animation:pop .5s ease-out both}
+.bigstars svg:nth-child(2){animation-delay:.15s}.bigstars svg:nth-child(3){animation-delay:.3s}
+.stats{display:flex;gap:10px;flex-wrap:wrap;justify-content:center}
+.stat{background:var(--surface2);border-radius:14px;padding:10px 16px;min-width:96px}
+.stat b{display:block;font:700 24px "Bricolage Grotesque",sans-serif;font-variant-numeric:tabular-nums}
+.stat span{font-size:12px;color:var(--muted);font-weight:800;text-transform:uppercase;letter-spacing:.06em}
+.newb{background:var(--kant-soft);border-radius:14px;padding:10px 14px;font-weight:700}
+
+/* Flashcards */
+.flash{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:22px;display:flex;flex-direction:column;gap:14px;min-height:260px}
+.flash .ans{background:var(--surface2);border-radius:14px;padding:14px 16px;font-weight:600;display:flex;flex-direction:column;gap:6px}
+.flash .ans p{margin:0}
+.flash .ans ul,.flash .ans ol{margin:0;padding-left:20px}
+.parent{font-size:13px;color:var(--muted);font-weight:700;margin:0}
+
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translateX(-50%) translateY(160%);background:var(--ink);color:var(--bg);padding:12px 20px;border-radius:99px;font-weight:800;transition:transform .3s;z-index:20;max-width:calc(100% - 32px);text-align:center}
+.toast.show{transform:translateX(-50%) translateY(0)}
+#fx{position:fixed;inset:0;pointer-events:none;z-index:15}
+.confirm{background:var(--lingon-soft);border:2px solid var(--lingon);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<canvas id="fx"></canvas>
+<div class="wrap" id="app">
+  <div class="hud">
+    <div class="lvl" id="lvlNum">1</div>
+    <div class="hud-main">
+      <div class="hud-top"><span class="lvl-name" id="lvlName">Nybörjare I</span><span class="xp" id="xpText">0 XP</span></div>
+      <div class="bar"><i id="xpBar" style="width:0%"></i></div>
+      <div class="hud-sub"><span id="rankInfo"></span><span class="streakc" id="streakChip" hidden></span></div>
+    </div>
+  </div>
+
+  <!-- LIBRARY -->
+  <section id="lib" class="wrap">
+    <div class="lib-head">
+      <div class="intro">
+        <h1>Läxmotorn</h1>
+        <p>Fota eller ladda upp veckans läxa. Claude gör ett förhör med stationer, medaljer, repetition och slutprov.</p>
+      </div>
+      <button class="btn" id="newBtn" hidden></button>
+    </div>
+    <p class="hint" id="libNote"></p>
+    <div id="dailyBox"></div>
+    <div class="lib-list" id="libList"></div>
+    <div class="sect"><h2>Märken</h2><div class="badges" id="badges"></div></div>
+    <p class="where" id="libWhere"></p>
+  </section>
+
+  <!-- CREATE -->
+  <section id="create" class="wrap" hidden>
+    <div class="qtop"><button class="back" id="createBack">← Läxorna</button></div>
+    <div class="panel" id="createPanel">
+      <h2>Ny läxa</h2>
+      <div class="drop" id="drop">
+        <span id="dropIcon"></span>
+        <b>Lägg till bilder eller dokument</b>
+        <span>Foton av sidorna, PDF, Word (.docx) eller textfil. Flera sidor går bra.</span>
+        <input class="cover" type="file" id="fileIn" multiple accept="image/*,.pdf,application/pdf,.docx,.txt,.md,text/plain" aria-label="Lägg till bilder eller dokument">
+      </div>
+      <div class="pickrow" id="pickRow">
+        <span class="pick" id="camPick"><span id="camIcon"></span>Ta foto<input class="cover" type="file" id="camIn" accept="image/*" capture="environment" aria-label="Ta foto av läxan"></span>
+        <span class="pick"><span id="anyIcon"></span>Välj valfri fil<input class="cover" type="file" id="anyIn" multiple aria-label="Välj valfri fil"></span>
+      </div>
+      <div id="pickDiag"></div>
+      <div class="mats" id="mats"></div>
+      <label class="field" for="pasteIn"><span>Eller klistra in text</span>
+        <textarea class="inp" id="pasteIn" rows="3" placeholder="T.ex. begreppslistan eller instuderingsfrågorna"></textarea>
+      </label>
+      <label class="field" for="linksIn"><span>Länkar till material (valfritt)</span>
+        <textarea class="inp" id="linksIn" rows="2" placeholder="En länk per rad, t.ex. en film på UR Play eller en text på SO-rummet"></textarea>
+      </label>
+      <div class="lchips" id="linkChips"></div>
+      <p class="hint">Länkarna sparas i förhöret så att eleven kan läsa och titta där. Länkar som står i läxan kommer med automatiskt. Claude kan inte öppna länkar själv, så ska innehållet bli frågor: kopiera texten från sidan, eller videons transkription (på YouTube: Visa transkription under videon), och klistra in den ovan.</p>
+      <div class="grid2">
+        <label class="field" for="titleIn"><span>Namn (valfritt)</span><input class="inp" id="titleIn" type="text" maxlength="60" placeholder="Claude föreslår ett"></label>
+        <label class="field" for="dateIn"><span>Provdatum (valfritt)</span><input class="inp" id="dateIn" type="date"></label>
+        <label class="field" for="subjIn"><span>Ämne</span>
+          <select class="inp" id="subjIn">
+            <option value="auto">Låt Claude avgöra</option><option value="no">NO</option><option value="so">SO</option><option value="sv">Svenska</option><option value="ma">Matte</option><option value="en">Engelska</option><option value="annat">Övrigt</option>
+          </select></label>
+        <label class="field" for="gradeIn"><span>Årskurs</span>
+          <select class="inp" id="gradeIn"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label>
+      </div>
+      <div class="field"><span class="lbl" id="diffLbl">Svårighet</span>
+        <div class="seg" role="radiogroup" aria-labelledby="diffLbl">
+          <label><input type="radio" name="diff" id="diffEasy" value="easy"><span>Lagom</span></label>
+          <label><input type="radio" name="diff" id="diffHard" value="hard" checked><span>Svår</span></label>
+        </div>
+      </div>
+      <div class="row"><button class="btn" id="genBtn" disabled>Skapa förhör</button></div>
+      <p class="hint" id="genHint"></p>
+    </div>
+    <div class="gen" id="genBox" hidden>
+      <div class="gen-top"><h3>Claude gör förhöret</h3><span class="gen-time" id="genTime">0:00</span></div>
+      <div class="gen-bar"><i></i></div>
+      <p class="gen-step" id="genStep" aria-live="polite">Startar…</p>
+      <p class="hint">Det brukar ta 1–3 minuter. Du kan lämna sidan öppen och göra annat.</p>
+      <div class="row"><button class="btn ghost small" id="stopBtn">Avbryt</button></div>
+    </div>
+    <div id="genErr"></div>
+  </section>
+
+  <!-- REVIEW -->
+  <section id="review" class="wrap" hidden>
+    <div class="qtop"><button class="back" id="revBack">← Ändra underlaget</button></div>
+    <div class="panel" id="revBox"></div>
+  </section>
+
+  <!-- QUIZ HOME -->
+  <section id="home" class="wrap" hidden>
+    <div class="qtop"><button class="back" id="homeBack">← Läxorna</button></div>
+    <div class="intro">
+      <h1 id="qzTitle"></h1>
+      <p id="qzSub"></p>
+      <div class="chiprow" id="qzChips"></div>
+    </div>
+    <div id="readyBox"></div>
+    <div id="modeBox"></div>
+    <div id="matBox"></div>
+    <div class="sect"><h2>Stationer</h2><p class="hint" style="margin:0 0 10px">Brons: alla frågor rätt minst en gång. Silver: en runda helt utan fel. Guld: allt sitter kvar en annan dag.</p>
+      <div class="trail" id="trail"></div></div>
+    <div class="sect"><h2>Delmål</h2><div id="goalBox"></div></div>
+    <div id="adultBox"></div>
+    <div id="resetBox"></div>
+  </section>
+
+  <!-- QUIZ -->
+  <section id="quiz" class="wrap" hidden>
+    <div class="qtop">
+      <button class="back" id="quitBtn">← Läxan</button>
+      <div class="chips">
+        <span class="chip hearts" id="lives" hidden></span>
+        <span class="chip" id="streak">0 i rad</span>
+      </div>
+    </div>
+    <div class="pips" id="pips"></div>
+    <div class="timer" id="timer" hidden><i id="timerBar"></i></div>
+    <div class="qcard" id="qcard">
+      <div class="qtype" id="qtype"></div>
+      <div class="qtext" id="qtext"></div>
+      <div id="qbody"></div>
+      <div class="row" id="qactions"></div>
+    </div>
+    <div id="feedback"></div>
+  </section>
+
+  <!-- RESULT -->
+  <section id="result" class="wrap" hidden>
+    <div class="res" id="resBox"></div>
+  </section>
+
+  <!-- FLASHCARDS -->
+  <section id="cards" class="wrap" hidden>
+    <div class="qtop">
+      <button class="back" id="quitCards">← Läxan</button>
+      <span class="chip" id="cardCount"></span>
+    </div>
+    <div class="flash" id="flash"></div>
+  </section>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+/* ---------- Ikoner ---------- */
+const ICONS={
+ book:'<path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19a2 2 0 0 1 2-2h13"/>',
+ tree:'<path d="M12 2 5 12h4l-3 5h12l-3-5h4z"/><path d="M12 17v5"/>',
+ cycle:'<path d="M4 12a8 8 0 0 1 14-5.3"/><path d="M18 3v4h-4"/><path d="M20 12a8 8 0 0 1-14 5.3"/><path d="M6 21v-4h4"/>',
+ mush:'<path d="M3 12a9 7.5 0 0 1 18 0z"/><path d="M9.5 12v6.5a2.5 2.5 0 0 0 5 0V12"/><circle cx="9" cy="8" r="1"/><circle cx="14.5" cy="7" r="1"/>',
+ chain:'<circle cx="4" cy="12" r="2"/><circle cx="12" cy="12" r="2"/><circle cx="20" cy="12" r="2"/><path d="M6 12h4M14 12h4"/>',
+ paw:'<circle cx="7" cy="9" r="2"/><circle cx="12" cy="6" r="2"/><circle cx="17" cy="9" r="2"/><path d="M8 17c0-3 2-5 4-5s4 2 4 5-2 3-4 3-4 0-4-3z"/>',
+ paper:'<path d="M6 2h9l4 4v16H6z"/><path d="M15 2v4h4"/><path d="M9 12h7M9 16h7"/>',
+ tent:'<path d="M12 3 2 21h20z"/><path d="m9 21 3-7 3 7"/>',
+ news:'<path d="M4 4h13v16H6a2 2 0 0 1-2-2z"/><path d="M17 8h3v10a2 2 0 0 1-2 2"/><path d="M7 8h7M7 12h7M7 16h4"/>',
+ tv:'<rect x="3" y="7" width="18" height="13" rx="2"/><path d="m8 3 4 4 4-4"/>',
+ pen:'<path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/>',
+ glass:'<circle cx="10.5" cy="10.5" r="6.5"/><path d="m20 20-4.8-4.8"/>',
+ shield:'<path d="M12 3 4 6v6c0 5 3.5 8 8 9 4.5-1 8-4 8-9V6z"/><path d="m9 12 2 2 4-4"/>',
+ scale:'<path d="M12 3v18M7 21h10"/><path d="M5 7h14"/><path d="m5 7-3 6h6zM19 7l-3 6h6z"/>',
+ mask:'<circle cx="12" cy="12" r="9"/><circle cx="9" cy="10" r="1.2"/><circle cx="15" cy="10" r="1.2"/><path d="M8.5 15a4 4 0 0 0 7 0"/>',
+ flask:'<path d="M9 3h6M10 3v6L4.5 18.5A2 2 0 0 0 6.2 21.5h11.6a2 2 0 0 0 1.7-3L14 9V3"/><path d="M7 15h10"/>',
+ globe:'<circle cx="12" cy="12" r="9"/><path d="M3 12h18"/><path d="M12 3a14 14 0 0 1 0 18a14 14 0 0 1 0-18z"/>',
+ clock:'<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>',
+ chat:'<path d="M4 5h16v11H9l-5 4z"/>',
+ calc:'<rect x="5" y="3" width="14" height="18" rx="2"/><path d="M8 7h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/>',
+ heart:'<path d="M12 20s-7-4.4-7-10a4 4 0 0 1 7-2.6A4 4 0 0 1 19 10c0 5.6-7 10-7 10z"/>',
+ drop:'<path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/>',
+ sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M2 12h2M20 12h2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>',
+ music:'<path d="M9 18V5l11-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="17" cy="16" r="3"/>',
+ map:'<path d="m3 6 6-3 6 3 6-3v15l-6 3-6-3-6 3z"/><path d="M9 3v15M15 6v15"/>',
+ bolt:'<path d="M13 2 4 14h7l-1 8 9-12h-7z"/>',
+ cards:'<rect x="3" y="6" width="13" height="15" rx="2"/><path d="M8 3h11a2 2 0 0 1 2 2v13"/>',
+ boss:'<path d="M5 21V4"/><path d="M5 4h12l-2 4 2 4H5"/>',
+ plus:'<path d="M12 5v14M5 12h14"/>',
+ trash:'<path d="M4 7h16M10 11v6M14 11v6"/><path d="M6 7l1 13h10l1-13M9 7V4h6v3"/>',
+ upload:'<path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 16v4h16v-4"/>',
+ doc:'<path d="M6 2h9l4 4v16H6z"/><path d="M15 2v4h4"/><path d="M9 12h7M9 16h5"/>',
+ x:'<path d="M6 6l12 12M18 6 6 18"/>',
+ play:'<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
+ link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
+ check:'<path d="m5 12 5 5 9-10"/>',
+ flame:'<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 1.6 1.2 2.6 2.5 3 0-3-1-5.5 0-8z"/>',
+ target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
+ lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
+ camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'
+};
+const UI_ICONS=['cards','boss','plus','trash','upload','doc','x','play','link','check','camera','flame','target','lock'];
+const ICON_KEYS=Object.keys(ICONS).filter(k=>!UI_ICONS.includes(k));
+const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||ICONS.book}</svg>`;
+const STAR='M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z';
+const starsHtml=(n,cls='stars')=>`<span class="${cls}">${[0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<n?'star-on':'star-off'}" aria-hidden="true"><path d="${STAR}"/></svg>`).join('')}</span>`;
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function normUrl(u){try{const x=new URL(u);return /^https?:$/.test(x.protocol)&&x.hostname.includes('.')?x.href:null}catch(e){return null}}
+function findUrls(t){const out=[];(String(t||'').match(/\bhttps?:\/\/[^\s<>"'`]+|\bwww\.[^\s<>"'`]+/gi)||[]).forEach(u=>{u=u.replace(/[.,;:!?)\]}»”]+$/,'');if(!/^https?:/i.test(u))u='https://'+u;const n=normUrl(u);if(n&&!out.includes(n))out.push(n)});return out}
+const hostOf=u=>{try{return new URL(u).hostname.replace(/^www\./,'')}catch(e){return ''}};
+function linkKind(u){const h=hostOf(u);return /(^|\.)(youtube\.com|youtu\.be|vimeo\.com|urplay\.se|svtplay\.se|tv4play\.se|ur\.se)$/.test(h)||/\/(video|play|watch)\b/.test(u)?'video':'text'}
+function linkTitle(u){
+  const h=hostOf(u);
+  if(/youtube\.com|youtu\.be/.test(h))return 'Film på YouTube';if(/urplay\.se/.test(h))return 'Film på UR Play';if(/svtplay\.se/.test(h))return 'Film på SVT Play';
+  try{const seg=new URL(u).pathname.split('/').filter(Boolean).pop();if(seg){const t=decodeURIComponent(seg).replace(/\.(html?|php|aspx?)$/i,'').replace(/[-_+]+/g,' ').trim();if(t&&!/^[\d\s]+$/.test(t)&&t.length<70)return t.charAt(0).toUpperCase()+t.slice(1)}}catch(e){}
+  return h||u;
+}
+const SUBJ={no:'NO',so:'SO',sv:'Svenska',ma:'Matte',en:'Engelska',annat:'Övrigt'};
+const SUBJ_ICON={no:'flask',so:'globe',sv:'book',ma:'calc',en:'chat',annat:'book'};
+const TYPE_LABEL={mc:'Flerval',tf:'Sant/falskt',multi:'Välj alla',order:'Ordning',write:'Skriv'};
+
+const $=s=>document.querySelector(s);
+const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- Framsteg (repetition med lådor, Leitner) ---------- */
+const DAY=864e5;
+const dayKey=(t=Date.now())=>{const d=new Date(t);return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+const dayStart=(t=Date.now())=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()};
+const INTERVAL=[0,1,2,4,7,14];          // dagar till nästa repetition per låda
+const READY=[0,.5,.8,1,1,1];            // hur mycket en fråga i varje låda bidrar till "provberedd"
+const BASE={tf:6,mc:10,multi:14,order:14,write:18};
+const MEDAL=['','Brons','Silver','Guld'],MEDAL_XP=[0,30,60,120];
+
+let G=Object.assign({xp:0,days:[],badges:[],fixed:0,reviews:0},LS.get('laxmotorn:xp',{})||{});
+if(!Array.isArray(G.days))G.days=[];if(!Array.isArray(G.badges))G.badges=[];
+const saveG=()=>LS.set('laxmotorn:xp',G);
+const PC={};
+function getP(id){
+  if(!PC[id]){
+    const raw=LS.get('laxmotorn:p:'+id,{})||{};
+    const p=Object.assign({q:{},medals:{},played:{},known:{},goals:[],seen:[],bossBest:0,repDone:false},raw);
+    if(Array.isArray(p.known)){const k={};p.known.forEach(i=>{k[i]=''});p.known=k}
+    ['q','medals','played','known'].forEach(f=>{if(!p[f]||typeof p[f]!=='object'||Array.isArray(p[f]))p[f]={}});
+    if(!Array.isArray(p.goals))p.goals=[];if(!Array.isArray(p.seen))p.seen=[];
+    delete p.stars;delete p.badges;
+    PC[id]=p;
+  }
+  return PC[id];
+}
+const saveP=id=>LS.set('laxmotorn:p:'+id,PC[id]);
+let QZ=null,STATIONS=[],FLASH=[],P=null;
+
+function show(id){['lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);window.scrollTo(0,0)}
+const TQ=[];let tBusy=false;
+function toast(msg){if(TQ[TQ.length-1]===msg)return;if(TQ.length>=3)TQ.shift();TQ.push(msg);if(!tBusy)nextToast()}
+function nextToast(){const t=$('#toast'),m=TQ.shift();if(!m){tBusy=false;return}tBusy=true;t.textContent=m;t.classList.add('show');setTimeout(()=>{t.classList.remove('show');setTimeout(nextToast,320)},2300)}
+
+/* ---------- Nivåer och rang ---------- */
+const RANKS=['Nybörjare','Upptäckare','Kunnig','Expert','Mästare','Professor'],ROMAN=['I','II','III','IV','V'],MAXL=30;
+const xpFor=L=>80*(L-1)*(L-1);
+function levelOf(xp){let L=1;while(L<MAXL&&xp>=xpFor(L+1))L++;return L}
+const rankOf=L=>Math.floor((L-1)/5);
+const levelName=L=>`${RANKS[rankOf(L)]} ${ROMAN[(L-1)%5]}`;
+const fmt=n=>Math.round(n).toLocaleString('sv-SE');
+function streak(){const set=new Set(G.days);let n=0,t=Date.now();if(!set.has(dayKey(t)))t-=DAY;while(set.has(dayKey(t))){n++;t-=DAY}return n}
+function markDay(){const k=dayKey();if(G.days.includes(k))return;G.days.push(k);G.days=G.days.slice(-90);saveG();const s=streak();if(s>=3)award('streak3');if(s>=7)award('streak7');updateHUD()}
+function updateHUD(){
+  const L=levelOf(G.xp),cur=xpFor(L),nxt=L<MAXL?xpFor(L+1):null,r=rankOf(L);
+  $('#lvlNum').textContent=L;$('#lvlName').textContent=levelName(L);
+  $('#xpText').textContent=nxt?`${fmt(G.xp)} / ${fmt(nxt)} XP`:`${fmt(G.xp)} XP`;
+  $('#xpBar').style.width=(nxt?Math.min(100,(G.xp-cur)/(nxt-cur)*100):100)+'%';
+  $('#rankInfo').textContent=r<RANKS.length-1?`Nästa rang: ${RANKS[r+1]} på nivå ${(r+1)*5+1}`:L<MAXL?'Högsta rangen. Fortsätt mot nivå 30.':'Högsta nivån!';
+  const s=streak(),c=$('#streakChip');c.hidden=s<1;c.innerHTML=`${svg('flame')}${s} ${s===1?'dag':'dagar'} i rad`;
+}
+function addXP(n){
+  n=Math.round(n);if(!n)return;const before=levelOf(G.xp);G.xp+=n;saveG();updateHUD();const after=levelOf(G.xp);
+  if(after>before){const up=rankOf(after)>rankOf(before);toast(up?`Ny rang: ${RANKS[rankOf(after)]}!`:`Ny nivå: ${levelName(after)}`);confetti(up?120:40);if(rankOf(after)>=5)award('pro')}
+}
+const BADGES=[
+ {id:'combo5',n:'På rulle',d:'5 rätt i rad',ic:'5'},
+ {id:'combo10',n:'Oslagbar',d:'10 rätt i rad',ic:'10'},
+ {id:'fix10',n:'Felfixare',d:'Fixa 10 missar',ic:'F'},
+ {id:'rev25',n:'Minnesmästare',d:'25 repetitioner i rätt tid',ic:'R'},
+ {id:'streak3',n:'Tre i rad',d:'Öva tre dagar i rad',ic:'3'},
+ {id:'streak7',n:'Hela veckan',d:'Öva sju dagar i rad',ic:'7'},
+ {id:'gold',n:'Första guldet',d:'Guld på en station',ic:'G'},
+ {id:'boss',n:'Provklar',d:'Klara ett slutprov',ic:'P'},
+ {id:'allgold',n:'Guldläxa',d:'Guld på alla stationer i en läxa',ic:'★'},
+ {id:'pro',n:'Professor',d:'Nå rangen Professor',ic:'Pr'}
+];
+let newBadges=[];
+function award(id){if(!G.badges.includes(id)){G.badges.push(id);newBadges.push(id);saveG();toast('Nytt märke: '+BADGES.find(b=>b.id===id).n)}}
+
+/* ---------- Frågor, lådor och medaljer ---------- */
+const qidOf=(st,i)=>st.id+'.'+i;
+const qState=(p,qid)=>p.q[qid]||{box:0,r:0,w:0,last:0,due:0,day:'',dn:0};
+function allQ(qz){const out=[];(qz.stations||[]).forEach(st=>st.qs.forEach((q,i)=>out.push({q,qid:qidOf(st,i),st})));return out}
+function readiness(qz,p){const a=allQ(qz);return a.length?a.reduce((s,x)=>s+READY[Math.min(qState(p,x.qid).box,3)],0)/a.length:0}
+const misses=(qz,p)=>allQ(qz).filter(x=>{const s=qState(p,x.qid);return s.box===0&&s.w>0});
+const dues=(qz,p,now=Date.now())=>allQ(qz).filter(x=>{const s=qState(p,x.qid);return s.box>=1&&s.due<=now});
+function nextDue(qz,p){let m=Infinity;allQ(qz).forEach(x=>{const s=qState(p,x.qid);if(s.box>=1&&s.due<m)m=s.due});return m===Infinity?null:m}
+function dueLabel(t){const n=Math.round((dayStart(t)-dayStart())/DAY);return n<=0?'nu':n===1?'i morgon':`om ${n} dagar`}
+function grade(ref,q,ok,o){
+  const p=getP(ref.qz),s=p.q[ref.qid]||(p.q[ref.qid]={box:0,r:0,w:0,last:0,due:0,day:'',dn:0});
+  const now=Date.now(),td=dayKey(now);if(s.day!==td){s.day=td;s.dn=0}
+  s.last=now;let kind='wrong',mult=0;
+  if(!ok){s.w++;if(!o.second){s.box=0;s.due=0}}
+  else if(o.second){kind='second';mult=.3}
+  else{
+    s.r++;
+    if(s.box===0){kind=s.w>0?'fix':'new';mult=kind==='fix'?1.5:1;s.box=1;s.due=dayStart(now)+INTERVAL[1]*DAY;if(kind==='fix')G.fixed++}
+    else if(now>=s.due){kind='review';mult=2;s.box=Math.min(5,s.box+1);s.due=dayStart(now)+INTERVAL[s.box]*DAY;G.reviews++}
+    else{kind='early';mult=s.dn<2?.2:0}
+    s.dn++;
+  }
+  saveP(ref.qz);saveG();
+  let xp=BASE[q.t]*mult*(o.joker?.5:1);if(ok&&mult>0&&xp<1)xp=1;
+  return {kind,xp:Math.round(xp)};
+}
+function updateMedal(qz,st,flawless){
+  const p=getP(qz.id),bx=st.qs.map((_,i)=>qState(p,qidOf(st,i)).box),cur=p.medals[st.id]||0;let m=cur,go=true;
+  while(go){go=false;
+    if(m===0&&bx.every(b=>b>=1)){m=1;go=true}
+    else if(m===1&&flawless&&bx.every(b=>b>=1)){m=2;go=true}
+    else if(m===2&&bx.every(b=>b>=2)){m=3;go=true}}
+  if(m>cur){p.medals[st.id]=m;saveP(qz.id);let b=0;for(let k=cur+1;k<=m;k++)b+=MEDAL_XP[k];addXP(b);
+    if(m===3)award('gold');if(qz.stations.every(s=>(p.medals[s.id]||0)>=3))award('allgold')}
+  return {from:cur,to:m};
+}
+function goalsFor(qz,p){
+  const st=qz.stations||[],fl=qz.flash||[],ln=(qz.links||[]).filter(l=>normUrl(l.url)),med=s=>p.medals[s.id]||0;
+  return [
+    ln.length&&{id:'mat',t:'Gå igenom materialet',cur:ln.filter(l=>p.seen.includes(l.url)).length,max:ln.length,xp:40},
+    {id:'play',t:'Spela alla stationer',cur:st.filter(s=>p.played[s.id]).length,max:st.length,xp:50},
+    {id:'brons',t:'Brons på alla stationer',cur:st.filter(s=>med(s)>=1).length,max:st.length,xp:100},
+    fl.length&&{id:'cards',t:'Kunna alla förklara-kort',cur:fl.filter((_,i)=>i in p.known).length,max:fl.length,xp:100},
+    {id:'rep',t:'Klara en repetition en annan dag',cur:p.repDone?1:0,max:1,xp:100},
+    {id:'boss',t:'Klara slutprovet',cur:p.bossBest>0?1:0,max:1,xp:150},
+    {id:'silver',t:'Silver på alla stationer',cur:st.filter(s=>med(s)>=2).length,max:st.length,xp:150},
+    {id:'ready',t:'Bli provberedd till 90 %',cur:Math.round(readiness(qz,p)*100),max:90,xp:200,pct:true},
+    {id:'guld',t:'Guld på alla stationer',cur:st.filter(s=>med(s)>=3).length,max:st.length,xp:250}
+  ].filter(Boolean);
+}
+function checkGoals(qz){const p=getP(qz.id);goalsFor(qz,p).forEach(g=>{if(g.cur>=g.max&&!p.goals.includes(g.id)){p.goals.push(g.id);saveP(qz.id);addXP(g.xp);toast(`Delmål klart: ${g.t} +${g.xp} XP`)}})}
+function nextStep(qz,p){
+  const m=misses(qz,p).length,d=dues(qz,p).length,st=qz.stations||[];
+  if(m)return {t:`Fixa ${m===1?'din miss':`dina ${m} missar`}`,why:'Det du svarade fel på fastnar bäst när du övar på det igen.',act:'miss'};
+  if(d)return {t:`Repetera ${d} ${d===1?'fråga':'frågor'}`,why:'Att plocka fram svaret efter en paus gör att det sitter längre.',act:'rep'};
+  const b=st.findIndex(s=>!(p.medals[s.id]>=1));
+  if(b>=0)return {t:`Spela ${st[b].name}`,why:'Ta en station i taget. Brons får du när alla frågor har gått rätt.',act:'st',i:b};
+  if(!p.bossBest)return {t:'Gör slutprovet',why:'Blandade frågor tränar dig att välja rätt kunskap, precis som på provet.',act:'boss'};
+  const s=st.findIndex(x=>(p.medals[x.id]||0)<2);
+  if(s>=0)return {t:`Ta silver på ${st[s].name}`,why:'Silver kräver en runda helt utan fel.',act:'st',i:s};
+  const nd=nextDue(qz,p);
+  return {t:'Bra jobbat, nu får hjärnan vila',why:nd?`Nästa repetition blir klar ${dueLabel(nd)}. Pausen hjälper minnet.`:'Kom tillbaka en annan dag och repetera.',act:null};
+}
+
+/* ---------- Datum ---------- */
+function parseDate(s){if(!s||!/^\d{4}-\d{2}-\d{2}$/.test(s))return null;const[y,m,d]=s.split('-').map(Number);return new Date(y,m-1,d)}
+function daysTo(s){const d=parseDate(s);if(!d)return null;const t=new Date();t.setHours(0,0,0,0);return Math.round((d-t)/864e5)}
+function dateLabel(s){
+  const d=parseDate(s);if(!d)return '';const n=daysTo(s),dm=`${d.getDate()}/${d.getMonth()+1}`;
+  if(n>1)return `Prov ${dm} · om ${n} dagar`;if(n===1)return `Prov i morgon`;if(n===0)return 'Provet är idag';return `Prov var ${dm}`;
+}
+
+/* ---------- Lagring ---------- */
+let sample=null,canWrite=null,imgLimits=null,booted=false;
+const Store={db:null,remote:[],ready:false,
+  local(){return LS.get('laxmotorn:quizzes',[])},
+  all(){return [...this.remote,...this.local().map(q=>({...q,localOnly:true}))]},
+  async add(doc){
+    if(this.db&&canWrite!==false){
+      try{const ref=await this.db.collection('quizzes').add(doc);return {id:ref.id||String(ref.path).split('/').pop(),local:false}}
+      catch(e){if(e&&e.code==='invalid_argument')canWrite=false}
+    }
+    const id='l'+Date.now().toString(36);const list=this.local();list.push({...doc,id});LS.set('laxmotorn:quizzes',list);
+    return {id,local:true};
+  },
+  async remove(q){
+    if(q.localOnly){LS.set('laxmotorn:quizzes',this.local().filter(x=>x.id!==q.id));try{localStorage.removeItem('laxmotorn:p:'+q.id)}catch(e){}return true}
+    try{await this.db.doc('quizzes/'+q.id).delete();try{localStorage.removeItem('laxmotorn:p:'+q.id)}catch(e){}return true}
+    catch(e){toast(e&&e.code==='invalid_argument'?'Du har inte behörighet att ta bort den här läxan.':'Kunde inte ta bort läxan. Försök igen.');return false}
+  }
+};
+
+function sortQuizzes(list){
+  const up=list.filter(q=>{const n=daysTo(q.testDate);return n!==null&&n>=0}).sort((a,b)=>parseDate(a.testDate)-parseDate(b.testDate));
+  const rest=list.filter(q=>!up.includes(q)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
+  return [...up,...rest];
+}
+/* ---------- Bibliotek ---------- */
+let pendingDel=null;
+function renderLib(){
+  updateHUD();
+  $('#app').removeAttribute('data-subj');
+  const nb=$('#newBtn');nb.innerHTML=svg('plus')+'Ny läxa';
+  nb.hidden=!booted||!sample;
+  $('#libNote').textContent=booted&&!sample?'Nya förhör kan bara skapas när sidan är öppen i Claude. Befintliga läxor går att spela som vanligt.':'';
+  const list=sortQuizzes(Store.all());
+  let dn=0,dq=0;list.forEach(qz=>{const c=dues(qz,getP(qz.id)).length;if(c){dn+=c;dq++}});
+  $('#dailyBox').innerHTML=dn?`<div class="daily">${svg('cycle')}<div><b>Dagens repetition</b><small>${Math.min(dn,15)} ${Math.min(dn,15)===1?'fråga':'frågor'} från ${dq} ${dq===1?'läxa':'läxor'} är redo att repeteras · 2× XP</small></div><button class="btn" id="dailyBtn">Kör</button></div>`:'';
+  const box=$('#libList');
+  if(!list.length){
+    box.innerHTML=Store.ready?`<div class="empty">Inga läxor än.${sample?' Tryck på Ny läxa och lägg till bilder eller ett dokument.':''}</div>`:'<div class="empty">Hämtar läxor…</div>';
+  }else{
+    box.innerHTML=list.map(q=>{
+      const subj=SUBJ[q.subject]?q.subject:'annat',nq=(q.stations||[]).reduce((a,s)=>a+s.qs.length,0);
+      const pp=getP(q.id),rd=Math.round(readiness(q,pp)*100),n=daysTo(q.testDate),past=n!==null&&n<0;
+      const canDel=q.localOnly||canWrite!==false;
+      const conf=pendingDel===q.id?`<div class="qz-confirm"><span>Ta bort <b>${esc(q.title)}</b> för alla som har sidan?</span><button class="btn danger small" data-yes="${esc(q.id)}">Ta bort</button><button class="btn ghost small" data-no="1">Avbryt</button></div>`:'';
+      return `<div class="qz-wrap"><div class="qz ${past?'past':''}" data-subj="${subj}">
+        <button class="qz-main" data-open="${esc(q.id)}">
+          <span class="qz-ic">${svg(q.stations&&q.stations[0]?q.stations[0].icon:SUBJ_ICON[subj])}</span>
+          <span class="qz-txt">
+            <span class="qz-meta"><span class="subj">${SUBJ[subj]}</span>${q.testDate?`<span>${esc(dateLabel(q.testDate))}</span>`:''}</span>
+            <h3>${esc(q.title)}</h3>
+            <small>${(q.stations||[]).length} stationer · ${nq} frågor${(q.flash||[]).length?` · ${(q.flash||[]).length} kort`:''}${(q.links||[]).length?` · ${q.links.length} länkar`:''}${q.localOnly?' · bara på den här enheten':''}</small>
+          </span>
+          <span class="qz-prog"><b>${rd} %</b><span class="mini"><i style="width:${rd}%"></i></span><small>provberedd</small><span class="mdots">${(q.stations||[]).map(s=>`<i class="m${pp.medals[s.id]||0}"></i>`).join('')}</span></span>
+        </button>
+        ${canDel?`<span class="qz-side"><button class="icon-btn" data-del="${esc(q.id)}" aria-label="Ta bort ${esc(q.title)}">${svg('trash')}</button></span>`:''}
+      </div>${conf}</div>`;
+    }).join('');
+  }
+  $('#badges').innerHTML=BADGES.map(b=>`<div class="badge ${G.badges.includes(b.id)?'':'locked'}"><span class="b-ic">${b.ic}</span><div><b>${b.n}</b><span>${b.d}</span></div></div>`).join('');
+  $('#libWhere').textContent=!booted?'':Store.db?'Läxorna sparas på sidan och syns för alla du delar den med. XP, medaljer och märken sparas i varje webbläsare.':'Läxorna sparas bara i den här webbläsaren.';
+}
+$('#dailyBox').addEventListener('click',e=>{if(e.target.closest('#dailyBtn')){QZ=null;startRound('daily')}});
+$('#libList').addEventListener('click',async e=>{
+  const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]'),y=e.target.closest('[data-yes]'),no=e.target.closest('[data-no]');
+  if(o){const q=Store.all().find(x=>x.id===o.dataset.open);if(q)openQuiz(q);return}
+  if(d){pendingDel=d.dataset.del;renderLib();return}
+  if(no){pendingDel=null;renderLib();return}
+  if(y){const q=Store.all().find(x=>x.id===y.dataset.yes);pendingDel=null;if(q&&await Store.remove(q))toast('Läxan är borttagen');renderLib()}
+});
+$('#newBtn').onclick=()=>{$('#genErr').innerHTML='';show('create');updateGen()};
+
+/* ---------- Underlag ---------- */
+const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
+const PDFW='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+const MAMMOTH='https://cdn.jsdelivr.net/npm/mammoth@1.6.0/mammoth.browser.min.js';
+const scripts={};
+function loadScript(src){return scripts[src]||(scripts[src]=new Promise((res,rej)=>{const s=document.createElement('script');s.src=src;s.onload=()=>res();s.onerror=()=>{delete scripts[src];rej(new Error('Kunde inte ladda filläsaren. Kontrollera nätet och försök igen.'))};document.head.appendChild(s)}))}
+async function needPdf(){await loadScript(PDFJS);await loadScript(PDFW);const lib=window.pdfjsLib||window['pdfjs-dist/build/pdf'];lib.GlobalWorkerOptions.workerSrc=PDFW;return lib}
+async function needMammoth(){await loadScript(MAMMOTH);return window.mammoth}
+const toBlob=(c,q=.88)=>new Promise((res,rej)=>c.toBlob(b=>b?res(b):rej(new Error('Kunde inte göra om bilden.')),'image/jpeg',q));
+function loadImg(f){return new Promise((res,rej)=>{const u=URL.createObjectURL(f);const i=new Image();i.onload=()=>res(i);i.onerror=()=>{URL.revokeObjectURL(u);rej(new Error('img'))};i.src=u})}
+async function normImage(f,max=2400){
+  let bmp;
+  try{bmp=await createImageBitmap(f,{imageOrientation:'from-image'})}
+  catch(e){try{bmp=await loadImg(f)}catch(e2){throw new Error('Bilden gick inte att öppna. Är det en HEIC-bild från iPhone? Välj JPG eller ta en skärmbild.')}}
+  const w=bmp.width||bmp.naturalWidth,h=bmp.height||bmp.naturalHeight,s=Math.min(1,max/Math.max(w,h));
+  const c=document.createElement('canvas');c.width=Math.round(w*s);c.height=Math.round(h*s);
+  const x=c.getContext('2d');x.fillStyle='#fff';x.fillRect(0,0,c.width,c.height);x.drawImage(bmp,0,0,c.width,c.height);
+  return toBlob(c);
+}
+async function splitImg(b){
+  const bmp=await createImageBitmap(b);const w=bmp.width,h=bmp.height;
+  if(h<w*1.15)return [b];
+  const cut=async(y0,y1)=>{const c=document.createElement('canvas');c.width=w;c.height=Math.round(y1-y0);c.getContext('2d').drawImage(bmp,0,y0,w,y1-y0,0,0,w,c.height);return toBlob(c,.9)};
+  return [await cut(0,h*.54),await cut(h*.46,h)];
+}
+
+let MAT=[],matSeq=0;
+function setText(it,t,label){t=(t||'').trim();if(!t)throw new Error('Hittade ingen text i filen.');it.kind='text';it.text=t;it.msg=label||`${t.length.toLocaleString('sv-SE')} tecken text`}
+async function readPdf(f,it){
+  const lib=await needPdf();
+  const pdf=await lib.getDocument({data:new Uint8Array(await f.arrayBuffer()),isEvalSupported:false}).promise;
+  const n=Math.min(pdf.numPages,30);let text='';
+  for(let p=1;p<=n;p++){it.msg=`Läser sida ${p} av ${n}…`;renderMat();
+    const tc=await(await pdf.getPage(p)).getTextContent();text+=tc.items.map(i=>(i.str||'')+(i.hasEOL?'\n':' ')).join('')+'\n\n'}
+  if(text.replace(/\s/g,'').length>=n*120){setText(it,text,`PDF med text · ${n} sidor`);return}
+  it.kind='img';
+  for(let p=1;p<=n;p++){it.msg=`Gör bild av sida ${p} av ${n}…`;renderMat();
+    const page=await pdf.getPage(p),v0=page.getViewport({scale:1}),v=page.getViewport({scale:Math.min(3,2000/Math.max(v0.width,v0.height))});
+    const c=document.createElement('canvas');c.width=Math.round(v.width);c.height=Math.round(v.height);const ctx=c.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);
+    await page.render({canvasContext:ctx,viewport:v}).promise;
+    const b=await toBlob(c,.86);it.blobs.push(b);it.urls.push(URL.createObjectURL(b));
+  }
+  it.msg=`PDF · ${n} ${n===1?'sida':'sidor'} som bild${pdf.numPages>30?' (de första 30)':''}`;
+}
+async function processFile(f,it){
+  const name=(f.name||'').toLowerCase(),type=f.type||'';
+  if(type.startsWith('image/')||/\.(jpe?g|png|webp|gif|heic|heif|bmp)$/.test(name)){const b=await normImage(f);it.kind='img';it.blobs=[b];it.urls=[URL.createObjectURL(b)];it.msg='Bild';return}
+  if(type==='application/pdf'||name.endsWith('.pdf')){await readPdf(f,it);return}
+  if(name.endsWith('.docx')){const lib=await needMammoth();const r=await lib.extractRawText({arrayBuffer:await f.arrayBuffer()});setText(it,r.value);return}
+  if(name.endsWith('.doc'))throw new Error('Gamla .doc-filer går inte att läsa. Spara som .docx eller PDF.');
+  if(type.startsWith('text/')||/\.(txt|md|csv)$/.test(name)){setText(it,await f.text());return}
+  throw new Error('Filtypen går inte att läsa. Använd bild, PDF, Word (.docx) eller text.');
+}
+async function addFiles(files){
+  for(const f of Array.from(files)){
+    const it={key:++matSeq,name:f.name||'Bild',kind:'',blobs:[],urls:[],text:'',status:'busy',msg:'Läser…'};
+    MAT.push(it);renderMat();updateGen();
+    try{await processFile(f,it);it.status='ok'}catch(e){it.status='err';it.msg=(e&&e.message)||'Kunde inte läsa filen.'}
+    renderMat();updateGen();renderLinkChips();
+  }
+}
+function renderMat(){
+  $('#mats').innerHTML=MAT.map(it=>`<div class="mat ${it.status}">
+    <span class="mat-th">${it.urls[0]?`<img src="${it.urls[0]}" alt="">`:svg(it.kind==='text'?'doc':'upload')}</span>
+    <span class="mat-txt"><b>${esc(it.name)}</b><small>${esc(it.msg)}</small></span>
+    <button class="icon-btn" data-rm="${it.key}" aria-label="Ta bort ${esc(it.name)}" ${it.status==='busy'||GEN?'disabled':''}>${svg('x')}</button></div>`).join('');
+}
+$('#mats').addEventListener('click',e=>{const b=e.target.closest('[data-rm]');if(!b||GEN)return;const it=MAT.find(x=>x.key===+b.dataset.rm);if(!it)return;it.urls.forEach(u=>URL.revokeObjectURL(u));MAT=MAT.filter(x=>x!==it);renderMat();updateGen()});
+$('#fileIn').addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''});
+const drop=$('#drop');
+drop.addEventListener('dragover',e=>{e.preventDefault();drop.classList.add('over')});
+drop.addEventListener('dragleave',()=>drop.classList.remove('over'));
+drop.addEventListener('drop',e=>{e.preventDefault();drop.classList.remove('over');if(e.dataTransfer&&e.dataTransfer.files.length)addFiles(e.dataTransfer.files)});
+$('#pasteIn').addEventListener('input',()=>{updateGen();renderLinkChips()});
+$('#linksIn').addEventListener('input',()=>{renderLinkChips();updateGen()});
+function collectLinks(){return findUrls([$('#linksIn').value,$('#pasteIn').value,...MAT.filter(i=>i.status==='ok'&&i.kind==='text').map(i=>i.text)].join('\n')).slice(0,30)}
+function renderLinkChips(){$('#linkChips').innerHTML=collectLinks().map(u=>`<span class="lchip">${svg(linkKind(u)==='video'?'play':'link')}<span>${esc(hostOf(u)+new URL(u).pathname.replace(/\/$/,''))}</span></span>`).join('')}
+document.addEventListener('paste',e=>{if($('#create').hidden||GEN)return;const fs=Array.from((e.clipboardData&&e.clipboardData.files)||[]).filter(f=>f.type.startsWith('image/'));if(fs.length){e.preventDefault();addFiles(fs)}});
+
+function imgCount(){return MAT.filter(i=>i.status==='ok'&&i.kind==='img').reduce((a,i)=>a+i.blobs.length,0)}
+function updateGen(){
+  const ok=MAT.some(i=>i.status==='ok'),paste=$('#pasteIn').value.trim().length>=40,busy=MAT.some(i=>i.status==='busy');
+  $('#genBtn').disabled=!(ok||paste)||busy||!!GEN||!sample;
+  const n=imgCount();
+  let h='';
+  if(busy)h='Läser in filerna…';
+  else if(!(ok||paste))h=$('#linksIn').value.trim()?'Claude kan inte öppna länkar. Lägg till bilder, ett dokument eller inklistrad text också.':'Lägg till minst en bild eller ett dokument.';
+  else if(n&&!imgLimits)h='Bilder kan inte skickas till Claude här. Använd PDF med text, Word eller klistra in texten.';
+  else if(n>40)h=`Max 40 bilder per förhör. De första 40 används.`;
+  else if(imgLimits&&n>imgLimits.maxCount)h=`${n} bilder: Claude läser av dem i omgångar först. Det tar lite längre tid.`;
+  else h='Tips: ta med sidan med det eleven ska kunna, till exempel en begreppslista eller instuderingsfrågor.';
+  $('#genHint').textContent=h;
+}
+const prefs=LS.get('laxmotorn:prefs',null);
+if(prefs){if(prefs.grade)$('#gradeIn').value=prefs.grade;if(prefs.diff==='easy')$('#diffEasy').checked=true}
+$('#dropIcon').innerHTML=svg('upload');$('#camIcon').innerHTML=svg('camera');$('#anyIcon').innerHTML=svg('doc');
+['#camIn','#anyIn'].forEach(id=>$(id).addEventListener('change',e=>{addFiles(e.target.files);e.target.value=''}));
+$('#camPick').hidden=!matchMedia('(pointer:coarse)').matches;
+/* Diagnos: om filväljaren inte öppnas */
+let pickT=null;
+function watchPicker(){
+  clearTimeout(pickT);let opened=false;
+  const on=()=>{opened=true};window.addEventListener('blur',on,{once:true});document.addEventListener('visibilitychange',on,{once:true});
+  pickT=setTimeout(()=>{window.removeEventListener('blur',on);if(!opened&&!MAT.length)showPickDiag()},2500);
+}
+['#fileIn','#camIn','#anyIn'].forEach(id=>{$(id).addEventListener('click',watchPicker);$(id).addEventListener('change',()=>{clearTimeout(pickT);$('#pickDiag').innerHTML=''})});
+function showPickDiag(){
+  const ua=navigator.userAgent,wv=/; wv\)/.test(ua)||(/Android/.test(ua)&&/Version\/[\d.]+ Chrome/.test(ua));
+  $('#pickDiag').innerHTML=`<div class="diag"><b>Öppnades ingen filväljare?</b>${wv?'Du verkar använda Claude-appen på Android. Där kan appen spärra filväljaren för sidor som den här.':'Den här vyn verkar spärra filväljaren.'} Prova något av detta:<ul style="margin:6px 0 0;padding-left:20px"><li>Öppna sidan i webbläsaren (Chrome eller Safari) via claude.ai och logga in.</li><li>Kopiera en bild och klistra in den här.</li><li>Skicka bilderna till Claude i chatten och be om ett förhör i Läxmotorn.</li></ul></div>`;
+}
+
+/* ---------- Generering ---------- */
+let GEN=null,DRAFT=null;
+function transcribePrompt(a,b,n){return `Bilderna är foton eller skannade sidor ur en skolläxa (sida ${a}–${b} av ${n}, i ordning). Skriv av all text ordagrant i läsordning, sida för sida, med rubriker, listor och tabeller. Om en bild eller ett diagram innehåller fakta (till exempel etiketter eller pilar), beskriv det kort inom hakparenteser. Skriv bara av texten. Inga kommentarer.`}
+function buildPrompt(o){
+  const diff=o.hard
+   ?'SVÅR. Minst två skrivfrågor per station, flera välj-alla-frågor och några frågor där eleven ska använda kunskapen i ett påhittat vardagsexempel (t.ex. "Emil ser … Vad är …?"). Felaktiga alternativ ska ligga nära det rätta.'
+   :'LAGOM. Mest flerval och sant/falskt, gärna en ordningsfråga och en–två skrivfrågor per station. Raka frågor om fakta och begrepp.';
+  const mat=[];
+  if(o.imgCount)mat.push(`Bifogat: ${o.imgCount} bilder av läxan i sidordning.${o.split?' Varje sida är delad i en övre och en nedre halva som överlappar lite, så samma rad kan synas två gånger.':''} Läs all text noga: rubriker, listor, rutor, bildtexter och etiketter i bilder.`);
+  if(o.text)mat.push(`Text från läxan:\n"""\n${o.text}\n"""`);
+  if(o.links&&o.links.length)mat.push(`Länkar som eleven har fått:\n${o.links.map(u=>'- '+u).join('\n')}`);
+  return `Du gör ett läxförhör på svenska för en elev i årskurs ${o.grade}. Förhöret spelas i en app med stationer, stjärnor och ett slutprov.
+
+MATERIAL
+${mat.join('\n\n')}
+
+UPPDRAG
+1. Ta reda på vad eleven ska kunna. Om materialet har en lista som "ska kunna", "bra att kunna", "inför provet", instuderingsfrågor eller en begreppslista: täck VARJE punkt i den.
+2. Dela in innehållet i 4–7 stationer efter delområdena i läxan, i den ordning de kommer i materialet.
+3. Skriv 6–10 frågor per station. Bygg frågorna på materialet och använd dess egna ord och exempel.
+4. Skriv 6–14 förklara-kort för muntligt förhör, helst utifrån instuderingsfrågorna. Svaret är ett kort modellsvar som en vuxen kan rätta efter.
+
+SVÅRIGHET: ${diff}
+
+FRÅGETYPER (varje station ska ha minst tre olika typer)
+- Flerval: {"t":"mc","q":"fråga","opts":["A","B","C","D"],"a":0,"why":"förklaring"}  3–4 alternativ, a = index för rätt svar.
+- Sant/falskt: {"t":"tf","q":"ett påstående","a":true,"why":"…"}
+- Välj alla: {"t":"multi","q":"Välj alla som …","opts":["…"],"a":[0,2],"why":"…"}  4–7 alternativ, minst ett rätt och minst ett fel.
+- Ordning: {"t":"order","q":"Sätt i rätt ordning …","items":["första","andra","tredje"],"why":"…"}  3–6 korta steg i RÄTT ordning. Bara när ordningen verkligen finns i materialet (en process, en kedja, en tidslinje).
+- Skriv: {"t":"write","q":"fråga","acc":["svar","variant"],"why":"…"}  Svaret är 1–3 ord, t.ex. ett begrepp. Lägg till godtagbara varianter och böjningar i acc.
+
+REGLER
+- Felaktiga alternativ ska låta rimliga men vara tydligt fel enligt materialet. Variera var rätt svar står, och låt inte rätt svar alltid vara det längsta.
+- "why" är 1–2 korta meningar som förklarar svaret med stöd i materialet.
+- Enkel svenska som passar årskurs ${o.grade}. Inga frågor om sidnummer, bokens titel eller hur bilderna ser ut.
+- Använd i första hand fakta från materialet. Om du lägger till något som inte står där, eller om något var svårläst, skriv det kort i "notes" så att en vuxen kan kontrollera.
+- "icon" väljs bland: ${ICON_KEYS.join(', ')}.
+- "subject" är en av: "no","so","sv","ma","en","annat".
+- Länkar: du kan inte öppna dem, så gör inga frågor om vad som finns bakom en länk. Lista varje länk i "links" med en kort titel (2–6 ord) som bygger på materialet runt länken eller på adressen. Skriv också av webbadresser som syns i bilderna, exakt tecken för tecken. Finns inga länkar blir "links" en tom lista.
+
+SVARA MED ENDAST JSON i exakt den här formen:
+{"title":"kort namn på läxan, 2–4 ord","subject":"so","summary":"en mening om vad läxan handlar om","stations":[{"name":"Stationens namn","sub":"3–6 ord om innehållet","icon":"book","qs":[]}],"flash":[{"q":"Förklara …","a":"Kort svar. Punktlistor skrivs som rader som börjar med \\"- \\"."}],"links":[{"url":"https://…","title":"…"}],"notes":[]}`;
+}
+const clean=(s,m)=>typeof s==='string'?s.replace(/\s+/g,' ').trim().slice(0,m):(typeof s==='number'&&isFinite(s)?String(s):'');
+const cleanBlock=(s,m)=>typeof s==='string'?s.replace(/\r/g,'').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim().slice(0,m):'';
+function cleanQ(q){
+  if(!q||typeof q!=='object')return null;
+  const t=q.t,text=clean(q.q,300),why=clean(q.why,400);
+  if(!text)return null;
+  const list=(v,m)=>(Array.isArray(v)?v:[]).map(x=>clean(x,m)).filter(Boolean);
+  if(t==='mc'){const opts=list(q.opts,160),a=Number(q.a);if(opts.length<2||opts.length>6||!Number.isInteger(a)||a<0||a>=opts.length||new Set(opts).size!==opts.length)return null;return {t,q:text,opts,a,why}}
+  if(t==='tf'){let a=q.a;if(a==='true')a=true;if(a==='false')a=false;if(typeof a!=='boolean')return null;return {t,q:text,a,why}}
+  if(t==='multi'){const opts=list(q.opts,160);if(opts.length<3||opts.length>8||new Set(opts).size!==opts.length)return null;const a=[...new Set((Array.isArray(q.a)?q.a:[]).map(Number))].filter(i=>Number.isInteger(i)&&i>=0&&i<opts.length).sort((x,y)=>x-y);if(!a.length||a.length===opts.length)return null;return {t,q:text,opts,a,why}}
+  if(t==='order'){const items=list(q.items,140);if(items.length<2||items.length>7||new Set(items).size!==items.length)return null;return {t,q:text,items,why}}
+  if(t==='write'){const acc=list(q.acc,60);if(!acc.length)return null;return {t,q:text,acc,why}}
+  return null;
+}
+function sanitize(d){
+  if(!d||typeof d!=='object'||!Array.isArray(d.stations))return null;
+  const stations=d.stations.slice(0,10).map((s,i)=>({id:'s'+(i+1),name:clean(s&&s.name,60)||`Del ${i+1}`,sub:clean(s&&s.sub,90),icon:ICON_KEYS.includes(s&&s.icon)?s.icon:'book',qs:(Array.isArray(s&&s.qs)?s.qs:[]).map(cleanQ).filter(Boolean).slice(0,14)})).filter(s=>s.qs.length>=3);
+  if(!stations.length)return null;
+  const flash=(Array.isArray(d.flash)?d.flash:[]).map(f=>({q:clean(f&&f.q,300),a:cleanBlock(f&&f.a,1500)})).filter(f=>f.q&&f.a).slice(0,20);
+  const notes=(Array.isArray(d.notes)?d.notes:[]).map(n=>clean(n,300)).filter(Boolean).slice(0,10);
+  return {title:clean(d.title,60)||'Ny läxa',subject:SUBJ[d.subject]?d.subject:'annat',summary:clean(d.summary,220),stations,flash,notes};
+}
+const ERR={
+  not_granted:'Sidan fick inte använda Claude. Tillåt det när frågan visas och försök igen.',
+  sampling_disabled:'Claude är inte tillgängligt för det här kontot.',
+  rate_limited:'För många förfrågningar just nu, eller så är användningsgränsen nådd. Vänta en stund och försök igen.',
+  session_expired:'Du behöver logga in i Claude igen.',
+  image_rejected:'En av bilderna gick inte att skicka. Ta bort den och försök igen.',
+  images_unavailable:'Bilder kan inte skickas härifrån. Använd PDF med text, Word eller klistra in texten.',
+  prompt_too_large:'Det blev för mycket material på en gång. Dela upp läxan i två förhör.',
+  invalid_json:'Svaret blev ofullständigt. Försök igen, gärna med färre sidor.',
+  refused:'Claude kunde inte göra ett förhör av det här materialet.',
+  empty_completion:'Claude svarade inte. Försök igen.',
+  bad_shape:'Förhöret blev för tunt. Kontrollera att bilderna är skarpa och försök igen.'
+};
+function step(msg){$('#genStep').textContent=msg}
+function setGenUI(on){
+  $('#genBox').hidden=!on;$('#createPanel').style.display=on?'none':'';
+  clearInterval(setGenUI.t);
+  if(on){const t0=Date.now();const tick=()=>{const s=Math.floor((Date.now()-t0)/1000);$('#genTime').textContent=`${Math.floor(s/60)}:${String(s%60).padStart(2,'0')}`};tick();setGenUI.t=setInterval(tick,1000)}
+  renderMat();updateGen();
+}
+$('#stopBtn').onclick=()=>{if(GEN)GEN.ctl.abort()};
+$('#genBtn').onclick=generate;
+async function generate(){
+  if(!sample||GEN)return;
+  $('#genErr').innerHTML='';
+  const imgs=MAT.filter(i=>i.status==='ok'&&i.kind==='img').flatMap(i=>i.blobs).slice(0,40);
+  const texts=MAT.filter(i=>i.status==='ok'&&i.kind==='text').map(i=>`[${i.name}]\n${i.text}`);
+  const paste=$('#pasteIn').value.trim();if(paste)texts.push(paste);
+  let text=texts.join('\n\n');
+  const maxImg=imgLimits?imgLimits.maxCount:0;
+  if(imgs.length&&!maxImg){$('#genErr').innerHTML=`<div class="errbox">${ERR.images_unavailable}</div>`;return}
+  const links=collectLinks();
+  const grade=$('#gradeIn').value,hard=$('#diffHard').checked;
+  LS.set('laxmotorn:prefs',{grade,diff:hard?'hard':'easy'});
+  GEN={ctl:new AbortController()};setGenUI(true);
+  try{
+    let send=[],split=false;
+    if(imgs.length&&imgs.length<=maxImg){
+      if(imgs.length*2<=maxImg){step('Förbereder bilderna…');for(const b of imgs){const parts=await splitImg(b);if(parts.length>1)split=true;send.push(...parts)}}
+      else send=imgs;
+    }else if(imgs.length){
+      let tr='';
+      for(let i=0;i<imgs.length;i+=maxImg){
+        const batch=imgs.slice(i,i+maxImg);step(`Läser av sida ${i+1}–${i+batch.length} av ${imgs.length}…`);
+        const r=await sample(transcribePrompt(i+1,i+batch.length,imgs.length),{images:batch,signal:GEN.ctl.signal,cache:false});
+        tr+=`\n\n[Sida ${i+1}–${i+batch.length}]\n${r.text}`;
+      }
+      text=(text+tr).trim();
+    }
+    if(text.length>150000)text=text.slice(0,150000);
+    step('Claude läser läxan och planerar frågorna…');
+    const opt={signal:GEN.ctl.signal,cache:false,onText:({text:t})=>{const n=(t.match(/"t"\s*:/g)||[]).length,s=(t.match(/"qs"\s*:/g)||[]).length,f=(t.match(/"flash"\s*:/)?1:0);
+      step(f?`Skriver förklara-kort… (${n} frågor klara)`:n?`Skriver frågor… ${n} klara, station ${Math.max(s,1)}`:'Planerar stationerna…')}};
+    if(send.length)opt.images=send;
+    const data=await sample.json(buildPrompt({grade,hard,imgCount:send.length,split,text,links}),opt);
+    const qz=sanitize(data);
+    if(!qz)throw {code:'bad_shape'};
+    if($('#subjIn').value!=='auto')qz.subject=$('#subjIn').value;
+    const t=$('#titleIn').value.trim();if(t)qz.title=t.slice(0,60);
+    qz.testDate=$('#dateIn').value||null;qz.grade=grade;
+    const got=(Array.isArray(data.links)?data.links:[]).map(l=>({url:normUrl(l&&typeof l.url==='string'?(/^https?:/i.test(l.url.trim())?l.url.trim():'https://'+l.url.trim()):''),title:clean(l&&l.title,90)})).filter(l=>l.url);
+    const ml=links.map(u=>{const g=got.find(x=>x.url===u);return {url:u,title:(g&&g.title)||linkTitle(u),kind:linkKind(u)}});
+    got.forEach(g=>{if(!ml.some(m=>m.url===g.url))ml.push({url:g.url,title:g.title||linkTitle(g.url),kind:linkKind(g.url),found:true})});
+    qz.links=ml.slice(0,30);
+    DRAFT=qz;GEN=null;setGenUI(false);renderReview();show('review');
+  }catch(e){
+    const code=e&&e.code;GEN=null;setGenUI(false);
+    if(code!=='cancelled')$('#genErr').innerHTML=`<div class="errbox">${esc(ERR[code]||'Något gick fel. Försök igen.')}</div>`;
+    if(code==='not_granted'||code==='sampling_disabled'){sample=null;updateGen()}
+  }
+}
+$('#createBack').onclick=()=>{if(GEN)GEN.ctl.abort();renderLib();show('lib')};
+
+/* ---------- Förhandsgranskning ---------- */
+const revOpen=new Set();
+function ansText(q){
+  if(q.t==='mc')return q.opts[q.a];if(q.t==='tf')return q.a?'Sant':'Falskt';
+  if(q.t==='multi')return q.a.map(i=>q.opts[i]).join(', ');if(q.t==='order')return q.items.join(' → ');return q.acc.join(' / ');
+}
+function renderReview(){
+  const d=DRAFT,nq=d.stations.reduce((a,s)=>a+s.qs.length,0);
+  $('#review').dataset.subj=d.subject;
+  $('#revBox').innerHTML=`<h2>Kolla förhöret</h2>
+   <label class="field" for="revTitle"><span>Namn</span><input class="inp" id="revTitle" maxlength="60" value="${esc(d.title)}"></label>
+   ${d.summary?`<p class="hint">${esc(d.summary)}</p>`:''}
+   <div class="rv-sum"><span class="subj">${SUBJ[d.subject]}</span><span>${d.stations.length} stationer</span><span>${nq} frågor</span><span>${d.flash.length} kort</span>${d.links&&d.links.length?`<span>${d.links.length} länkar</span>`:''}${d.testDate?`<span>${esc(dateLabel(d.testDate))}</span>`:''}</div>
+   ${d.notes.length?`<div class="notes"><b>Att dubbelkolla</b><ul>${d.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`:''}
+   ${d.links&&d.links.length?`<div class="field"><span class="lbl">Material att läsa och titta på</span><div class="mats">${d.links.map((l,i)=>`<div class="mat"><span class="mat-th">${svg(l.kind==='video'?'play':'link')}</span><span class="mat-txt"><input class="inp sm" data-lt="${i}" maxlength="90" value="${esc(l.title)}" aria-label="Titel för länk ${i+1}"><small>${esc(hostOf(l.url))}${l.found?' · hittad i läxan, kontrollera adressen':''}</small></span><button class="icon-btn" data-dl="${i}" aria-label="Ta bort länken">${svg('trash')}</button></div>`).join('')}</div></div>`:''}
+   <p class="hint">Öppna en station för att se frågorna och svaren. Ta bort det som inte stämmer med läxan.</p>
+   ${d.stations.map((s,si)=>`<details class="rv" data-si="${si}" ${revOpen.has(si)?'open':''}><summary><span>${esc(s.name)}</span><span class="hint">${s.qs.length} frågor</span></summary>
+     <ul class="rv-list">${s.qs.map((q,qi)=>`<li class="rv-q"><div><small>${TYPE_LABEL[q.t]}</small><p>${esc(q.q)}</p><div class="ans">${esc(ansText(q))}</div></div><button class="icon-btn" data-dq="${si}:${qi}" aria-label="Ta bort frågan">${svg('trash')}</button></li>`).join('')}</ul></details>`).join('')}
+   ${d.flash.length?`<details class="rv" data-si="f" ${revOpen.has('f')?'open':''}><summary><span>Förklara-kort</span><span class="hint">${d.flash.length} kort</span></summary>
+     <ul class="rv-list">${d.flash.map((f,fi)=>`<li class="rv-q"><div><small>Kort</small><p>${esc(f.q)}</p><div class="ans">${esc(f.a).replace(/\n/g,'<br>')}</div></div><button class="icon-btn" data-df="${fi}" aria-label="Ta bort kortet">${svg('trash')}</button></li>`).join('')}</ul></details>`:''}
+   <div class="row"><button class="btn" id="saveBtn" ${d.stations.length?'':'disabled'}>Spara och spela</button><button class="btn ghost" id="discardBtn">Kasta</button></div>`;
+  $('#revBox').querySelectorAll('details.rv').forEach(el=>el.addEventListener('toggle',()=>{const k=el.dataset.si==='f'?'f':+el.dataset.si;el.open?revOpen.add(k):revOpen.delete(k)}));
+  $('#revTitle').oninput=e=>{DRAFT.title=e.target.value.trim().slice(0,60)};
+  $('#saveBtn').onclick=saveDraft;
+  $('#discardBtn').onclick=()=>{DRAFT=null;revOpen.clear();show('create');updateGen()};
+}
+$('#revBox').addEventListener('click',e=>{
+  const dq=e.target.closest('[data-dq]'),df=e.target.closest('[data-df]');
+  if(dq){const[si,qi]=dq.dataset.dq.split(':').map(Number);DRAFT.stations[si].qs.splice(qi,1);if(!DRAFT.stations[si].qs.length){DRAFT.stations.splice(si,1);revOpen.clear()}renderReview()}
+  if(df){DRAFT.flash.splice(+df.dataset.df,1);renderReview()}
+  const dl=e.target.closest('[data-dl]');if(dl){DRAFT.links.splice(+dl.dataset.dl,1);renderReview()}
+});
+$('#revBox').addEventListener('input',e=>{const t=e.target.closest('[data-lt]');if(t&&DRAFT.links[+t.dataset.lt])DRAFT.links[+t.dataset.lt].title=t.value.trim().slice(0,90)||linkTitle(DRAFT.links[+t.dataset.lt].url)});
+$('#revBack').onclick=()=>{show('create');updateGen()};
+async function saveDraft(){
+  const b=$('#saveBtn');b.disabled=true;b.textContent='Sparar…';
+  const d=DRAFT;
+  const doc={v:1,title:d.title||'Ny läxa',subject:d.subject,summary:d.summary,grade:d.grade,testDate:d.testDate,createdAt:Date.now(),
+    stations:d.stations.map((s,i)=>({...s,id:'s'+(i+1)})),flash:d.flash,notes:d.notes,links:(d.links||[]).map(({url,title,kind})=>({url,title,kind}))};
+  const r=await Store.add(doc);
+  if(r.local&&Store.db)toast('Sparat bara på den här enheten');else toast('Läxan är sparad');
+  MAT.forEach(it=>it.urls.forEach(u=>URL.revokeObjectURL(u)));MAT=[];renderMat();
+  ['#pasteIn','#titleIn','#dateIn','#linksIn'].forEach(s=>$(s).value='');renderLinkChips();$('#subjIn').value='auto';
+  DRAFT=null;revOpen.clear();
+  openQuiz({...doc,id:r.id,localOnly:r.local});
+}
+
+/* ---------- Läxans karta ---------- */
+let NS=null;
+function openQuiz(q){
+  QZ=q;STATIONS=q.stations||[];FLASH=q.flash||[];P=getP(q.id);
+  $('#app').dataset.subj=SUBJ[q.subject]?q.subject:'annat';
+  checkGoals(QZ);renderHome();show('home');
+}
+function renderHome(){
+  P=getP(QZ.id);
+  $('#qzTitle').textContent=QZ.title;
+  const nq=STATIONS.reduce((a,s)=>a+s.qs.length,0);
+  $('#qzSub').textContent=QZ.summary||`${STATIONS.length} stationer och ${nq} frågor.`;
+  $('#qzChips').innerHTML=`<span class="count">${SUBJ[QZ.subject]||'Övrigt'}</span>${QZ.testDate?`<span class="count">${esc(dateLabel(QZ.testDate))}</span>`:''}`;
+  const rd=Math.round(readiness(QZ,P)*100);NS=nextStep(QZ,P);
+  $('#readyBox').innerHTML=`<div class="ready">
+    <div class="ready-top"><span class="lbl">Provberedd</span><b>${rd} %</b></div>
+    <div class="rbar" role="img" aria-label="Provberedd ${rd} procent"><i style="width:${rd}%"></i><span class="mark90"></span></div>
+    <div class="ready-next"><div><span class="lbl">Nästa steg</span><b>${esc(NS.t)}</b><small>${esc(NS.why)}</small></div>${NS.act?'<button class="btn" id="nextStepBtn">Kör</button>':''}</div></div>`;
+  const m=misses(QZ,P).length,d=dues(QZ,P).length,nd=nextDue(QZ,P),allB=STATIONS.every(s=>(P.medals[s.id]||0)>=1);
+  const kn=FLASH.filter((_,i)=>i in P.known).length;
+  $('#modeBox').innerHTML=`<div class="sect"><h2>Banor</h2><div class="modes">
+    <button class="mode" data-mode="miss" ${m?'':'disabled'}>${svg('target')}<b>Mina missar</b><small>${m?`${m} att fixa · 1,5× XP`:'Inga missar just nu'}</small></button>
+    <button class="mode" data-mode="rep" ${d?'':'disabled'}>${svg('cycle')}<b>Repetition</b><small>${d?`${d} redo · 2× XP`:nd?`Nästa ${dueLabel(nd)}`:'Spela en station först'}</small></button>
+    ${FLASH.length?`<button class="mode" data-mode="cards">${svg('cards')}<b>Förklara-kort</b><small>${kn}/${FLASH.length} kan · med en vuxen</small></button>`:''}
+    <button class="mode boss" data-mode="boss" ${allB?'':'disabled'}>${svg(allB?'boss':'lock')}<b>Slutprovet</b><small>${allB?`${Math.min(15,nq)} blandade · 3 liv · 30 sek`:'Låses upp med brons på alla stationer'}</small></button>
+  </div></div>`;
+  $('#trail').innerHTML=STATIONS.map((s,i)=>{const md=P.medals[s.id]||0,ms=s.qs.filter((_,k)=>{const x=qState(P,qidOf(s,k));return x.box===0&&x.w>0}).length;
+    return `<button class="node ${md?'done':''}" data-st="${i}"><span class="dot">${svg(s.icon)}</span><span class="card-n"><span><h3>${esc(s.name)}</h3><small>${s.sub?esc(s.sub)+' · ':''}${s.qs.length} frågor${ms?` · <span class="miss-tag">${ms} ${ms===1?'miss':'missar'}</span>`:''}</small></span><span class="medal m${md}" aria-label="${md?MEDAL[md]:'Ingen medalj än'}">${md?MEDAL[md]:'–'}</span></span></button>`}).join('');
+  renderMaterial();
+  const gl=goalsFor(QZ,P),gd=gl.filter(g=>P.goals.includes(g.id)).length;
+  $('#goalBox').innerHTML=`<p class="hint" style="margin:0 0 10px">${gd} av ${gl.length} klara</p><ul class="goals">${gl.map(g=>{const done=P.goals.includes(g.id),pc=Math.min(100,Math.round(g.cur/g.max*100));
+    return `<li class="${done?'done':''}"><span class="gchk">${done?svg('check'):''}</span><span class="gt"><b>${esc(g.t)}</b><span class="gbar"><i style="width:${done?100:pc}%"></i></span></span><span class="gx">${g.pct?Math.min(g.cur,100)+' %':Math.min(g.cur,g.max)+'/'+g.max}<br>+${g.xp} XP</span></li>`}).join('')}</ul>`;
+  const hard=allQ(QZ).map(x=>({...x,s:qState(P,x.qid)})).filter(x=>x.s.w>0).sort((a,b)=>b.s.w-a.s.w).slice(0,6);
+  $('#adultBox').innerHTML=`<details class="adult"><summary>Så får du XP</summary><ul>
+    <li>Ny fråga rätt: 6–18 XP. Skrivfrågor ger mest, sant/falskt minst.</li>
+    <li>Fixa en fråga du haft fel på: 1,5 gånger så mycket.</li>
+    <li>Repetera i rätt tid, efter en paus: dubbelt så mycket.</li>
+    <li>Fråga du redan kan samma dag: nästan inget. Spela hellre missar eller repetera i morgon.</li>
+    <li>Rätt i rad: upp till +50 %. Medaljer: brons 30, silver 60, guld 120. Delmål ger extra.</li></ul></details>
+   <details class="adult"><summary>För vuxna</summary>
+    <p class="hint" style="margin-top:8px">Provberedd bygger på hur många gånger varje fråga har gått rätt, och med vilka pauser emellan. En fråga räknas helt när den har gått rätt tre olika dagar.</p>
+    ${hard.length?`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Svåraste frågorna</p><ul>${hard.map(x=>`<li>${esc(x.q.q)} <span class="hint">(fel ${x.s.w} ${x.s.w===1?'gång':'gånger'}) Rätt svar: ${esc(ansText(x.q))}</span></li>`).join('')}</ul>`:''}
+    ${QZ.notes&&QZ.notes.length?`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Att dubbelkolla</p><ul>${QZ.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}
+   </details>`;
+  $('#resetBox').innerHTML='<button class="reset" id="resetBtn">Nollställ medaljer, missar och delmål för den här läxan</button>';
+  updateHUD();
+}
+function runStep(){if(!NS)return;if(NS.act==='miss')startRound('miss');else if(NS.act==='rep')startRound('rep');else if(NS.act==='st')startRound('station',{si:NS.i});else if(NS.act==='boss')startRound('boss')}
+$('#readyBox').addEventListener('click',e=>{if(e.target.closest('#nextStepBtn'))runStep()});
+$('#modeBox').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b||b.disabled)return;const m=b.dataset.mode;if(m==='cards')startCards();else startRound(m)});
+function renderMaterial(){
+  const L=(QZ.links||[]).filter(l=>normUrl(l.url));
+  if(!L.length){$('#matBox').innerHTML='';return}
+  const done=L.filter(l=>P.seen.includes(l.url)).length;
+  $('#matBox').innerHTML=`<div class="sect"><h2>Material</h2><p class="hint" style="margin-bottom:10px">Läs eller titta först. Bocka av när du är klar: +15 XP. ${done}/${L.length} klara.</p><div class="mlist">${L.map((l,i)=>{const d=P.seen.includes(l.url);return `<div class="mlink ${d?'done':''}">
+    <span class="ml-ic">${svg(l.kind==='video'?'play':'doc')}</span>
+    <span class="ml-txt"><b>${esc(l.title||linkTitle(l.url))}</b><small>${l.kind==='video'?'Film':'Text'} · ${esc(hostOf(l.url))}</small></span>
+    <a class="btn ghost small" href="${esc(normUrl(l.url))}" target="_blank" rel="noopener noreferrer">Öppna</a>
+    <button class="icon-btn ml-check" data-seen="${i}" aria-pressed="${d}" aria-label="${d?'Klar':'Markera som klar'}" ${d?'disabled':''}>${svg('check')}</button></div>`}).join('')}</div></div>`;
+}
+$('#matBox').addEventListener('click',e=>{
+  const b=e.target.closest('[data-seen]');if(!b)return;
+  const L=(QZ.links||[]).filter(l=>normUrl(l.url)),l=L[+b.dataset.seen];if(!l||P.seen.includes(l.url))return;
+  P.seen.push(l.url);saveP(QZ.id);addXP(15);markDay();checkGoals(QZ);renderHome();
+});
+$('#trail').addEventListener('click',e=>{const n=e.target.closest('.node');if(n)startRound('station',{si:+n.dataset.st})});
+$('#resetBox').addEventListener('click',e=>{
+  if(e.target.id==='resetBtn'){$('#resetBox').innerHTML='<div class="confirm"><span>Radera medaljer, missar, repetitioner och delmål för den här läxan? XP och märken finns kvar.</span><button class="btn danger small" id="yesReset">Nollställ</button><button class="btn ghost small" id="noReset">Avbryt</button></div>'}
+  if(e.target.id==='yesReset'){try{localStorage.removeItem('laxmotorn:p:'+QZ.id)}catch(err){}delete PC[QZ.id];P=getP(QZ.id);saveP(QZ.id);renderHome();toast('Läxan är nollställd')}
+  if(e.target.id==='noReset')renderHome();
+});
+$('#homeBack').onclick=()=>{QZ=null;renderLib();show('lib')};
+
+/* ---------- Rundor ---------- */
+let R=null;
+const MODE_NAME={station:'Station',miss:'Mina missar',rep:'Repetition',boss:'Slutprovet',daily:'Dagens repetition'};
+function interleave(arr){const by={};arr.forEach(x=>{(by[x.st.id]=by[x.st.id]||[]).push(x)});const lists=shuffle(Object.values(by)).map(shuffle),out=[];let k=0;while(lists.some(l=>l.length)){const l=lists[k%lists.length];if(l.length)out.push(l.shift());k++}return out}
+function startRound(mode,opt={}){
+  newBadges=[];
+  const mk=(qz,x)=>({q:x.q,ref:{qz:qz.id,qid:x.qid},qzObj:qz});
+  let items=[];
+  if(mode==='station'){const st=STATIONS[opt.si];items=shuffle(st.qs.map((q,i)=>({q,qid:qidOf(st,i)}))).map(x=>mk(QZ,x))}
+  else if(mode==='miss')items=shuffle(misses(QZ,P)).slice(0,12).map(x=>mk(QZ,x));
+  else if(mode==='rep')items=shuffle(dues(QZ,P)).slice(0,15).map(x=>mk(QZ,x));
+  else if(mode==='boss')items=interleave(allQ(QZ)).slice(0,15).map(x=>mk(QZ,x));
+  else if(mode==='daily'){const pool=[];Store.all().forEach(qz=>dues(qz,getP(qz.id)).forEach(x=>pool.push(mk(qz,x))));items=shuffle(pool).slice(0,15)}
+  if(!items.length){toast('Inga frågor att köra här just nu');return}
+  R={mode,si:opt.si,boss:mode==='boss',items,i:0,firstN:items.length,correct:0,streak:0,lives:3,joker:false,jokerNow:false,xp:0,res:[],
+     kinds:{},missed:[],flawless:true,readyBefore:QZ&&mode!=='daily'?readiness(QZ,P):null,xpStart:G.xp};
+  $('#quitBtn').textContent=mode==='daily'?'← Läxorna':'← Läxan';
+  show('quiz');renderQ();
+}
+function renderQ(){
+  const it=R.items[R.i],q=it.q;R.answered=false;
+  $('#pips').innerHTML=R.items.map((x,k)=>`<i class="${k<R.i?(R.res[k]?'ok':'no'):k===R.i?'now':''}${x.second?' sec':''}"></i>`).join('');
+  $('#lives').hidden=!R.boss;$('#lives').textContent='♥'.repeat(R.lives)+'♡'.repeat(3-R.lives);
+  renderStreak();
+  const lab={mc:'Välj ett svar',tf:'Sant eller falskt?',multi:'Välj alla som stämmer',order:'Tryck i rätt ordning',write:'Skriv svaret'}[q.t];
+  $('#qtype').textContent=`${it.second?'Andra chansen · ':''}${lab} · ${R.mode==='daily'?it.qzObj.title:MODE_NAME[R.mode]} · ${R.i+1}/${R.items.length}`;
+  $('#qtext').textContent=q.q;
+  $('#feedback').innerHTML='';
+  const body=$('#qbody'),act=$('#qactions');body.innerHTML='';act.innerHTML='';
+  const card=$('#qcard');card.classList.remove('pop','shake');void card.offsetWidth;card.classList.add('pop');
+
+  if(q.t==='mc'){
+    const opts=shuffle(q.opts.map((t,k)=>({t,ok:k===q.a})));
+    body.innerHTML=`<div class="opts">${opts.map((o,k)=>`<button class="opt" data-k="${k}">${esc(o.t)}</button>`).join('')}</div>`;
+    body.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      if(R.answered)return;const o=opts[+b.dataset.k];
+      body.querySelectorAll('.opt').forEach((x,k)=>{x.disabled=true;if(opts[k].ok)x.classList.add('correct')});
+      if(!o.ok)b.classList.add('wrong');answer(o.ok);
+    });
+    if(!R.boss&&!R.joker&&!it.second&&q.opts.length>=3){
+      act.innerHTML='<button class="btn ghost" id="jokerBtn">Joker 50/50 (halva XP, 1 per runda)</button>';
+      $('#jokerBtn').onclick=()=>{R.joker=true;R.jokerNow=true;R.flawless=false;const wrong=shuffle(opts.map((o,k)=>o.ok?-1:k).filter(k=>k>=0)).slice(0,opts.length-2);
+        wrong.forEach(k=>{const b=body.querySelectorAll('.opt')[k];b.classList.add('gone');b.disabled=true});act.innerHTML=''};
+    }
+  }
+  if(q.t==='tf'){
+    body.innerHTML='<div class="opts two"><button class="opt" data-v="1">Sant</button><button class="opt" data-v="0">Falskt</button></div>';
+    body.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      if(R.answered)return;const v=b.dataset.v==='1',ok=v===q.a;
+      body.querySelectorAll('.opt').forEach(x=>{x.disabled=true;if((x.dataset.v==='1')===q.a)x.classList.add('correct')});
+      if(!ok)b.classList.add('wrong');answer(ok);
+    });
+  }
+  if(q.t==='multi'){
+    const order=shuffle(q.opts.map((t,k)=>k));const sel=new Set();
+    body.innerHTML=`<div class="opts">${order.map(k=>`<button class="opt" data-k="${k}"><span class="box"></span>${esc(q.opts[k])}</button>`).join('')}</div>`;
+    act.innerHTML='<button class="btn" id="check" disabled>Kolla svaret</button>';
+    body.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{
+      if(R.answered)return;const k=+b.dataset.k;
+      if(sel.has(k)){sel.delete(k);b.classList.remove('sel');b.querySelector('.box').textContent=''}else{sel.add(k);b.classList.add('sel');b.querySelector('.box').textContent='✓'}
+      $('#check').disabled=!sel.size;
+    });
+    $('#check').onclick=()=>{
+      const good=new Set(q.a);const ok=sel.size===good.size&&[...sel].every(k=>good.has(k));
+      body.querySelectorAll('.opt').forEach(b=>{const k=+b.dataset.k;b.disabled=true;b.classList.remove('sel');
+        if(good.has(k)&&sel.has(k))b.classList.add('correct');else if(good.has(k))b.classList.add('missed');else if(sel.has(k))b.classList.add('wrong')});
+      act.innerHTML='';answer(ok);
+    };
+  }
+  if(q.t==='order'){
+    const idx=q.items.map((_,k)=>k);let pool=shuffle(idx);while(idx.length>1&&pool.every((x,k)=>x===k))pool=shuffle(idx);
+    const chosen=[];
+    const draw=()=>{
+      body.innerHTML=`<div class="slots">${q.items.map((_,k)=>`<button class="slot ${chosen[k]!==undefined?'filled':''}" data-k="${k}">${chosen[k]!==undefined?esc(q.items[chosen[k]]):''}</button>`).join('')}</div>
+      <p class="hint" style="margin-top:12px">${chosen.length<q.items.length?'Tryck på det som kommer härnäst. Tryck på en rad ovan för att ångra.':'Klart? Kolla svaret.'}</p>
+      <div class="opts" style="margin-top:10px">${pool.filter(x=>!chosen.includes(x)).map(x=>`<button class="opt" data-i="${x}">${esc(q.items[x])}</button>`).join('')}</div>`;
+      body.querySelectorAll('.opt').forEach(b=>b.onclick=()=>{if(R.answered)return;chosen.push(+b.dataset.i);draw()});
+      body.querySelectorAll('.slot.filled').forEach(b=>b.onclick=()=>{if(R.answered)return;chosen.splice(+b.dataset.k,1);draw()});
+      act.innerHTML=`<button class="btn" id="check" ${chosen.length<q.items.length?'disabled':''}>Kolla svaret</button>`;
+      $('#check').onclick=()=>{
+        const ok=chosen.every((x,k)=>x===k);
+        body.querySelectorAll('.slot').forEach((s,k)=>{s.classList.add(chosen[k]===k?'correct':'wrong');s.disabled=true});
+        const hn=body.querySelector('.hint');if(hn)hn.remove();act.innerHTML='';
+        answer(ok,ok?'':`<p>Rätt ordning:</p><ol>${q.items.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`);
+      };
+    };
+    draw();
+  }
+  if(q.t==='write'){
+    body.innerHTML='<input class="winput" id="winput" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Skriv här…" aria-label="Ditt svar">';
+    act.innerHTML='<button class="btn" id="check" disabled>Kolla svaret</button>';
+    const inp=$('#winput');inp.focus({preventScroll:true});
+    inp.oninput=()=>{$('#check').disabled=!inp.value.trim()};
+    inp.onkeydown=e=>{if(e.key==='Enter'&&inp.value.trim()&&!R.answered)$('#check').click()};
+    $('#check').onclick=()=>{
+      const v=norm(inp.value);const exact=q.acc.some(a=>norm(a)===v);
+      const close=!exact&&q.acc.some(a=>norm(a).length>=5&&lev(norm(a),v)<=1);
+      const ok=exact||close;inp.disabled=true;inp.classList.add(ok?'correct':'wrong');act.innerHTML='';
+      answer(ok,ok?(close?`<p>Nästan rätt stavat. Det skrivs <b>${esc(q.acc[0])}</b>.</p>`:''):`<p>Rätt svar: <b>${esc(q.acc[0])}</b></p>`);
+    };
+  }
+  startTimer();
+}
+const norm=s=>String(s).toLowerCase().trim().replace(/[.,!?"'–\-:;()]/g,'').replace(/\s+/g,' ');
+function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
+  for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
+const TIME=30;
+function startTimer(){
+  clearInterval(R.tick);const t=$('#timer');t.hidden=!R.boss;if(!R.boss)return;
+  R.left=TIME;const bar=$('#timerBar');bar.style.width='100%';t.classList.remove('low');
+  R.tick=setInterval(()=>{R.left-=.1;bar.style.width=Math.max(0,R.left/TIME*100)+'%';t.classList.toggle('low',R.left<8);
+    if(R.left<=0){clearInterval(R.tick);if(!R.answered)timeout()}},100);
+}
+function timeout(){
+  const q=R.items[R.i].q;
+  document.querySelectorAll('#qbody button,#qbody input,#qactions button').forEach(x=>x.disabled=true);$('#qactions').innerHTML='';
+  const extra=q.t==='order'?`<p>Tiden tog slut. Rätt ordning:</p><ol>${q.items.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:`<p>Tiden tog slut. Rätt svar: <b>${esc(ansText(q))}</b></p>`;
+  answer(false,extra);
+}
+function renderStreak(){const c=$('#streak');const m=Math.min(R.streak,5)*10;c.textContent=R.streak?`${R.streak} i rad${m?` · +${m} %`:''}`:'0 i rad';c.classList.toggle('hot',R.streak>=3)}
+const CHEERS=['Rätt!','Snyggt!','Klockrent!','Precis!'];
+const KIND_HEAD={fix:'Fixat!',review:'Den satt kvar!',early:'Rätt!',second:'Bra, nu sitter den bättre'};
+const KIND_SUB={fix:'Du hade fel på den här förut. 1,5× XP.',review:'Repetition efter en paus ger dubbla XP.',early:'Den här kan du redan idag. Mest XP ger nya frågor, missar och repetitioner.'};
+function answer(ok,extra=''){
+  const it=R.items[R.i],q=it.q;R.answered=true;clearInterval(R.tick);R.res[R.i]=ok;
+  const g=grade(it.ref,q,ok,{second:!!it.second,joker:R.jokerNow});R.jokerNow=false;
+  let pts=g.xp;
+  if(ok&&!it.second){
+    R.streak++;R.correct++;
+    if(pts>0&&g.kind!=='early')pts=Math.round(pts*(1+Math.min(R.streak-1,5)*.1));
+    if(R.boss&&R.left>15&&pts>0)pts+=3;
+    if(R.streak>=5)award('combo5');if(R.streak>=10)award('combo10');
+  }else if(!ok){
+    R.streak=0;if(!it.second){R.flawless=false;R.missed.push(it)}if(R.boss)R.lives--;
+    const c=$('#qcard');c.classList.remove('pop');void c.offsetWidth;c.classList.add('shake');
+  }
+  if(ok)R.kinds[g.kind]=(R.kinds[g.kind]||0)+1;
+  markDay();if(pts>0){R.xp+=pts;addXP(pts)}
+  if(G.fixed>=10)award('fix10');if(G.reviews>=25)award('rev25');
+  const requeue=!ok&&!it.second&&!R.boss;if(requeue)R.items.push({...it,second:true});
+  renderStreak();$('#lives').textContent='♥'.repeat(Math.max(R.lives,0))+'♡'.repeat(3-Math.max(R.lives,0));
+  const last=R.i===R.items.length-1||(R.boss&&R.lives<=0);
+  const head=ok?(KIND_HEAD[g.kind]||CHEERS[Math.floor(Math.random()*CHEERS.length)]):'Inte riktigt';
+  const sub=ok?(KIND_SUB[g.kind]||''):(requeue?'Frågan kommer tillbaka i slutet av rundan.':'');
+  $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span>${pts>0?`<span class="pts">+${pts} XP</span>`:''}</h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${last?'Se resultat':'Nästa fråga →'}</button></div></div>`;
+  $('#nextBtn').focus({preventScroll:true});
+  $('#feedback').scrollIntoView({behavior:'smooth',block:'nearest'});
+  $('#nextBtn').onclick=()=>{if(last)finish();else{R.i++;renderQ()}};
+}
+function finish(){
+  clearInterval(R.tick);
+  const n=R.firstN,c=R.correct,pct=c/n,touched=[...new Set(R.items.map(x=>x.qzObj))];
+  let medal=null,bossWin=false;
+  if(R.mode==='station'){const st=STATIONS[R.si];P.played[st.id]=1;saveP(QZ.id);medal=updateMedal(QZ,st,R.flawless)}
+  if(R.boss){bossWin=R.lives>0;if(bossWin){P.bossBest=Math.max(P.bossBest||0,R.lives);saveP(QZ.id);award('boss')}}
+  touched.forEach(qz=>{const p=getP(qz.id);if((R.mode==='rep'||R.mode==='daily')&&pct>=.8&&!p.repDone){p.repDone=true;saveP(qz.id)}(qz.stations||[]).forEach(st=>updateMedal(qz,st,false));checkGoals(qz)});
+  const bonus=G.xp-R.xpStart-R.xp;
+  let title,msg;
+  if(R.mode==='station'){
+    const md=P.medals[STATIONS[R.si].id]||0;
+    title=medal.to>medal.from?`${MEDAL[medal.to]}!`:['Bra försök','Godkänt!','Riktigt bra!','Alla rätt!'][pct>=.99?3:pct>=.8?2:pct>=.6?1:0];
+    msg=md===0?'Brons får du när alla frågor har gått rätt minst en gång. Missarna hittar du under Mina missar.':md===1?'Silver får du för en runda helt utan fel.':md===2?'Guld får du när allt sitter kvar en annan dag. Repetera i morgon.':'Guld! Allt sitter kvar.';
+  }else if(R.mode==='miss'){title=`${c} av ${n} fixade`;msg=c===n?'Alla missar fixade!':'Det som inte satt finns kvar under Mina missar.'}
+  else if(R.mode==='rep'||R.mode==='daily'){title=`${c} av ${n} satt kvar`;msg=pct>=.8?'Bra minne! Nästa repetition kommer om några dagar.':'Det du glömt blev missar som du kan fixa.'}
+  else{title=bossWin?'Provklar!':'Slut på liv';msg=bossWin?`Du klarade slutprovet med ${R.lives} liv kvar.`:'Fixa dina missar och försök igen.'}
+  const ra=R.readyBefore!==null?readiness(QZ,getP(QZ.id)):null;
+  const kinds=[['new','Nya'],['fix','Fixade'],['review','Repeterade'],['early','Redan kunde'],['second','Andra chansen']].filter(([k])=>R.kinds[k]).map(([k,l])=>`<span>${l} ${R.kinds[k]}</span>`).join('');
+  const nb=newBadges.map(id=>BADGES.find(b=>b.id===id).n);
+  const mdNow=R.mode==='station'?(P.medals[STATIONS[R.si].id]||0):0;
+  $('#resBox').innerHTML=`<h2>${esc(title)}</h2>
+   ${R.mode==='station'?`<span class="medal big m${mdNow}">${MEDAL[mdNow]||'Ingen medalj än'}</span>`:''}
+   ${R.boss?`<div class="bigstars">${[0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<(bossWin?R.lives:0)?'star-on':'star-off'}" aria-hidden="true"><path d="${STAR}"/></svg>`).join('')}</div>`:''}
+   <p style="margin:0;font-weight:700;max-width:46ch">${msg}</p>
+   <div class="stats"><div class="stat"><b>${c}/${n}</b><span>Rätt direkt</span></div><div class="stat"><b>+${fmt(R.xp)}</b><span>XP</span></div>${bonus>0?`<div class="stat"><b>+${fmt(bonus)}</b><span>Bonus</span></div>`:''}${ra!==null?`<div class="stat"><b>${Math.round(R.readyBefore*100)}→${Math.round(ra*100)} %</b><span>Provberedd</span></div>`:''}</div>
+   ${kinds?`<div class="kinds">${kinds}</div>`:''}
+   ${nb.length?`<div class="newb">Nya märken: ${nb.map(esc).join(', ')}</div>`:''}
+   ${R.missed.length?`<div class="review-list"><span class="lbl">Öva mer på</span>${R.missed.slice(0,6).map(it=>`<div><b>${esc(it.q.q)}</b><span>${esc(ansText(it.q))}</span></div>`).join('')}</div>`:''}
+   <div class="row" style="justify-content:center"><button class="btn" id="again">Kör igen</button><button class="btn ghost" id="home2">${R.mode==='daily'?'Till läxorna':'Till läxan'}</button></div>`;
+  const mode=R.mode,si=R.si;
+  $('#again').onclick=()=>startRound(mode,{si});
+  $('#home2').onclick=()=>{if(mode==='daily'){renderLib();show('lib')}else{renderHome();show('home')}};
+  show('result');if((medal&&medal.to>medal.from)||bossWin)confetti(medal&&medal.to===3?140:90);
+}
+$('#quitBtn').onclick=()=>{clearInterval(R&&R.tick);if(R&&R.mode==='daily'||!QZ){renderLib();show('lib')}else{renderHome();show('home')}};
+
+/* ---------- Förklara-kort ---------- */
+function fmtAns(a){
+  const lines=String(a).split('\n').map(l=>l.trim()).filter(Boolean);let h='',ul=null,ol=null;
+  const flush=()=>{if(ul){h+=`<ul>${ul}</ul>`;ul=null}if(ol){h+=`<ol>${ol}</ol>`;ol=null}};
+  for(const l of lines){
+    let m;
+    if((m=l.match(/^[-•*]\s+(.*)/))){if(ol)flush();ul=(ul||'')+`<li>${esc(m[1])}</li>`}
+    else if((m=l.match(/^\d+[.)]\s+(.*)/))){if(ul)flush();ol=(ol||'')+`<li>${esc(m[1])}</li>`}
+    else{flush();h+=`<p>${esc(l)}</p>`}
+  }
+  flush();return h;
+}
+let F=null;
+function startCards(){newBadges=[];const all=shuffle(FLASH.map((_,k)=>k));F={order:[...all.filter(k=>!(k in P.known)),...all.filter(k=>k in P.known)],i:0,open:false};show('cards');renderCard()}
+function renderCard(){
+  const k=F.order[F.i],c=FLASH[k];
+  $('#cardCount').textContent=`Kort ${F.i+1} av ${FLASH.length}`;
+  $('#flash').innerHTML=`<div class="qtype">Förklara med egna ord${k in P.known?' · repetition':''}</div><div class="qtext">${esc(c.q)}</div>
+   ${F.open?`<div class="ans pop">${fmtAns(c.a)}</div><p class="parent">För den som förhör: fick hen med det viktigaste?</p><div class="row"><button class="btn" id="knew">Kunde det</button><button class="btn ghost" id="practice">Öva mer</button></div>`
+   :`<p class="hint">Försök säga svaret högt först. Sedan visar du svaret.</p><div class="row"><button class="btn" id="reveal">Visa svar</button></div>`}`;
+  if(!F.open)$('#reveal').onclick=()=>{F.open=true;renderCard()};
+  else{
+    $('#knew').onclick=()=>{const td=dayKey(),prev=P.known[k];const xp=prev===undefined?20:prev!==td?10:0;P.known[k]=td;saveP(QZ.id);markDay();if(xp){addXP(xp);toast(`+${xp} XP`)}nextCard()};
+    $('#practice').onclick=()=>{delete P.known[k];saveP(QZ.id);nextCard()};
+  }
+}
+function nextCard(){F.open=false;F.i++;if(F.i>=FLASH.length){checkGoals(QZ);renderHome();show('home');toast(`Kort klara: ${FLASH.filter((_,i)=>i in P.known).length} av ${FLASH.length} kan`);return}renderCard()}
+$('#quitCards').onclick=()=>{checkGoals(QZ);renderHome();show('home')};
+
+/* ---------- Konfetti ---------- */
+function confetti(n){
+  if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
+  const cv=$('#fx'),ctx=cv.getContext('2d');cv.width=innerWidth;cv.height=innerHeight;
+  const cs=getComputedStyle($('#app'));const cols=[cs.getPropertyValue('--moss').trim()||'#0F6A73','#E3A400','#C9343B','#1E7A46','#8A94A6'];
+  const Pp=Array.from({length:n},()=>({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.5,vx:(Math.random()-.5)*1.5,vy:2+Math.random()*2.5,r:Math.random()*6,vr:(Math.random()-.5)*.2,s:6+Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)],w:Math.random()*6}));
+  let t=0;(function f(){ctx.clearRect(0,0,cv.width,cv.height);t++;
+    Pp.forEach(p=>{p.x+=p.vx+Math.sin((t+p.w*20)/20);p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/1.4,p.s,p.s*1.4);ctx.restore()});
+    if(t<200)requestAnimationFrame(f);else ctx.clearRect(0,0,cv.width,cv.height)})();
+}
+
+/* ---------- Start ---------- */
+async function boot(){
+  renderLib();
+  const use=n=>window.claude&&window.claude.use?window.claude.use(n).catch(()=>null):Promise.resolve(null);
+  const [db,smp,user]=await Promise.all([use('db'),use('sample'),use('user')]);
+  sample=smp;
+  if(user){try{canWrite=await user.can('data.write')}catch(e){}}
+  if(smp){try{const l=await smp.limits();imgLimits=l&&l.images?l.images:null}catch(e){imgLimits=null}}
+  booted=true;
+  if(db){
+    Store.db=db;
+    db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(snap=>{
+      Store.remote=snap.docs.filter(d=>d.exists).map(d=>({...d.data(),id:d.id}));Store.ready=true;
+      if(!$('#lib').hidden)renderLib();
+      if(QZ&&!QZ.localOnly&&!Store.remote.some(q=>q.id===QZ.id)&&!$('#home').hidden){QZ=null;renderLib();show('lib');toast('Läxan har tagits bort')}
+    },()=>{Store.ready=true;if(!$('#lib').hidden)renderLib()});
+  }else Store.ready=true;
+  renderLib();updateGen();
+}
+boot();
+</script>
+
+</body></html>
