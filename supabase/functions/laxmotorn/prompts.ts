@@ -24,7 +24,10 @@ Varje begrepp blir ett kort förklaringsklipp (10–20 sekunder) som spelas när
 - Varje "t" är högst 4 ord. Varje "cue" är ett ord eller en kort fras (1–3 ord) som står ordagrant i "say", och de kommer i samma ordning som i "say".
 - Text och fakta i "show" ska stämma exakt med materialet. "icon" väljs bland: ${ICON_KEYS.join(", ")}.`;
 
-export function quizPrompt(o: { grade: string; hard: boolean; imgCount: number; split: boolean; text: string; links: string[] }) {
+// När underlaget bara är en rubrik: bygg på kursplanen (Lgr22) för årskursen.
+const KURSPLAN = (grade: string) => `UNDERLAG: Materialet är bara en rubrik eller en kort beskrivning från skolans veckobrev, inte klassens eget material. Bygg förhöret på det som en elev i årskurs ${grade} normalt ska kunna inom området enligt kursplanen (Lgr22, centralt innehåll för årskursen). Håll dig till vedertagna fakta och begrepp på rätt nivå, inget som hör till senare årskurser. Skriv i "notes" att förhöret bygger på kursplanen och inte på klassens material, och nämn om något kan skilja sig från hur klassen har arbetat.`;
+
+export function quizPrompt(o: { grade: string; hard: boolean; imgCount: number; split: boolean; text: string; links: string[]; basis?: string }) {
   const diff = o.hard
     ? 'SVÅR. Minst två skrivfrågor per station, flera välj-alla-frågor och några frågor där eleven ska använda kunskapen i ett påhittat vardagsexempel (t.ex. "Emil ser … Vad är …?"). Felaktiga alternativ ska ligga nära det rätta.'
     : "LAGOM. Mest flerval och sant/falskt, gärna en ordningsfråga och en–två skrivfrågor per station. Raka frågor om fakta och begrepp.";
@@ -36,7 +39,7 @@ export function quizPrompt(o: { grade: string; hard: boolean; imgCount: number; 
 
 MATERIAL
 ${mat.join("\n\n")}
-
+${o.basis === "kursplan" ? "\n" + KURSPLAN(o.grade) + "\n" : ""}
 UPPDRAG
 1. Ta reda på vad eleven ska kunna. Om materialet har en lista som "ska kunna", "bra att kunna", "inför provet", instuderingsfrågor eller en begreppslista: täck VARJE punkt i den.
 2. Dela in innehållet i 4–7 stationer efter delområdena i läxan, i den ordning de kommer i materialet. Om materialet är kort (till exempel bara en begreppslista): 2–4 stationer.
@@ -89,7 +92,10 @@ SVARA MED ENDAST JSON:
 }
 
 // Tolka ett mejl från skolan (Unikum) till kommande prov och läxförhör för ett barn.
-export function mailPrompt(o: { today: string; sent: string; subject: string; body: string; child: string; grade: number }) {
+export function mailPrompt(o: { today: string; sent: string; subject: string; body: string; child: string; grade: number; languages: string[] }) {
+  const lang = o.languages.length
+    ? `\n- Språkval: ${o.child} läser ${o.languages.join(" och ")} som modernt språk. Hoppa över prov och läxor i andra moderna språk (till exempel spanska, franska eller tyska om de inte står här), även när veckobrevet gäller hela klassen.`
+    : "";
   return `Du läser ett mejl från skolan (Unikum) till vårdnadshavare. Hitta prov, läxförhör och läxor som går att öva på med ett förhör, för ${o.child} i årskurs ${o.grade}.
 
 Dagens datum: ${o.today}
@@ -106,12 +112,15 @@ REGLER
 - Hoppa över: ren information, utflykter, inlämningar, läsläxor utan innehåll att förhöra, och prov eller läxförhör vars datum redan har passerat i förhållande till dagens datum.
 - "date": räkna ut det exakta datumet (ÅÅÅÅ-MM-DD) när det går, till exempel "Torsdag" under "Vecka 43" eller "tisdagen den 29/9". Använd årtalet från när mejlet skickades. Om bara veckan anges: "date": null och "week": veckonumret.
 - "what": vad eleven ska kunna, så ordagrant som möjligt från mejlet (begreppslistor, kapitel, sidor, frågor). Hitta inte på innehåll.
-- "enough": true bara om "what" innehåller tillräckligt med konkreta fakta eller begrepp för att göra ett förhör utan annat material. Ett ämne eller en rubrik räcker inte.
-- "missing": om underlaget inte räcker, skriv kort vad som saknas och var det finns (till exempel "häftet om skogen som skickas hem / PDF i Unikum"). Annars tom sträng.
+- "basis": vad ett förhör kan byggas på:
+  - "mejl": mejlet innehåller själv tillräckligt med konkreta fakta eller begrepp.
+  - "kursplan": området är ett vedertaget skolområde som går att förhöra utifrån rubriken och årskursen, med kunskap som är densamma oavsett lärobok. Exempel: adverbial, ordklasser, bråk, överslagsräkning och avrundning, multiplikationstabellerna, Sveriges landskap, universum, lag och rätt, fotosyntes, tyska räkneord.
+  - "material": förhöret kräver klassens eget material som inte finns i mejlet, till exempel en bestämd lista med glosor, ett visst kapitel i en lärobok där innehållet inte framgår, en egen text eller en film.
+- "missing": bara vid "material": skriv kort vad som saknas och var det finns (till exempel "glosorna på Skolplus" eller "häftet om skogen som skickas hem"). Annars tom sträng.${lang}
 - "subject": en av "no","so","sv","ma","en","annat" (tyska, spanska, franska och andra språk är "annat").
 - "title": 2–4 ord om innehållet, utan ordet prov, till exempel "Lag och rätt" eller "Universum".
 
 SVARA MED ENDAST JSON:
-{"items":[{"kind":"prov","subject":"so","title":"Lag och rätt","date":"2026-10-22","week":null,"what":"…","enough":false,"missing":"…"}]}
+{"items":[{"kind":"prov","subject":"so","title":"Lag och rätt","date":"2026-10-22","week":null,"what":"…","basis":"kursplan","missing":""}]}
 Finns inget: {"items":[]}`;
 }

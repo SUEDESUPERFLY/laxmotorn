@@ -1,7 +1,8 @@
 // Läxmotorn API (edge function "laxmotorn", verify_jwt av: autentiseringen görs här).
 //
 // Inloggad vuxen (Authorization: Bearer <JWT>, e-post i ALLOWED_EMAILS), svaret strömmas som text:
-//   {action:"quiz", grade, hard, text, links, images, split}   förhör med förklaringsklipp (JSON)
+//   {action:"quiz", grade, hard, text, links, images, split, basis?}  förhör med förklaringsklipp (JSON);
+//                                                              basis "kursplan" = bara rubrik, bygg på Lgr22
 //   {action:"transcribe", from, to, total, images}             skriv av läxsidor
 //   {action:"concepts", grade, quiz:{title,stations,flash}}    förklaringsklipp till ett befintligt förhör
 // Fel: JSON {code} med status ≥ 400, eller "\n\u0000ERR:<code>" sist i strömmen.
@@ -9,6 +10,7 @@
 // Apps Script (body.token = households.ingest_token), svarar JSON:
 //   {action:"ping", token}
 //   {action:"ingest", token, message:{id, subject, date, body}}  Unikum-mejl → kommande prov hos rätt barn
+//   {action:"todo", token}                                      väntande prov som kan bli förslag
 //   {action:"prepare", token, quiz_id}                          gör förhörsförslag i bakgrunden (202)
 //
 // Hemligheter: ANTHROPIC_API_KEY, ALLOWED_EMAILS, valfria CLAUDE_MODEL och CLAUDE_EFFORT.
@@ -86,6 +88,15 @@ async function streamOut(content: Any[], signal: AbortSignal, o: { effort?: stri
   return new Response(readable, { headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" } });
 }
 
+// Moderna språk och ord som avslöjar dem (för att hoppa över språk barnet inte läser).
+const LANGS: Record<string, string[]> = {
+  tyska: ["tyska", "deutsch", "hausaufgabe"],
+  spanska: ["spanska", "español", "espanol"],
+  franska: ["franska", "français", "francais"],
+  italienska: ["italienska", "italiano"],
+  kinesiska: ["kinesiska"],
+};
+
 const str = (v: unknown, m: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, m) : "");
 const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9åäö]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
 
@@ -98,7 +109,7 @@ async function ingest(hh: { id: string }, m: Any) {
   const { data: done } = await admin.from("mail_imports").select("message_id").eq("household_id", hh.id).eq("message_id", id).maybeSingle();
   if (done) return json({ skipped: "already_imported", items: [] });
 
-  const { data: kids } = await admin.from("children").select("id,name,grade,class_codes").eq("household_id", hh.id);
+  const { data: kids } = await admin.from("children").select("id,name,grade,class_codes,languages").eq("household_id", hh.id);
   const hay = (subject + "\n" + body.slice(0, 600)).toUpperCase();
   const child = (kids ?? []).find((k: Any) => (k.class_codes ?? []).some((c: string) => c && hay.includes(c.toUpperCase())));
   const log = (result: unknown, childId: string | null = null) =>
@@ -108,8 +119,14 @@ async function ingest(hh: { id: string }, m: Any) {
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" });
   const prompt = mailPrompt({
     today, sent: sent.toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" }),
-    subject, body, child: child.name, grade: child.grade,
+    subject, body, child: child.name, grade: child.grade, languages: child.languages ?? [],
   });
+  const otherLang = (s: string) => {
+    const mine = (child.languages ?? []).map((l: string) => l.toLowerCase());
+    if (!mine.length) return false;
+    const low = s.toLowerCase();
+    return Object.entries(LANGS).some(([sv, words]) => !mine.includes(sv) && words.some((w) => low.includes(w)));
+  };
   const parsed = extractJson(await complete([{ type: "text", text: prompt }], { effort: "low", maxTokens: 6000 }));
   if (!parsed || !Array.isArray(parsed.items)) throw new ClaudeError("invalid_json");
 
@@ -123,8 +140,11 @@ async function ingest(hh: { id: string }, m: Any) {
     if (date && date < today) continue; // provet har redan varit
     const what = typeof it?.what === "string" ? it.what.trim().slice(0, 4000) : "";
     const kind = ["prov", "läxförhör", "läxa", "övning"].includes(it?.kind) ? it.kind : "prov";
-    const enough = it?.enough === true && what.length >= 40;
-    const missing = str(it?.missing, 200);
+    if (subj === "annat" && otherLang(`${title} ${what}`)) continue; // språk som barnet inte läser (inte "franska revolutionen")
+    let basis = ["mejl", "kursplan", "material"].includes(it?.basis) ? it.basis : (it?.enough === true ? "mejl" : "material");
+    if (basis === "mejl" && what.length < 40) basis = "kursplan";
+    const enough = basis !== "material";
+    const missing = basis === "material" ? str(it?.missing, 200) : "";
     const key = `${child.id}|${subj}|${date ?? (week ? "v" + week : slug(title))}`;
     const msg = { id, subject, sent: sent.toISOString(), what, missing };
 
@@ -133,7 +153,10 @@ async function ingest(hh: { id: string }, m: Any) {
       const src = ex.source ?? {};
       const msgs = Array.isArray(src.messages) ? src.messages : [];
       if (!msgs.some((x: Any) => x.id === id)) msgs.push(msg);
-      const upd: Any = { source: { ...src, messages: msgs, enough: !!(src.enough || enough), missing: enough ? "" : (src.missing || missing) } };
+      // Bästa underlaget vinner: mejl > kursplan > material.
+      const rank = (b: string) => ({ mejl: 3, kursplan: 2, material: 1 } as Record<string, number>)[b] ?? 0;
+      const best = rank(basis) > rank(src.basis) ? basis : (src.basis ?? basis);
+      const upd: Any = { source: { ...src, messages: msgs, basis: best, enough: best !== "material", missing: best === "material" ? (src.missing || missing) : "" } };
       if (!ex.test_date && date) upd.test_date = date;
       await admin.from("quizzes").update(upd).eq("id", ex.id);
       out.push({ quiz_id: ex.id, title, status: ex.status, enough: upd.source.enough, new: false });
@@ -141,7 +164,7 @@ async function ingest(hh: { id: string }, m: Any) {
       const { data: row, error } = await admin.from("quizzes").insert({
         household_id: hh.id, child_id: child.id, title, subject: subj, grade: child.grade, test_date: date,
         status: "pending", content: {}, dedupe_key: key,
-        source: { from: "unikum", kind, week, enough, missing, messages: [msg] },
+        source: { from: "unikum", kind, week, basis, enough, missing, messages: [msg] },
       }).select("id").single();
       if (error) { console.error(error); continue; }
       out.push({ quiz_id: row.id, title, status: "pending", enough, new: true });
@@ -165,7 +188,7 @@ async function prepare(hh: { id: string }, quizId: unknown) {
   const text = [`Ämne: ${q.title}`, ...(src.messages ?? []).map((m: Any) => m.what).filter(Boolean)].join("\n\n");
   bg((async () => {
     try {
-      const raw = extractJson(await complete([{ type: "text", text: quizPrompt({ grade: String(q.grade ?? 4), hard: false, imgCount: 0, split: false, text, links: [] }) }]));
+      const raw = extractJson(await complete([{ type: "text", text: quizPrompt({ grade: String(q.grade ?? 4), hard: false, imgCount: 0, split: false, text, links: [], basis: src.basis }) }]));
       const d = sanitize(raw);
       if (!d) throw new ClaudeError("bad_shape");
       const { data: cur } = await admin.from("quizzes").select("status,source").eq("id", q.id).single();
@@ -179,7 +202,7 @@ async function prepare(hh: { id: string }, quizId: unknown) {
       console.error("prepare", q.id, e);
       const { data: cur } = await admin.from("quizzes").select("source").eq("id", q.id).single();
       await admin.from("quizzes").update({
-        source: { ...(cur?.source ?? src), preparing_at: null, prepare_error: e instanceof ClaudeError ? e.code : "upstream" },
+        source: { ...(cur?.source ?? src), preparing_at: null, prepare_error: e instanceof ClaudeError ? e.code : "upstream", prepare_failed_at: new Date().toISOString() },
       }).eq("id", q.id);
     }
   })());
@@ -194,12 +217,25 @@ Deno.serve(async (req) => {
   const action = body?.action;
 
   try {
-    if (action === "ping" || action === "ingest" || action === "prepare") {
+    if (action === "ping" || action === "ingest" || action === "prepare" || action === "todo") {
       const hh = await tokenAuth(body.token);
       if (!hh) return fail(401, "bad_token");
       if (action === "ping") {
-        const { data: kids } = await admin.from("children").select("name,class_codes").eq("household_id", hh.id);
+        const { data: kids } = await admin.from("children").select("name,class_codes,languages").eq("household_id", hh.id);
         return json({ ok: true, household: hh.name, children: kids });
+      }
+      if (action === "todo") {
+        // Väntande prov som har underlag men inget förslag än (misslyckade försöker igen efter en timme).
+        const { data: rows } = await admin.from("quizzes").select("id,title,source").eq("household_id", hh.id).eq("status", "pending");
+        const now = Date.now();
+        const ids = (rows ?? []).filter((r: Any) => {
+          const s = r.source ?? {};
+          if (!s.enough) return false;
+          if (s.preparing_at && now - Date.parse(s.preparing_at) < 5 * 60_000) return false;
+          if (s.prepare_error && s.prepare_failed_at && now - Date.parse(s.prepare_failed_at) < 60 * 60_000) return false;
+          return true;
+        }).map((r: Any) => ({ quiz_id: r.id, title: r.title }));
+        return json({ items: ids });
       }
       if (action === "ingest") return await ingest(hh, body.message);
       return await prepare(hh, body.quiz_id);
@@ -221,7 +257,8 @@ Deno.serve(async (req) => {
       const text = typeof body.text === "string" ? body.text.slice(0, MAX_TEXT) : "";
       const links = (Array.isArray(body.links) ? body.links : []).filter((u: unknown) => typeof u === "string").slice(0, 30);
       if (!text.trim() && !imgs.length) return fail(400, "bad_request");
-      const prompt = quizPrompt({ grade, hard: !!body.hard, imgCount: imgs.length / 2, split: !!body.split, text, links });
+      const basis = body.basis === "kursplan" ? "kursplan" : undefined;
+      const prompt = quizPrompt({ grade, hard: !!body.hard, imgCount: imgs.length / 2, split: !!body.split, text, links, basis });
       return await streamOut([...imgs, { type: "text", text: prompt }], req.signal);
     }
     if (action === "concepts") {

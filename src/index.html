@@ -351,6 +351,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .qz.inb.draft{border-color:var(--ok)}.qz.inb.draft .st{color:var(--ok)}
 .qz.inb.busy .st{color:var(--moss)}
 .qz.inb.need .st{color:var(--muted)}
+.qz.inb.wait .st{color:var(--moss)}
 .kidbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700;color:var(--muted)}
 .kidbar b{color:var(--ink)}
 .qz.kid{width:100%;text-align:left;padding:0}
@@ -439,7 +440,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
       </form>
     </div>
     <details class="adult" id="mailSetup"><summary>Koppla skolmejlen (Unikum)</summary>
-      <p class="hint" style="margin:8px 0">Läxmotorn läser mejl från Unikum och kopplar dem till rätt barn via klasskoden i ämnesraden, till exempel <b>RG16C</b> i "Veckobrev v. 42 - RG16C". Flera koder skiljs med kommatecken. En kod som slutar med / tar alla grupper som börjar så (RG14/ tar språkval).</p>
+      <p class="hint" style="margin:8px 0">Läxmotorn läser mejl från Unikum och kopplar dem till rätt barn via klasskoden i ämnesraden, till exempel <b>RG16C</b> i "Veckobrev v. 42 - RG16C". Flera koder skiljs med kommatecken. En kod som slutar med / tar alla grupper som börjar så (RG14/ tar språkval). Under språkval skriver du vilket modernt språk barnet läser, så hoppas prov i andra språk över.</p>
       <div id="codeList" class="mats"></div>
       <p class="hint" style="margin:12px 0 6px">Nyckel till Apps Script-skriptet (skriptegenskapen LAXMOTORN_TOKEN):</p>
       <div class="row" style="align-items:center"><code id="tokenOut" style="overflow-wrap:anywhere;font-size:13px">Visa nyckeln för att kopiera den.</code><button class="btn ghost small" id="tokenBtn" type="button">Visa</button></div>
@@ -949,7 +950,8 @@ function inboxState(q){
   if(q.status==='draft')return {cls:'draft',label:'Förslag klart · granska och godkänn'};
   if(s.preparing_at&&Date.now()-Date.parse(s.preparing_at)<5*60e3)return {cls:'busy',label:'Förslaget skapas…'};
   if(s.prepare_error)return {cls:'need',label:'Förslaget misslyckades · skapa själv'};
-  return s.enough?{cls:'need',label:'Skapa förhör från mejlet'}:{cls:'need',label:'Behöver underlag'+(s.missing?': '+s.missing:'')};
+  if(s.enough)return {cls:'wait',label:(s.basis==='kursplan'?'Förslag görs från rubrik och årskurs':'Förslag görs från mejlet')+' vid nästa körning · tryck för att göra det nu'};
+  return {cls:'need',label:'Behöver underlag'+(s.missing?': '+s.missing:'')};
 }
 function whenLabel(q){
   if(q.testDate)return dateLabel(q.testDate);
@@ -996,7 +998,9 @@ function openCreate(from){
     $('#pasteIn').value=(s.messages||[]).map(m=>m.what).filter(Boolean).join('\n\n');
     $('#fromBox').innerHTML=`<div class="notes"><b>${esc(kidName(from.childId))} · ${esc(whenLabel(from)||'Inget datum')}</b>
       <ul>${(s.messages||[]).map(m=>`<li>${esc(m.subject)} (${esc(new Date(m.sent).toLocaleDateString('sv-SE'))})</li>`).join('')}</ul>
-      ${s.enough?'<p class="hint" style="margin:6px 0 0">Mejlet räcker för ett förhör. Lägg gärna till bilder om du har mer material.</p>':`<p style="margin:6px 0 0;font-weight:700">Saknas: ${esc(s.missing||'materialet')}. Fota eller ladda upp det nedan.</p>`}</div>`;
+      ${s.basis==='kursplan'?`<p class="hint" style="margin:6px 0 0">Mejlet anger bara området. Utan eget material byggs förhöret på kursplanen för årskurs ${esc(String(k?k.grade:from.grade||''))}. Har du klassens material blir det bättre: lägg till bilder nedan.</p>`
+        :s.enough?'<p class="hint" style="margin:6px 0 0">Mejlet räcker för ett förhör. Lägg gärna till bilder om du har mer material.</p>'
+        :`<p style="margin:6px 0 0;font-weight:700">Saknas: ${esc(s.missing||'materialet')}. Fota eller ladda upp det nedan.</p>`}</div>`;
   }else{$('#createTitle').textContent='Ny läxa';$('#fromBox').innerHTML=''}
   renderLinkChips();show('create');updateGen();
 }
@@ -1225,7 +1229,9 @@ async function generate(){
     const opt={signal:GEN.ctl.signal,onText:({text:t})=>{const n=(t.match(/"t"\s*:/g)||[]).length,s=(t.match(/"qs"\s*:/g)||[]).length,f=(t.match(/"flash"\s*:/)?1:0),k=(t.match(/"say"\s*:/g)||[]).length;
       step(f?`Skriver förklara-kort… (${n} frågor klara)`:n?`Skriver frågor… ${n} klara, station ${Math.max(s,1)}`:k?`Skriver förklaringsklipp… ${k} klara`:'Planerar stationerna…')}};
     if(send.length)opt.images=send;
-    const data=await sample.json({action:'quiz',grade,hard,split,text,links},opt);
+    // Bara rubrik från skolmejlet och inget eget material: bygg på kursplanen.
+    const basis=FROM&&FROM.source&&FROM.source.basis==='kursplan'&&!MAT.some(i=>i.status==='ok')?'kursplan':undefined;
+    const data=await sample.json({action:'quiz',grade,hard,split,text,links,basis},opt);
     const qz=sanitize(data);
     if(!qz)throw {code:'bad_shape'};
     if($('#subjIn').value!=='auto')qz.subject=$('#subjIn').value;
@@ -1776,7 +1782,7 @@ async function afterLogin(){
   if(hm.length)HH=hm[0].household_id;
   else{const r=await sb.rpc('create_household',{hh_name:'Familjen'});if(r.error){$('#loadMsg').textContent='Kunde inte skapa familjen. Ladda om sidan.';return}HH=r.data}
   sample=makeSample();imgLimits={maxCount:20};canWrite=true;booted=true;
-  const [k]=await Promise.all([sb.from('children').select('id,name,grade,stats,class_codes').order('created_at'),Store.load()]);
+  const [k]=await Promise.all([sb.from('children').select('id,name,grade,stats,class_codes,languages').order('created_at'),Store.load()]);
   KIDS=k.error?[]:k.data;
   const saved=LS.get('laxmotorn:kid',null);
   const pick=KIDS.find(x=>x.id===saved)||(KIDS.length===1?KIDS[0]:null);
@@ -1787,10 +1793,19 @@ function showKids(){
     return `<button class="qz kid ${k.id===KID?'cur':''}" data-kid="${esc(k.id)}"><span class="qz-main"><span class="lvl">${L}</span><span class="qz-txt"><h3>${esc(k.name)}</h3><small>Årskurs ${k.grade} · ${esc(levelName(L))}</small></span></span></button>`}).join('')
     :'<div class="empty">Lägg till barnen som ska öva.</div>';
   $('#kidsBack').hidden=!KID;
-  $('#codeList').innerHTML=KIDS.map(k=>`<label class="mat" style="padding:8px 12px"><span class="mat-txt"><b>${esc(k.name)}</b><input class="inp sm" data-codes="${esc(k.id)}" value="${esc((k.class_codes||[]).join(', '))}" placeholder="t.ex. RG16C" aria-label="Klasskoder för ${esc(k.name)}"></span></label>`).join('');
+  $('#codeList').innerHTML=KIDS.map(k=>`<div class="mat" style="padding:8px 12px"><span class="mat-txt" style="gap:6px"><b>${esc(k.name)}</b>
+    <input class="inp sm" data-codes="${esc(k.id)}" value="${esc((k.class_codes||[]).join(', '))}" placeholder="Klasskoder, t.ex. RG16C" aria-label="Klasskoder för ${esc(k.name)}">
+    <input class="inp sm" data-langs="${esc(k.id)}" value="${esc((k.languages||[]).join(', '))}" placeholder="Språkval, t.ex. tyska (tomt = alla)" aria-label="Språkval för ${esc(k.name)}"></span></div>`).join('');
   show('kids');
 }
 $('#codeList').addEventListener('change',async e=>{
+  const l=e.target.closest('[data-langs]');
+  if(l){
+    const langs=[...new Set(l.value.split(/[,\s]+/).map(s=>s.trim().toLowerCase()).filter(Boolean))].slice(0,4);
+    const {error}=await sb.from('children').update({languages:langs}).eq('id',l.dataset.langs);
+    if(error){toast('Kunde inte spara språkvalet.');return}
+    const k=KIDS.find(x=>x.id===l.dataset.langs);if(k)k.languages=langs;l.value=langs.join(', ');toast('Språkvalet är sparat');return;
+  }
   const i=e.target.closest('[data-codes]');if(!i)return;
   const codes=[...new Set(i.value.split(/[,\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean))].slice(0,10);
   const {error}=await sb.from('children').update({class_codes:codes}).eq('id',i.dataset.codes);
@@ -1810,7 +1825,7 @@ $('#switchKid').onclick=()=>{flush();showKids()};
 $('#kidForm').addEventListener('submit',async e=>{
   e.preventDefault();const name=$('#kidName').value.trim(),grade=+$('#kidGrade').value;if(!name)return;
   const b=$('#kidAdd');b.disabled=true;
-  const {data,error}=await sb.from('children').insert({household_id:HH,name:name.slice(0,40),grade}).select('id,name,grade,stats,class_codes').single();
+  const {data,error}=await sb.from('children').insert({household_id:HH,name:name.slice(0,40),grade}).select('id,name,grade,stats,class_codes,languages').single();
   b.disabled=false;
   if(error){toast('Kunde inte lägga till barnet.');return}
   KIDS.push(data);$('#kidName').value='';showKids();

@@ -60,7 +60,6 @@ function laxmotornSync_(window) {
   const started = Date.now();
   const label = GmailApp.getUserLabelByName(LAXMOTORN_LABEL) || GmailApp.createLabel(LAXMOTORN_LABEL);
   const threads = GmailApp.search(LAXMOTORN_FROM + ' ' + window, 0, 50);
-  const prepare = [];
   let sent = 0, found = 0;
 
   // Äldst först, så att datum och innehåll byggs på i rätt ordning.
@@ -77,17 +76,26 @@ function laxmotornSync_(window) {
       sent++;
       (r.body.items || []).forEach(function (it) {
         found++;
-        Logger.log((r.body.child || '?') + ': ' + it.title + (it.enough ? ' (förslag görs)' : ' (behöver underlag)'));
-        if (it.status === 'pending' && it.enough && prepare.indexOf(it.quiz_id) < 0) prepare.push(it.quiz_id);
+        Logger.log((r.body.child || '?') + ': ' + it.title + (it.enough ? '' : ' (behöver underlag)'));
       });
     });
     thread.addLabel(label);
   });
+  Logger.log(sent + ' nya mejl, ' + found + ' prov/läxor.');
+  laxmotornPrepare();
+}
 
-  // Förslagen görs i bakgrunden på servern (1–2 minuter styck).
-  prepare.forEach(function (id) {
-    const r = laxmotornCall_({ action: 'prepare', quiz_id: id });
-    if (r.status >= 300) Logger.log('Kunde inte starta förslag ' + id + ': ' + JSON.stringify(r.body));
+/**
+ * Gör förhörsförslag av alla väntande prov som har underlag (mejlet eller rubrik + årskurs).
+ * Körs i slutet av varje synk; misslyckade försöker igen efter en timme.
+ */
+function laxmotornPrepare() {
+  const todo = laxmotornCall_({ action: 'todo' });
+  if (todo.status !== 200) { Logger.log('Kunde inte hämta väntande prov: ' + JSON.stringify(todo.body)); return; }
+  const items = todo.body.items || [];
+  items.forEach(function (it) {
+    const r = laxmotornCall_({ action: 'prepare', quiz_id: it.quiz_id });
+    Logger.log((r.status < 300 ? 'Förslag startat: ' : 'Kunde inte starta: ') + it.title + (r.status < 300 ? '' : ' ' + JSON.stringify(r.body)));
   });
-  Logger.log('Klart: ' + sent + ' nya mejl, ' + found + ' prov/läxor, ' + prepare.length + ' förslag startade.');
+  Logger.log(items.length + ' förslag görs nu i bakgrunden (1–2 minuter styck).');
 }
