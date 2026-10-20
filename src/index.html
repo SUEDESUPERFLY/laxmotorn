@@ -341,11 +341,72 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .toast.show{transform:translateX(-50%) translateY(0)}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:15}
 .confirm{background:var(--lingon-soft);border:2px solid var(--lingon);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.inbox{background:var(--surface);border:2px solid var(--kant);border-radius:18px;padding:12px 14px}
+.inbox>summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;align-items:center;gap:10px}
+.inbox>summary::-webkit-details-marker{display:none}
+.inbox>summary>span:first-child{display:flex;align-items:center;gap:8px;font:700 19px "Bricolage Grotesque",sans-serif}
+.inbox>summary svg{width:22px;height:22px;color:var(--bark)}
+.inbox .hint{margin:8px 0 10px}
+.qz.inb .st{font-weight:800}
+.qz.inb.draft{border-color:var(--ok)}.qz.inb.draft .st{color:var(--ok)}
+.qz.inb.busy .st{color:var(--moss)}
+.qz.inb.need .st{color:var(--muted)}
 .kidbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700;color:var(--muted)}
 .kidbar b{color:var(--ink)}
 .qz.kid{width:100%;text-align:left;padding:0}
 .qz.kid .lvl{width:44px;height:44px;font-size:18px}
 .qz.kid.cur{border-color:var(--moss)}
+/* Förklaringsklipp */
+.xp-ov{position:fixed;inset:0;background:rgba(10,14,20,.55);z-index:30;display:grid;place-items:center;padding:16px}
+.xp-card{width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--surface);border:3px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 rgba(0,0,0,.25);padding:16px;display:flex;flex-direction:column;gap:12px;animation:xpIn .35s ease-out}
+@keyframes xpIn{from{transform:translateY(24px) rotate(-1.5deg);opacity:0}to{transform:none;opacity:1}}
+.xp-band{display:flex;align-items:center;gap:10px;border-bottom:2px dashed var(--line);padding-bottom:10px}
+.xp-ic{width:40px;height:40px;border-radius:12px;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center;flex:none}
+.xp-ic svg{width:24px;height:24px}
+.xp-band h3{flex:1;font-size:22px}
+.xp-kick{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
+.xp-win{min-height:230px;background:var(--surface2);border:2px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:center;gap:12px;position:relative;overflow:hidden;
+  background-image:radial-gradient(var(--line) 1px,transparent 1.2px);background-size:14px 14px}
+.xp-it{opacity:0;transform:translateY(10px);transition:opacity .35s,transform .35s}
+.xp-it.on{opacity:1;transform:none}
+.xp-it.pop{animation:xpPop .45s ease-out}
+@keyframes xpPop{0%{transform:scale(.7)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
+.xp-h{margin:0;font:700 18px "Bricolage Grotesque",sans-serif;color:var(--muted);text-align:center}
+.xp-term{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
+.xp-term b{font:800 clamp(30px,8vw,46px)/1.05 "Bricolage Grotesque",sans-serif;color:var(--moss);background:var(--surface);border:3px solid var(--ink);border-radius:14px;padding:6px 18px}
+.xp-term span{font-weight:700;font-size:19px;max-width:30ch}
+.xp-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.xp-list li{display:flex;align-items:center;gap:10px;background:var(--surface);border:2px solid var(--ink);border-radius:12px;padding:8px 12px;font-weight:800;font-size:19px}
+.xp-dot{width:28px;height:28px;border-radius:50%;background:var(--kant);color:#161A21;display:grid;place-items:center;flex:none}
+.xp-dot svg{width:16px;height:16px}
+.xp-steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px}
+.xp-steps li{display:flex;align-items:center;gap:6px}
+.xp-steps span{background:var(--surface);border:2px solid var(--ink);border-radius:12px;padding:8px 12px;font-weight:800;font-size:17px;display:flex;gap:8px;align-items:center}
+.xp-steps em{font-style:normal;width:24px;height:24px;border-radius:50%;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center;font-size:13px}
+.xp-arrow{font-style:normal;font-weight:800;font-size:22px;color:var(--muted)}
+.xp-cyc{position:relative;width:min(340px,100%);aspect-ratio:340/300;margin:0 auto;color:var(--muted)}
+.xp-cyc svg{position:absolute;inset:0;width:100%;height:100%}
+.xp-arc{fill:none;stroke:currentColor;stroke-width:3;stroke-dasharray:6 6}
+.xp-node{position:absolute;transform:translate(-50%,-50%) translateY(10px);background:var(--surface);border:2px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:800;font-size:15px;color:var(--ink);white-space:nowrap;max-width:46%;white-space:normal;text-align:center}
+.xp-node.on{transform:translate(-50%,-50%)}
+.xp-node.pop{animation:none}
+.xp-cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start}
+.xp-col ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
+.xp-col li{background:var(--surface);border:2px solid var(--ink);border-radius:10px;padding:6px 10px;font-weight:800;text-align:center}
+.xp-vs{align-self:center;font:800 18px "Bricolage Grotesque",sans-serif;color:var(--muted)}
+.xp-cap{min-height:3.2em;font-weight:700;font-size:18px;line-height:1.45;text-align:center}
+.xp-cap span{color:var(--muted);transition:color .15s}
+.xp-cap span.past{color:var(--ink)}
+.xp-cap span.now{color:var(--ink);background:var(--kant-soft);border-radius:4px;box-shadow:0 0 0 2px var(--kant-soft)}
+.xp-bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+.xp-bar i{display:block;height:100%;width:0;background:var(--moss);transition:width .2s linear}
+.xp-ctl{justify-content:center}
+.xp-ov:not(.end) #xpGo{opacity:.8}
+.clips{display:flex;flex-wrap:wrap;gap:8px}
+.clip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:2px solid var(--line);border-radius:99px;padding:6px 12px 6px 8px;font-weight:800;font-size:14px}
+.clip:hover{border-color:var(--moss)}
+.clip svg{width:18px;height:18px;color:var(--moss)}
+@media (max-width:480px){.xp-cmp{grid-template-columns:1fr}.xp-vs{display:none}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
@@ -377,6 +438,13 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
         <button class="btn" id="kidAdd" type="submit">Lägg till barn</button>
       </form>
     </div>
+    <details class="adult" id="mailSetup"><summary>Koppla skolmejlen (Unikum)</summary>
+      <p class="hint" style="margin:8px 0">Läxmotorn läser mejl från Unikum och kopplar dem till rätt barn via klasskoden i ämnesraden, till exempel <b>RG16C</b> i "Veckobrev v. 42 - RG16C". Flera koder skiljs med kommatecken. En kod som slutar med / tar alla grupper som börjar så (RG14/ tar språkval).</p>
+      <div id="codeList" class="mats"></div>
+      <p class="hint" style="margin:12px 0 6px">Nyckel till Apps Script-skriptet (skriptegenskapen LAXMOTORN_TOKEN):</p>
+      <div class="row" style="align-items:center"><code id="tokenOut" style="overflow-wrap:anywhere;font-size:13px">Visa nyckeln för att kopiera den.</code><button class="btn ghost small" id="tokenBtn" type="button">Visa</button></div>
+      <p class="hint" style="margin:10px 0 0"><a href="https://github.com/SUEDESUPERFLY/laxmotorn/blob/main/apps-script/LaxmotornMejl.gs" target="_blank" rel="noopener">Skriptet och instruktionerna</a></p>
+    </details>
   </section>
 
   <div class="kidbar" id="kidbar" hidden><span>Övar: <b id="kidNow"></b></span><span class="row"><button class="btn ghost small" id="switchKid">Byt barn</button><button class="btn ghost small" id="logoutBtn">Logga ut</button></span></div>
@@ -399,6 +467,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
       <button class="btn" id="newBtn" hidden></button>
     </div>
     <p class="hint" id="libNote"></p>
+    <div id="inboxBox"></div>
     <div id="dailyBox"></div>
     <div class="lib-list" id="libList"></div>
     <div class="sect"><h2>Märken</h2><div class="badges" id="badges"></div></div>
@@ -409,7 +478,8 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
   <section id="create" class="wrap" hidden>
     <div class="qtop"><button class="back" id="createBack">← Läxorna</button></div>
     <div class="panel" id="createPanel">
-      <h2>Ny läxa</h2>
+      <h2 id="createTitle">Ny läxa</h2>
+      <div id="fromBox"></div>
       <div class="drop" id="drop">
         <span id="dropIcon"></span>
         <b>Lägg till bilder eller dokument</b>
@@ -439,6 +509,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
           </select></label>
         <label class="field" for="gradeIn"><span>Årskurs</span>
           <select class="inp" id="gradeIn"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label>
+        <label class="field" for="kidIn"><span>För</span><select class="inp" id="kidIn"></select></label>
       </div>
       <div class="field"><span class="lbl" id="diffLbl">Svårighet</span>
         <div class="seg" role="radiogroup" aria-labelledby="diffLbl">
@@ -518,6 +589,16 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
   </section>
 </div>
 <div class="toast" id="toast" role="status"></div>
+<div class="xp-ov" id="xpOv" hidden>
+  <div class="xp-card" role="dialog" aria-modal="true" aria-labelledby="xpTitle">
+    <div class="xp-band"><span class="xp-ic" id="xpIc"></span><h3 id="xpTitle"></h3><span class="xp-kick">Förklaring</span></div>
+    <div class="xp-win" id="xpWin"></div>
+    <div class="xp-cap" id="xpCap"></div>
+    <div class="xp-bar"><i id="xpBar"></i></div>
+    <p class="hint" id="xpNote" style="margin:0"></p>
+    <div class="row xp-ctl"><button class="btn" id="xpGo">Fortsätt</button><button class="btn ghost" id="xpAgain">Spela igen</button><button class="btn ghost small" id="xpMute"></button></div>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
@@ -756,21 +837,33 @@ function dateLabel(s){
 
 /* ---------- Lagring ---------- */
 let sample=null,canWrite=null,imgLimits=null,booted=false;
-const QZ_COLS='id,title,subject,summary,grade,test_date,content,created_at';
-const rowToQuiz=r=>({...(r.content||{}),id:r.id,title:r.title,subject:r.subject,summary:r.summary||'',grade:r.grade?String(r.grade):null,testDate:r.test_date,createdAt:Date.parse(r.created_at)});
+const QZ_COLS='id,title,subject,summary,grade,test_date,content,created_at,child_id,status,source';
+const rowToQuiz=r=>({...(r.content||{}),id:r.id,title:r.title,subject:r.subject,summary:r.summary||'',grade:r.grade?String(r.grade):null,testDate:r.test_date,createdAt:Date.parse(r.created_at),
+  childId:r.child_id||null,status:r.status||'ready',source:r.source||null});
 const Store={db:true,remote:[],ready:false,
-  all(){return this.remote},
+  // Det barnet ser: godkända läxor för barnet eller för alla.
+  all(){return this.remote.filter(q=>q.status==='ready'&&(!q.childId||q.childId===KID))},
+  // Vuxnas inkorg: kommande prov från skolmejl och förslag som väntar på godkännande.
+  inbox(){return this.remote.filter(q=>q.status!=='ready')},
   async load(){
     const {data,error}=await sb.from('quizzes').select(QZ_COLS).order('created_at',{ascending:false});
     if(error)toast('Kunde inte hämta läxorna.');else this.remote=data.map(rowToQuiz);
     this.ready=true;
   },
   async add(doc){
-    const {title,subject,summary,grade,testDate,stations,flash,notes,links,concepts}=doc;
-    const {data,error}=await sb.from('quizzes').insert({household_id:HH,title,subject,summary:summary||null,grade:+grade||null,test_date:testDate||null,
-      content:{stations,flash,notes,links,...(concepts?{concepts}:{})}}).select(QZ_COLS).single();
+    const {title,subject,summary,grade,testDate,stations,flash,notes,links,concepts,childId,fromId}=doc;
+    const row={title,subject,summary:summary||null,grade:+grade||null,test_date:testDate||null,child_id:childId||null,status:'ready',
+      content:{stations,flash,notes,links,...(concepts&&concepts.length?{concepts}:{})}};
+    // Ett kommande prov från skolmejl blir förhöret när det godkänns.
+    const q0=fromId?sb.from('quizzes').update(row).eq('id',fromId):sb.from('quizzes').insert({...row,household_id:HH});
+    const {data,error}=await q0.select(QZ_COLS).single();
     if(error){console.error(error);return null}
-    const q=rowToQuiz(data);this.remote.unshift(q);return {id:q.id,local:false};
+    const q=rowToQuiz(data);this.remote=[q,...this.remote.filter(x=>x.id!==q.id)];return {id:q.id,local:false};
+  },
+  async patch(id,fields){
+    const {data,error}=await sb.from('quizzes').update(fields).eq('id',id).select(QZ_COLS).single();
+    if(error){console.error(error);return null}
+    const q=rowToQuiz(data);this.remote=this.remote.map(x=>x.id===id?q:x);return q;
   },
   async remove(q){
     const {error}=await sb.from('quizzes').delete().eq('id',q.id);
@@ -782,13 +875,15 @@ const Store={db:true,remote:[],ready:false,
 /* ---------- Claude via edge function (ersätter window.claude sample) ---------- */
 async function blobToB64(b){const u=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
 function extractJson(t){t=String(t||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'');const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<=a)return null;try{return JSON.parse(t.slice(a,b+1))}catch(e){return null}}
+const API_URL=SB_URL+'/functions/v1/laxmotorn';
 function makeSample(){
-  const call=async(prompt,opt={})=>{
+  // payload: {action:'quiz'|'transcribe'|'concepts', ...}. Promptarna byggs på servern.
+  const call=async(payload,opt={})=>{
     const {data:{session}}=await sb.auth.getSession();if(!session)throw {code:'session_expired'};
     const images=opt.images?await Promise.all(opt.images.map(async b=>({media_type:b.type||'image/jpeg',data:await blobToB64(b)}))):[];
     let res;
-    try{res=await fetch(SB_URL+'/functions/v1/generate',{method:'POST',signal:opt.signal,
-      headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token,apikey:SB_KEY},body:JSON.stringify({prompt,images})})}
+    try{res=await fetch(API_URL,{method:'POST',signal:opt.signal,
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token,apikey:SB_KEY},body:JSON.stringify({...payload,images})})}
     catch(e){throw {code:e&&e.name==='AbortError'?'cancelled':'network'}}
     if(!res.ok){let j={};try{j=await res.json()}catch(e){}throw {code:j.code||(res.status===401?'session_expired':res.status===546||res.status===504?'timeout':'upstream')}}
     const rd=res.body.getReader(),dec=new TextDecoder();let text='';
@@ -798,7 +893,7 @@ function makeSample(){
     if(!text.trim())throw {code:'empty_completion'};
     return {text};
   };
-  call.json=async(prompt,opt)=>{const {text}=await call(prompt,opt);const j=extractJson(text);if(!j)throw {code:'invalid_json'};return j};
+  call.json=async(payload,opt)=>{const {text}=await call(payload,opt);const j=extractJson(text);if(!j)throw {code:'invalid_json'};return j};
   return call;
 }
 
@@ -810,7 +905,7 @@ function sortQuizzes(list){
 /* ---------- Bibliotek ---------- */
 let pendingDel=null;
 function renderLib(){
-  updateHUD();
+  updateHUD();renderInbox();
   $('#app').removeAttribute('data-subj');
   const nb=$('#newBtn');nb.innerHTML=svg('plus')+'Ny läxa';
   nb.hidden=!booted||!sample;
@@ -845,6 +940,66 @@ function renderLib(){
   $('#libWhere').textContent=booted?'Läxorna delas av hela familjen. XP, medaljer och märken sparas per barn.':'';
 }
 $('#dailyBox').addEventListener('click',e=>{if(e.target.closest('#dailyBtn')){QZ=null;startRound('daily')}});
+
+/* ---------- Från skolan: kommande prov från skolmejl ---------- */
+let inboxOpen=LS.get('laxmotorn:inboxOpen',true),pollT=null;
+const kidName=id=>{const k=KIDS.find(x=>x.id===id);return k?k.name:'Alla'};
+function inboxState(q){
+  const s=q.source||{};
+  if(q.status==='draft')return {cls:'draft',label:'Förslag klart · granska och godkänn'};
+  if(s.preparing_at&&Date.now()-Date.parse(s.preparing_at)<5*60e3)return {cls:'busy',label:'Förslaget skapas…'};
+  if(s.prepare_error)return {cls:'need',label:'Förslaget misslyckades · skapa själv'};
+  return s.enough?{cls:'need',label:'Skapa förhör från mejlet'}:{cls:'need',label:'Behöver underlag'+(s.missing?': '+s.missing:'')};
+}
+function whenLabel(q){
+  if(q.testDate)return dateLabel(q.testDate);
+  const w=q.source&&q.source.week;return w?`Vecka ${w}`:(q.source&&q.source.kind==='övning'?'Övning':'');
+}
+function renderInbox(){
+  const list=Store.inbox().sort((a,b)=>(parseDate(a.testDate)||9e15)-(parseDate(b.testDate)||9e15));
+  const box=$('#inboxBox');
+  if(!list.length){box.innerHTML='';clearTimeout(pollT);return}
+  const nDraft=list.filter(q=>q.status==='draft').length;
+  box.innerHTML=`<details class="inbox" ${inboxOpen?'open':''}><summary><span>${svg('news')}<b>Från skolan</b></span><span class="count">${list.length}${nDraft?` · ${nDraft} att godkänna`:''}</span></summary>
+    <p class="hint">Hittat i skolmejlen. Barnen ser inget förrän du har godkänt förhöret.</p>
+    <div class="lib-list">${list.map(q=>{const st=inboxState(q),subj=SUBJ[q.subject]?q.subject:'annat';
+      return `<div class="qz inb ${st.cls}" data-subj="${subj}"><button class="qz-main" data-inb="${esc(q.id)}"><span class="qz-ic">${svg(SUBJ_ICON[subj])}</span><span class="qz-txt">
+        <span class="qz-meta"><span class="subj">${SUBJ[subj]}</span><span>${esc(kidName(q.childId))}</span>${whenLabel(q)?`<span>${esc(whenLabel(q))}</span>`:''}</span>
+        <h3>${esc(q.title)}</h3><small class="st">${esc(st.label)}</small></span></button>
+        <span class="qz-side"><button class="icon-btn" data-inbdel="${esc(q.id)}" aria-label="Ta bort ${esc(q.title)}">${svg('x')}</button></span></div>`}).join('')}</div></details>`;
+  box.querySelector('details').addEventListener('toggle',e=>{inboxOpen=e.target.open;LS.set('laxmotorn:inboxOpen',inboxOpen)});
+  clearTimeout(pollT);
+  if(list.some(q=>inboxState(q).cls==='busy'))pollT=setTimeout(async()=>{if($('#lib').hidden)return;await Store.load();renderLib()},20000);
+}
+$('#inboxBox').addEventListener('click',async e=>{
+  const o=e.target.closest('[data-inb]'),d=e.target.closest('[data-inbdel]');
+  if(d){const q=Store.remote.find(x=>x.id===d.dataset.inbdel);if(q&&await Store.remove(q))toast('Borttagen');renderLib();return}
+  if(!o)return;const q=Store.remote.find(x=>x.id===o.dataset.inb);if(!q)return;
+  if(q.status==='draft'){
+    FROM=q;DRAFT={title:q.title,subject:q.subject,summary:q.summary,stations:q.stations||[],flash:q.flash||[],notes:q.notes||[],links:q.links||[],concepts:q.concepts||[],
+      testDate:q.testDate,grade:q.grade,childId:q.childId,fromId:q.id};
+    revOpen.clear();renderReview();show('review');
+  }else openCreate(q);
+});
+function fillKidSelect(sel){
+  $('#kidIn').innerHTML=KIDS.map(k=>`<option value="${esc(k.id)}">${esc(k.name)}</option>`).join('')+'<option value="">Alla barn</option>';
+  $('#kidIn').value=sel===undefined?(KID||''):(sel||'');
+}
+function openCreate(from){
+  FROM=from||null;$('#genErr').innerHTML='';
+  fillKidSelect(from?from.childId:undefined);
+  if(from){
+    const s=from.source||{},k=KIDS.find(x=>x.id===from.childId);
+    $('#createTitle').textContent='Förhör från skolmejl';
+    $('#titleIn').value=from.title;$('#dateIn').value=from.testDate||'';$('#subjIn').value=from.subject||'auto';
+    if(k)$('#gradeIn').value=String(k.grade);
+    $('#pasteIn').value=(s.messages||[]).map(m=>m.what).filter(Boolean).join('\n\n');
+    $('#fromBox').innerHTML=`<div class="notes"><b>${esc(kidName(from.childId))} · ${esc(whenLabel(from)||'Inget datum')}</b>
+      <ul>${(s.messages||[]).map(m=>`<li>${esc(m.subject)} (${esc(new Date(m.sent).toLocaleDateString('sv-SE'))})</li>`).join('')}</ul>
+      ${s.enough?'<p class="hint" style="margin:6px 0 0">Mejlet räcker för ett förhör. Lägg gärna till bilder om du har mer material.</p>':`<p style="margin:6px 0 0;font-weight:700">Saknas: ${esc(s.missing||'materialet')}. Fota eller ladda upp det nedan.</p>`}</div>`;
+  }else{$('#createTitle').textContent='Ny läxa';$('#fromBox').innerHTML=''}
+  renderLinkChips();show('create');updateGen();
+}
 $('#libList').addEventListener('click',async e=>{
   const o=e.target.closest('[data-open]'),d=e.target.closest('[data-del]'),y=e.target.closest('[data-yes]'),no=e.target.closest('[data-no]');
   if(o){const q=Store.all().find(x=>x.id===o.dataset.open);if(q)openQuiz(q);return}
@@ -852,7 +1007,10 @@ $('#libList').addEventListener('click',async e=>{
   if(no){pendingDel=null;renderLib();return}
   if(y){const q=Store.all().find(x=>x.id===y.dataset.yes);pendingDel=null;if(q&&await Store.remove(q))toast('Läxan är borttagen');renderLib()}
 });
-$('#newBtn').onclick=()=>{$('#genErr').innerHTML='';show('create');updateGen()};
+$('#newBtn').onclick=()=>{
+  if(FROM){FROM=null;['#pasteIn','#titleIn','#dateIn'].forEach(s=>$(s).value='');$('#subjIn').value='auto'}
+  openCreate(null);
+};
 
 /* ---------- Underlag ---------- */
 const PDFJS='https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js';
@@ -966,69 +1124,47 @@ function showPickDiag(){
 }
 
 /* ---------- Generering ---------- */
-let GEN=null,DRAFT=null;
-function transcribePrompt(a,b,n){return `Bilderna är foton eller skannade sidor ur en skolläxa (sida ${a}–${b} av ${n}, i ordning). Skriv av all text ordagrant i läsordning, sida för sida, med rubriker, listor och tabeller. Om en bild eller ett diagram innehåller fakta (till exempel etiketter eller pilar), beskriv det kort inom hakparenteser. Skriv bara av texten. Inga kommentarer.`}
-function buildPrompt(o){
-  const diff=o.hard
-   ?'SVÅR. Minst två skrivfrågor per station, flera välj-alla-frågor och några frågor där eleven ska använda kunskapen i ett påhittat vardagsexempel (t.ex. "Emil ser … Vad är …?"). Felaktiga alternativ ska ligga nära det rätta.'
-   :'LAGOM. Mest flerval och sant/falskt, gärna en ordningsfråga och en–två skrivfrågor per station. Raka frågor om fakta och begrepp.';
-  const mat=[];
-  if(o.imgCount)mat.push(`Bifogat: ${o.imgCount} bilder av läxan i sidordning.${o.split?' Varje sida är delad i en övre och en nedre halva som överlappar lite, så samma rad kan synas två gånger.':''} Läs all text noga: rubriker, listor, rutor, bildtexter och etiketter i bilder.`);
-  if(o.text)mat.push(`Text från läxan:\n"""\n${o.text}\n"""`);
-  if(o.links&&o.links.length)mat.push(`Länkar som eleven har fått:\n${o.links.map(u=>'- '+u).join('\n')}`);
-  return `Du gör ett läxförhör på svenska för en elev i årskurs ${o.grade}. Förhöret spelas i en app med stationer, stjärnor och ett slutprov.
-
-MATERIAL
-${mat.join('\n\n')}
-
-UPPDRAG
-1. Ta reda på vad eleven ska kunna. Om materialet har en lista som "ska kunna", "bra att kunna", "inför provet", instuderingsfrågor eller en begreppslista: täck VARJE punkt i den.
-2. Dela in innehållet i 4–7 stationer efter delområdena i läxan, i den ordning de kommer i materialet.
-3. Skriv 6–10 frågor per station. Bygg frågorna på materialet och använd dess egna ord och exempel.
-4. Skriv 6–14 förklara-kort för muntligt förhör, helst utifrån instuderingsfrågorna. Svaret är ett kort modellsvar som en vuxen kan rätta efter.
-
-SVÅRIGHET: ${diff}
-
-FRÅGETYPER (varje station ska ha minst tre olika typer)
-- Flerval: {"t":"mc","q":"fråga","opts":["A","B","C","D"],"a":0,"why":"förklaring"}  3–4 alternativ, a = index för rätt svar.
-- Sant/falskt: {"t":"tf","q":"ett påstående","a":true,"why":"…"}
-- Välj alla: {"t":"multi","q":"Välj alla som …","opts":["…"],"a":[0,2],"why":"…"}  4–7 alternativ, minst ett rätt och minst ett fel.
-- Ordning: {"t":"order","q":"Sätt i rätt ordning …","items":["första","andra","tredje"],"why":"…"}  3–6 korta steg i RÄTT ordning. Bara när ordningen verkligen finns i materialet (en process, en kedja, en tidslinje).
-- Skriv: {"t":"write","q":"fråga","acc":["svar","variant"],"why":"…"}  Svaret är 1–3 ord, t.ex. ett begrepp. Lägg till godtagbara varianter och böjningar i acc.
-
-REGLER
-- Felaktiga alternativ ska låta rimliga men vara tydligt fel enligt materialet. Variera var rätt svar står, och låt inte rätt svar alltid vara det längsta.
-- "why" är 1–2 korta meningar som förklarar svaret med stöd i materialet.
-- Enkel svenska som passar årskurs ${o.grade}. Inga frågor om sidnummer, bokens titel eller hur bilderna ser ut.
-- Använd i första hand fakta från materialet. Om du lägger till något som inte står där, eller om något var svårläst, skriv det kort i "notes" så att en vuxen kan kontrollera.
-- "icon" väljs bland: ${ICON_KEYS.join(', ')}.
-- "subject" är en av: "no","so","sv","ma","en","annat".
-- Länkar: du kan inte öppna dem, så gör inga frågor om vad som finns bakom en länk. Lista varje länk i "links" med en kort titel (2–6 ord) som bygger på materialet runt länken eller på adressen. Skriv också av webbadresser som syns i bilderna, exakt tecken för tecken. Finns inga länkar blir "links" en tom lista.
-
-SVARA MED ENDAST JSON i exakt den här formen:
-{"title":"kort namn på läxan, 2–4 ord","subject":"so","summary":"en mening om vad läxan handlar om","stations":[{"name":"Stationens namn","sub":"3–6 ord om innehållet","icon":"book","qs":[]}],"flash":[{"q":"Förklara …","a":"Kort svar. Punktlistor skrivs som rader som börjar med \\"- \\"."}],"links":[{"url":"https://…","title":"…"}],"notes":[]}`;
-}
+let GEN=null,DRAFT=null,FROM=null;   // FROM: kommande prov från skolmejl som håller på att bli förhör
+/* Tvätt av Claudes förhörs-JSON. Samma regler som supabase/functions/laxmotorn/quiz.ts; ändra båda ihop. */
 const clean=(s,m)=>typeof s==='string'?s.replace(/\s+/g,' ').trim().slice(0,m):(typeof s==='number'&&isFinite(s)?String(s):'');
 const cleanBlock=(s,m)=>typeof s==='string'?s.replace(/\r/g,'').replace(/[ \t]+/g,' ').replace(/\n{3,}/g,'\n\n').trim().slice(0,m):'';
-function cleanQ(q){
+const cleanList=(v,m)=>(Array.isArray(v)?v:[]).map(x=>clean(x,m)).filter(Boolean);
+function cleanQ(q,ids=new Set()){
   if(!q||typeof q!=='object')return null;
   const t=q.t,text=clean(q.q,300),why=clean(q.why,400);
   if(!text)return null;
-  const list=(v,m)=>(Array.isArray(v)?v:[]).map(x=>clean(x,m)).filter(Boolean);
-  if(t==='mc'){const opts=list(q.opts,160),a=Number(q.a);if(opts.length<2||opts.length>6||!Number.isInteger(a)||a<0||a>=opts.length||new Set(opts).size!==opts.length)return null;return {t,q:text,opts,a,why}}
-  if(t==='tf'){let a=q.a;if(a==='true')a=true;if(a==='false')a=false;if(typeof a!=='boolean')return null;return {t,q:text,a,why}}
-  if(t==='multi'){const opts=list(q.opts,160);if(opts.length<3||opts.length>8||new Set(opts).size!==opts.length)return null;const a=[...new Set((Array.isArray(q.a)?q.a:[]).map(Number))].filter(i=>Number.isInteger(i)&&i>=0&&i<opts.length).sort((x,y)=>x-y);if(!a.length||a.length===opts.length)return null;return {t,q:text,opts,a,why}}
-  if(t==='order'){const items=list(q.items,140);if(items.length<2||items.length>7||new Set(items).size!==items.length)return null;return {t,q:text,items,why}}
-  if(t==='write'){const acc=list(q.acc,60);if(!acc.length)return null;return {t,q:text,acc,why}}
+  const c=ids.has(q.c)?{c:q.c}:{},list=cleanList;
+  if(t==='mc'){const opts=list(q.opts,160),a=Number(q.a);if(opts.length<2||opts.length>6||!Number.isInteger(a)||a<0||a>=opts.length||new Set(opts).size!==opts.length)return null;return {t,q:text,opts,a,why,...c}}
+  if(t==='tf'){let a=q.a;if(a==='true')a=true;if(a==='false')a=false;if(typeof a!=='boolean')return null;return {t,q:text,a,why,...c}}
+  if(t==='multi'){const opts=list(q.opts,160);if(opts.length<3||opts.length>8||new Set(opts).size!==opts.length)return null;const a=[...new Set((Array.isArray(q.a)?q.a:[]).map(Number))].filter(i=>Number.isInteger(i)&&i>=0&&i<opts.length).sort((x,y)=>x-y);if(!a.length||a.length===opts.length)return null;return {t,q:text,opts,a,why,...c}}
+  if(t==='order'){const items=list(q.items,140);if(items.length<2||items.length>7||new Set(items).size!==items.length)return null;return {t,q:text,items,why,...c}}
+  if(t==='write'){const acc=list(q.acc,60);if(!acc.length)return null;return {t,q:text,acc,why,...c}}
   return null;
+}
+const SHOW_TYPES=['term','list','steps','cycle','compare'];
+function cleanItems(v,say,max){const low=say.toLowerCase();return (Array.isArray(v)?v:[]).map(it=>{const t=clean(it&&it.t,40);if(!t)return null;const cue=clean(it&&it.cue,40);return cue&&low.includes(cue.toLowerCase())?{t,cue}:{t}}).filter(Boolean).slice(0,max)}
+function cleanConcepts(v){
+  const out=[],seen=new Set();
+  for(const k of Array.isArray(v)?v:[]){
+    const id=clean(k&&k.id,12),name=clean(k&&k.name,40),say=clean(k&&k.say,400);
+    if(!id||seen.has(id)||!name||!say)continue;
+    const s=k.show||{},type=SHOW_TYPES.includes(s.type)?s.type:'term';let show;
+    if(type==='term'){const word=clean(s.word,40)||name,def=clean(s.def,120),cue=clean(s.cue,40);show={type,word,def,...(cue&&say.toLowerCase().includes(cue.toLowerCase())?{cue}:{})}}
+    else if(type==='compare'){const side=x=>({title:clean(x&&x.title,30),items:cleanItems(x&&x.items,say,4)});const left=side(s.left),right=side(s.right);
+      show=!left.title||!right.title||!left.items.length||!right.items.length?{type:'term',word:name,def:''}:{type,left,right}}
+    else{const items=cleanItems(s.items,say,5);show=items.length>=2?{type,title:clean(s.title,40),items}:{type:'term',word:name,def:''}}
+    seen.add(id);out.push({id,name,icon:ICON_KEYS.includes(k.icon)?k.icon:'book',say,show});
+  }
+  return out.slice(0,12);
 }
 function sanitize(d){
   if(!d||typeof d!=='object'||!Array.isArray(d.stations))return null;
-  const stations=d.stations.slice(0,10).map((s,i)=>({id:'s'+(i+1),name:clean(s&&s.name,60)||`Del ${i+1}`,sub:clean(s&&s.sub,90),icon:ICON_KEYS.includes(s&&s.icon)?s.icon:'book',qs:(Array.isArray(s&&s.qs)?s.qs:[]).map(cleanQ).filter(Boolean).slice(0,14)})).filter(s=>s.qs.length>=3);
+  const concepts=cleanConcepts(d.concepts),ids=new Set(concepts.map(k=>k.id));
+  const stations=d.stations.slice(0,10).map((s,i)=>({id:'s'+(i+1),name:clean(s&&s.name,60)||`Del ${i+1}`,sub:clean(s&&s.sub,90),icon:ICON_KEYS.includes(s&&s.icon)?s.icon:'book',qs:(Array.isArray(s&&s.qs)?s.qs:[]).map(q=>cleanQ(q,ids)).filter(Boolean).slice(0,14)})).filter(s=>s.qs.length>=3);
   if(!stations.length)return null;
   const flash=(Array.isArray(d.flash)?d.flash:[]).map(f=>({q:clean(f&&f.q,300),a:cleanBlock(f&&f.a,1500)})).filter(f=>f.q&&f.a).slice(0,20);
-  const notes=(Array.isArray(d.notes)?d.notes:[]).map(n=>clean(n,300)).filter(Boolean).slice(0,10);
-  return {title:clean(d.title,60)||'Ny läxa',subject:SUBJ[d.subject]?d.subject:'annat',summary:clean(d.summary,220),stations,flash,notes};
+  const notes=cleanList(d.notes,300).slice(0,10);
+  return {title:clean(d.title,60)||'Ny läxa',subject:SUBJ[d.subject]?d.subject:'annat',summary:clean(d.summary,220),stations,flash,notes,concepts};
 }
 const ERR={
   not_granted:'Ditt konto får inte skapa förhör. Lägg till e-postadressen i ALLOWED_EMAILS i Supabase.',
@@ -1079,22 +1215,22 @@ async function generate(){
       let tr='';
       for(let i=0;i<imgs.length;i+=maxImg){
         const batch=imgs.slice(i,i+maxImg);step(`Läser av sida ${i+1}–${i+batch.length} av ${imgs.length}…`);
-        const r=await sample(transcribePrompt(i+1,i+batch.length,imgs.length),{images:batch,signal:GEN.ctl.signal,cache:false});
+        const r=await sample({action:'transcribe',from:i+1,to:i+batch.length,total:imgs.length},{images:batch,signal:GEN.ctl.signal});
         tr+=`\n\n[Sida ${i+1}–${i+batch.length}]\n${r.text}`;
       }
       text=(text+tr).trim();
     }
     if(text.length>150000)text=text.slice(0,150000);
     step('Claude läser läxan och planerar frågorna…');
-    const opt={signal:GEN.ctl.signal,cache:false,onText:({text:t})=>{const n=(t.match(/"t"\s*:/g)||[]).length,s=(t.match(/"qs"\s*:/g)||[]).length,f=(t.match(/"flash"\s*:/)?1:0);
-      step(f?`Skriver förklara-kort… (${n} frågor klara)`:n?`Skriver frågor… ${n} klara, station ${Math.max(s,1)}`:'Planerar stationerna…')}};
+    const opt={signal:GEN.ctl.signal,onText:({text:t})=>{const n=(t.match(/"t"\s*:/g)||[]).length,s=(t.match(/"qs"\s*:/g)||[]).length,f=(t.match(/"flash"\s*:/)?1:0),k=(t.match(/"say"\s*:/g)||[]).length;
+      step(f?`Skriver förklara-kort… (${n} frågor klara)`:n?`Skriver frågor… ${n} klara, station ${Math.max(s,1)}`:k?`Skriver förklaringsklipp… ${k} klara`:'Planerar stationerna…')}};
     if(send.length)opt.images=send;
-    const data=await sample.json(buildPrompt({grade,hard,imgCount:send.length,split,text,links}),opt);
+    const data=await sample.json({action:'quiz',grade,hard,split,text,links},opt);
     const qz=sanitize(data);
     if(!qz)throw {code:'bad_shape'};
     if($('#subjIn').value!=='auto')qz.subject=$('#subjIn').value;
     const t=$('#titleIn').value.trim();if(t)qz.title=t.slice(0,60);
-    qz.testDate=$('#dateIn').value||null;qz.grade=grade;
+    qz.testDate=$('#dateIn').value||null;qz.grade=grade;qz.childId=$('#kidIn').value||null;qz.fromId=FROM?FROM.id:null;
     const got=(Array.isArray(data.links)?data.links:[]).map(l=>({url:normUrl(l&&typeof l.url==='string'?(/^https?:/i.test(l.url.trim())?l.url.trim():'https://'+l.url.trim()):''),title:clean(l&&l.title,90)})).filter(l=>l.url);
     const ml=links.map(u=>{const g=got.find(x=>x.url===u);return {url:u,title:(g&&g.title)||linkTitle(u),kind:linkKind(u)}});
     got.forEach(g=>{if(!ml.some(m=>m.url===g.url))ml.push({url:g.url,title:g.title||linkTitle(g.url),kind:linkKind(g.url),found:true})});
@@ -1106,7 +1242,7 @@ async function generate(){
     if(code==='not_granted'||code==='sampling_disabled'){sample=null;updateGen()}
   }
 }
-$('#createBack').onclick=()=>{if(GEN)GEN.ctl.abort();renderLib();show('lib')};
+$('#createBack').onclick=()=>{if(GEN)GEN.ctl.abort();FROM=null;renderLib();show('lib')};
 
 /* ---------- Förhandsgranskning ---------- */
 const revOpen=new Set();
@@ -1120,7 +1256,7 @@ function renderReview(){
   $('#revBox').innerHTML=`<h2>Kolla förhöret</h2>
    <label class="field" for="revTitle"><span>Namn</span><input class="inp" id="revTitle" maxlength="60" value="${esc(d.title)}"></label>
    ${d.summary?`<p class="hint">${esc(d.summary)}</p>`:''}
-   <div class="rv-sum"><span class="subj">${SUBJ[d.subject]}</span><span>${d.stations.length} stationer</span><span>${nq} frågor</span><span>${d.flash.length} kort</span>${d.links&&d.links.length?`<span>${d.links.length} länkar</span>`:''}${d.testDate?`<span>${esc(dateLabel(d.testDate))}</span>`:''}</div>
+   <div class="rv-sum"><span class="subj">${SUBJ[d.subject]}</span><span>För ${esc(kidName(d.childId))}</span><span>${d.stations.length} stationer</span><span>${nq} frågor</span><span>${d.flash.length} kort</span>${(d.concepts||[]).length?`<span>${d.concepts.length} klipp</span>`:''}${d.links&&d.links.length?`<span>${d.links.length} länkar</span>`:''}${d.testDate?`<span>${esc(dateLabel(d.testDate))}</span>`:''}</div>
    ${d.notes.length?`<div class="notes"><b>Att dubbelkolla</b><ul>${d.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul></div>`:''}
    ${d.links&&d.links.length?`<div class="field"><span class="lbl">Material att läsa och titta på</span><div class="mats">${d.links.map((l,i)=>`<div class="mat"><span class="mat-th">${svg(l.kind==='video'?'play':'link')}</span><span class="mat-txt"><input class="inp sm" data-lt="${i}" maxlength="90" value="${esc(l.title)}" aria-label="Titel för länk ${i+1}"><small>${esc(hostOf(l.url))}${l.found?' · hittad i läxan, kontrollera adressen':''}</small></span><button class="icon-btn" data-dl="${i}" aria-label="Ta bort länken">${svg('trash')}</button></div>`).join('')}</div></div>`:''}
    <p class="hint">Öppna en station för att se frågorna och svaren. Ta bort det som inte stämmer med läxan.</p>
@@ -1128,32 +1264,42 @@ function renderReview(){
      <ul class="rv-list">${s.qs.map((q,qi)=>`<li class="rv-q"><div><small>${TYPE_LABEL[q.t]}</small><p>${esc(q.q)}</p><div class="ans">${esc(ansText(q))}</div></div><button class="icon-btn" data-dq="${si}:${qi}" aria-label="Ta bort frågan">${svg('trash')}</button></li>`).join('')}</ul></details>`).join('')}
    ${d.flash.length?`<details class="rv" data-si="f" ${revOpen.has('f')?'open':''}><summary><span>Förklara-kort</span><span class="hint">${d.flash.length} kort</span></summary>
      <ul class="rv-list">${d.flash.map((f,fi)=>`<li class="rv-q"><div><small>Kort</small><p>${esc(f.q)}</p><div class="ans">${esc(f.a).replace(/\n/g,'<br>')}</div></div><button class="icon-btn" data-df="${fi}" aria-label="Ta bort kortet">${svg('trash')}</button></li>`).join('')}</ul></details>`:''}
-   <div class="row"><button class="btn" id="saveBtn" ${d.stations.length?'':'disabled'}>Spara och spela</button><button class="btn ghost" id="discardBtn">Kasta</button></div>`;
-  $('#revBox').querySelectorAll('details.rv').forEach(el=>el.addEventListener('toggle',()=>{const k=el.dataset.si==='f'?'f':+el.dataset.si;el.open?revOpen.add(k):revOpen.delete(k)}));
+   ${(d.concepts||[]).length?`<details class="rv" data-si="k" ${revOpen.has('k')?'open':''}><summary><span>Förklaringsklipp</span><span class="hint">${d.concepts.length} klipp</span></summary>
+     <ul class="rv-list">${d.concepts.map((k,ki)=>{const n=d.stations.reduce((a,s)=>a+s.qs.filter(q=>q.c===k.id).length,0);return `<li class="rv-q"><div><small>${n} ${n===1?'fråga':'frågor'}</small><p>${esc(k.name)}</p><div class="ans" style="color:var(--ink);font-weight:600">${esc(k.say)}</div></div><button class="icon-btn" data-play="${ki}" aria-label="Spela klippet ${esc(k.name)}">${svg('play')}</button></li>`}).join('')}</ul></details>`:''}
+   <div class="row">${FROM&&FROM.status==='draft'&&d.fromId===FROM.id
+     ?`<button class="btn" id="saveBtn" ${d.stations.length?'':'disabled'}>Godkänn</button><button class="btn ghost" id="redoBtn">Gör om med mer material</button><button class="btn ghost" id="discardBtn">Tillbaka</button>`
+     :`<button class="btn" id="saveBtn" ${d.stations.length?'':'disabled'}>${d.fromId?'Godkänn':'Spara och spela'}</button><button class="btn ghost" id="discardBtn">Kasta</button>`}</div>`;
+  $('#revBox').querySelectorAll('details.rv').forEach(el=>el.addEventListener('toggle',()=>{const k=['f','k'].includes(el.dataset.si)?el.dataset.si:+el.dataset.si;el.open?revOpen.add(k):revOpen.delete(k)}));
   $('#revTitle').oninput=e=>{DRAFT.title=e.target.value.trim().slice(0,60)};
   $('#saveBtn').onclick=saveDraft;
-  $('#discardBtn').onclick=()=>{DRAFT=null;revOpen.clear();show('create');updateGen()};
+  const fromDraft=FROM&&FROM.status==='draft'&&d.fromId===FROM.id;
+  $('#discardBtn').onclick=()=>{DRAFT=null;revOpen.clear();if(fromDraft){FROM=null;renderLib();show('lib')}else{show('create');updateGen()}};
+  if($('#redoBtn'))$('#redoBtn').onclick=()=>{const f=FROM;DRAFT=null;revOpen.clear();openCreate(f)};
 }
 $('#revBox').addEventListener('click',e=>{
   const dq=e.target.closest('[data-dq]'),df=e.target.closest('[data-df]');
   if(dq){const[si,qi]=dq.dataset.dq.split(':').map(Number);DRAFT.stations[si].qs.splice(qi,1);if(!DRAFT.stations[si].qs.length){DRAFT.stations.splice(si,1);revOpen.clear()}renderReview()}
   if(df){DRAFT.flash.splice(+df.dataset.df,1);renderReview()}
   const dl=e.target.closest('[data-dl]');if(dl){DRAFT.links.splice(+dl.dataset.dl,1);renderReview()}
+  const pl=e.target.closest('[data-play]');if(pl){const k=DRAFT.concepts[+pl.dataset.play];if(k)Explainer.open(k)}
 });
 $('#revBox').addEventListener('input',e=>{const t=e.target.closest('[data-lt]');if(t&&DRAFT.links[+t.dataset.lt])DRAFT.links[+t.dataset.lt].title=t.value.trim().slice(0,90)||linkTitle(DRAFT.links[+t.dataset.lt].url)});
-$('#revBack').onclick=()=>{show('create');updateGen()};
+$('#revBack').onclick=()=>{if(FROM&&FROM.status==='draft'&&DRAFT&&DRAFT.fromId===FROM.id){DRAFT=null;FROM=null;renderLib();show('lib')}else{show('create');updateGen()}};
 async function saveDraft(){
   const b=$('#saveBtn');b.disabled=true;b.textContent='Sparar…';
   const d=DRAFT;
   const doc={v:1,title:d.title||'Ny läxa',subject:d.subject,summary:d.summary,grade:d.grade,testDate:d.testDate,createdAt:Date.now(),
-    stations:d.stations.map((s,i)=>({...s,id:'s'+(i+1)})),flash:d.flash,notes:d.notes,links:(d.links||[]).map(({url,title,kind})=>({url,title,kind}))};
+    stations:d.stations.map((s,i)=>({...s,id:'s'+(i+1)})),flash:d.flash,notes:d.notes,links:(d.links||[]).map(({url,title,kind})=>({url,title,kind})),
+    concepts:d.concepts||[],childId:d.childId||null,fromId:d.fromId||null};
   const r=await Store.add(doc);
-  if(!r){b.disabled=false;b.textContent='Spara och spela';toast('Kunde inte spara läxan. Försök igen.');return}
-  toast('Läxan är sparad');
+  if(!r){b.disabled=false;b.textContent=d.fromId?'Godkänn':'Spara och spela';toast('Kunde inte spara läxan. Försök igen.');return}
   MAT.forEach(it=>it.urls.forEach(u=>URL.revokeObjectURL(u)));MAT=[];renderMat();
   ['#pasteIn','#titleIn','#dateIn','#linksIn'].forEach(s=>$(s).value='');renderLinkChips();$('#subjIn').value='auto';
-  DRAFT=null;revOpen.clear();
-  openQuiz({...doc,id:r.id,localOnly:r.local});
+  DRAFT=null;FROM=null;revOpen.clear();
+  const q=Store.remote.find(x=>x.id===r.id);
+  if(q&&q.childId&&q.childId!==KID){const k=KIDS.find(x=>x.id===q.childId);toast(`Sparad för ${k?k.name:'barnet'}`);renderLib();show('lib');return}
+  toast(d.fromId?'Godkänd. Nu syns läxan för barnet.':'Läxan är sparad');
+  openQuiz(q||{...doc,id:r.id});
 }
 
 /* ---------- Läxans karta ---------- */
@@ -1181,7 +1327,8 @@ function renderHome(){
     <button class="mode" data-mode="rep" ${d?'':'disabled'}>${svg('cycle')}<b>Repetition</b><small>${d?`${d} redo · 2× XP`:nd?`Nästa ${dueLabel(nd)}`:'Spela en station först'}</small></button>
     ${FLASH.length?`<button class="mode" data-mode="cards">${svg('cards')}<b>Förklara-kort</b><small>${kn}/${FLASH.length} kan · med en vuxen</small></button>`:''}
     <button class="mode boss" data-mode="boss" ${allB?'':'disabled'}>${svg(allB?'boss':'lock')}<b>Slutprovet</b><small>${allB?`${Math.min(15,nq)} blandade · 3 liv · 30 sek`:'Låses upp med brons på alla stationer'}</small></button>
-  </div></div>`;
+  </div></div>
+  ${(QZ.concepts||[]).length?`<div class="sect"><h2>Förklaringar</h2><p class="hint" style="margin:0 0 10px">Korta klipp om det viktigaste. De spelas också när du svarar fel.</p><div class="clips">${QZ.concepts.map((k,i)=>`<button class="clip" data-clip="${i}">${svg('play')}${esc(k.name)}</button>`).join('')}</div></div>`:''}`;
   $('#trail').innerHTML=STATIONS.map((s,i)=>{const md=P.medals[s.id]||0,ms=s.qs.filter((_,k)=>{const x=qState(P,qidOf(s,k));return x.box===0&&x.w>0}).length;
     return `<button class="node ${md?'done':''}" data-st="${i}"><span class="dot">${svg(s.icon)}</span><span class="card-n"><span><h3>${esc(s.name)}</h3><small>${s.sub?esc(s.sub)+' · ':''}${s.qs.length} frågor${ms?` · <span class="miss-tag">${ms} ${ms===1?'miss':'missar'}</span>`:''}</small></span><span class="medal m${md}" aria-label="${md?MEDAL[md]:'Ingen medalj än'}">${md?MEDAL[md]:'–'}</span></span></button>`}).join('');
   renderMaterial();
@@ -1199,13 +1346,16 @@ function renderHome(){
     <p class="hint" style="margin-top:8px">Provberedd bygger på hur många gånger varje fråga har gått rätt, och med vilka pauser emellan. En fråga räknas helt när den har gått rätt tre olika dagar.</p>
     ${hard.length?`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Svåraste frågorna</p><ul>${hard.map(x=>`<li>${esc(x.q.q)} <span class="hint">(fel ${x.s.w} ${x.s.w===1?'gång':'gånger'}) Rätt svar: ${esc(ansText(x.q))}</span></li>`).join('')}</ul>`:''}
     ${QZ.notes&&QZ.notes.length?`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Att dubbelkolla</p><ul>${QZ.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}
+    ${(QZ.concepts||[]).length?'':`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Förklaringsklipp</p><p class="hint" style="margin:0 0 8px">Den här läxan har inga klipp än. Claude kan göra dem utifrån frågorna (ungefär en minut).</p><button class="btn small" id="mkClips" ${sample?'':'disabled'}>${svg('play')}Skapa förklaringsklipp</button>`}
    </details>`;
+  const mk=$('#mkClips');if(mk)mk.onclick=makeClips;
   $('#resetBox').innerHTML='<button class="reset" id="resetBtn">Nollställ medaljer, missar och delmål för den här läxan</button>';
   updateHUD();
 }
 function runStep(){if(!NS)return;if(NS.act==='miss')startRound('miss');else if(NS.act==='rep')startRound('rep');else if(NS.act==='st')startRound('station',{si:NS.i});else if(NS.act==='boss')startRound('boss')}
 $('#readyBox').addEventListener('click',e=>{if(e.target.closest('#nextStepBtn'))runStep()});
-$('#modeBox').addEventListener('click',e=>{const b=e.target.closest('[data-mode]');if(!b||b.disabled)return;const m=b.dataset.mode;if(m==='cards')startCards();else startRound(m)});
+$('#modeBox').addEventListener('click',e=>{const c=e.target.closest('[data-clip]');if(c){const k=(QZ.concepts||[])[+c.dataset.clip];if(k)Explainer.open(k);return}
+  const b=e.target.closest('[data-mode]');if(!b||b.disabled)return;const m=b.dataset.mode;if(m==='cards')startCards();else startRound(m)});
 function renderMaterial(){
   const L=(QZ.links||[]).filter(l=>normUrl(l.url));
   if(!L.length){$('#matBox').innerHTML='';return}
@@ -1228,6 +1378,131 @@ $('#resetBox').addEventListener('click',e=>{
   if(e.target.id==='noReset')renderHome();
 });
 $('#homeBack').onclick=()=>{QZ=null;renderLib();show('lib')};
+
+/* ---------- Förklaringsklipp ----------
+   Infofilm-principen i webbläsaren: rösten läser manuset och varje del av grafiken ritas upp
+   exakt när rösten säger sitt ord ("cue"). All text och alla fakta ritas i kod från förhöret.
+   Tid: talsyntesens ordgränser (onboundary) när de finns, annars uppskattad tid per tecken. */
+const Explainer=(()=>{
+  const MS_PER_CHAR=68;            // uppskattat taltempo (svenska, rate 0.95)
+  let K=null,cues=[],words=[],timers=[],tick=null,t0=0,usingBoundary=false,lastChar=-1,done=false,onClose=null,speaking=false;
+  const voiceOn=()=>LS.get('laxmotorn:voice',true)!==false;
+  function svVoice(){
+    if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return null;
+    try{const vs=speechSynthesis.getVoices().filter(v=>/^sv/i.test(v.lang));
+      return vs.find(v=>/natural|neural|google|alva|klara|sofie/i.test(v.name))||vs[0]||null}catch(e){return null}
+  }
+  if('speechSynthesis' in window)try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
+
+  // Ord med teckenpositioner, och var varje cue hamnar i manuset (i ordning).
+  function prepare(k){
+    words=[];const re=/\S+/g;let m;while((m=re.exec(k.say)))words.push({w:m[0],at:m.index});
+    const low=k.say.toLowerCase();let from=0;cues=[];
+    const items=showItems(k.show);
+    items.forEach((it,i)=>{let at=-1;if(it.cue){at=low.indexOf(it.cue.toLowerCase(),from);if(at<0)at=low.indexOf(it.cue.toLowerCase())}if(at>=0)from=at+1;cues.push({i,at})});
+    // Delar utan cue fördelas jämnt mellan grannarna.
+    const total=k.say.length;
+    cues.forEach((c,i)=>{if(c.at>=0)return;const prev=i?cues[i-1].at:Math.round(total*.08);const nx=cues.slice(i+1).find(x=>x.at>=0);const next=nx?nx.at:total;c.at=Math.round(prev+(next-prev)/2);if(c.at<prev)c.at=prev});
+  }
+  function showItems(s){
+    if(s.type==='term')return [{cue:s.cue||s.word},{cue:null,def:true}];
+    if(s.type==='compare'){const out=[];const n=Math.max(s.left.items.length,s.right.items.length);
+      for(let r=0;r<n;r++){if(s.left.items[r])out.push({...s.left.items[r],side:'l',r});if(s.right.items[r])out.push({...s.right.items[r],side:'r',r})}return out}
+    return s.items;
+  }
+
+  // ---------- Ritning (allt i kod, inga bilder) ----------
+  function draw(k){
+    const s=k.show;let h='';
+    if(s.type==='term'){
+      h=`<div class="xp-term"><b class="xp-it" data-i="0">${esc(s.word)}</b>${s.def?`<span class="xp-it" data-i="1">${esc(s.def)}</span>`:''}</div>`;
+    }else if(s.type==='list'){
+      h=`${s.title?`<p class="xp-h">${esc(s.title)}</p>`:''}<ul class="xp-list">${s.items.map((it,i)=>`<li class="xp-it" data-i="${i}"><span class="xp-dot">${svg('check')}</span>${esc(it.t)}</li>`).join('')}</ul>`;
+    }else if(s.type==='steps'){
+      h=`${s.title?`<p class="xp-h">${esc(s.title)}</p>`:''}<ol class="xp-steps">${s.items.map((it,i)=>`<li class="xp-it" data-i="${i}">${i?'<i class="xp-arrow" aria-hidden="true">→</i>':''}<span><em>${i+1}</em>${esc(it.t)}</span></li>`).join('')}</ol>`;
+    }else if(s.type==='cycle'){
+      const n=s.items.length,R=118,cx=170,cy=150;
+      const pts=s.items.map((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;return [cx+R*Math.cos(a),cy+R*Math.sin(a)]});
+      const arcs=pts.map((p,i)=>{const q=pts[(i+1)%n];const a1=Math.atan2(p[1]-cy,p[0]-cx)+.42,a2=Math.atan2(q[1]-cy,q[0]-cx)-.42;
+        const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
+        return `<path class="xp-it xp-arc" data-i="${(i+1)%n}" d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" marker-end="url(#xpHead)"/>`}).join('');
+      h=`${s.title?`<p class="xp-h">${esc(s.title)}</p>`:''}<div class="xp-cyc"><svg viewBox="0 0 340 300" aria-hidden="true"><defs><marker id="xpHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>${arcs}</svg>
+        ${s.items.map((it,i)=>`<span class="xp-it xp-node" data-i="${i}" style="left:${(pts[i][0]/340*100).toFixed(1)}%;top:${(pts[i][1]/300*100).toFixed(1)}%">${esc(it.t)}</span>`).join('')}</div>`;
+    }else if(s.type==='compare'){
+      const col=(side,x)=>`<div class="xp-col"><p class="xp-h">${esc(x.title)}</p><ul>${x.items.map(it=>{const i=showItems(s).findIndex(o=>o.side===side&&o.t===it.t);return `<li class="xp-it" data-i="${i}">${esc(it.t)}</li>`}).join('')}</ul></div>`;
+      h=`<div class="xp-cmp">${col("l",s.left)}<span class="xp-vs">vs</span>${col("r",s.right)}</div>`;
+    }
+    $('#xpWin').innerHTML=h;
+  }
+  function reveal(upto){
+    cues.forEach(c=>{if(c.at<=upto){const el=$('#xpWin').querySelectorAll(`.xp-it[data-i="${c.i}"]`);el.forEach(e=>{if(!e.classList.contains('on')){e.classList.add('on');if(e.classList.contains('xp-node')||e.tagName==='LI'||e.tagName==='B')e.classList.add('pop')}})}});
+    const wi=words.findIndex((w,i)=>upto>=w.at&&(i===words.length-1||upto<words[i+1].at));
+    caption(wi);
+    $('#xpBar').style.width=Math.min(100,upto/Math.max(1,K.say.length)*100)+'%';
+  }
+  // Undertext: meningen som läses, med ordet som sägs markerat.
+  function caption(wi){
+    if(wi<0){return}
+    const say=K.say,pos=words[wi].at;
+    const starts=[0];say.replace(/[.!?]\s+/g,(m,o)=>{starts.push(o+m.length);return m});
+    let s0=0;starts.forEach(s=>{if(s<=pos)s0=s});const s1=starts.find(s=>s>pos)??say.length;
+    const sw=words.filter(w=>w.at>=s0&&w.at<s1);
+    $('#xpCap').innerHTML=sw.map(w=>`<span class="${w.at===pos?'now':w.at<pos?'past':''}">${esc(w.w)}</span>`).join(' ');
+  }
+  function clear(){timers.forEach(clearTimeout);timers=[];clearInterval(tick);tick=null;if('speechSynthesis' in window&&speaking){try{speechSynthesis.cancel()}catch(e){}}speaking=false}
+  function finish(){if(done)return;done=true;clear();reveal(K.say.length);$('#xpBar').style.width='100%';$('#xpOv').classList.add('end');$('#xpGo').focus({preventScroll:true})}
+  function runTimer(fromChar){
+    usingBoundary=false;clearInterval(tick);
+    const start=Date.now()-fromChar*MS_PER_CHAR;
+    tick=setInterval(()=>{const c=Math.floor((Date.now()-start)/MS_PER_CHAR);reveal(c);if(c>=K.say.length+8)finish()},60);
+  }
+  function play(){
+    clear();done=false;lastChar=-1;$('#xpOv').classList.remove('end');
+    $('#xpWin').querySelectorAll('.xp-it').forEach(e=>e.classList.remove('on','pop'));$('#xpBar').style.width='0%';
+    const v=voiceOn()?svVoice():null;
+    $('#xpNote').textContent=voiceOn()&&!v?'Ingen svensk röst på den här enheten. Läs texten.':'';
+    $('#xpMute').innerHTML=svg(voiceOn()?'music':'x')+(voiceOn()?'Ljud på':'Ljud av');
+    t0=Date.now();
+    if(!v){timers.push(setTimeout(()=>runTimer(0),500));return}
+    const u=new SpeechSynthesisUtterance(K.say);u.voice=v;u.lang=v.lang;u.rate=.95;u.pitch=1.05;
+    u.onboundary=e=>{if(e.name&&e.name!=='word')return;if(!usingBoundary){usingBoundary=true;clearInterval(tick)}lastChar=e.charIndex;reveal(e.charIndex)};
+    u.onend=()=>{speaking=false;finish()};
+    u.onerror=()=>{speaking=false;if(!done)runTimer(Math.max(0,lastChar))};
+    speaking=true;try{speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){speaking=false;runTimer(0);return}
+    // Inga ordgränser inom 1,2 s: kör på uppskattad tid (rösten fortsätter ändå).
+    timers.push(setTimeout(()=>{if(!usingBoundary&&!done)runTimer(Math.max(0,Math.floor((Date.now()-t0-300)/MS_PER_CHAR)))},1200));
+    // Säkerhet om onend aldrig kommer.
+    timers.push(setTimeout(()=>{if(!done)finish()},K.say.length*MS_PER_CHAR*1.8+4000));
+  }
+  function open(k,opt={}){
+    K=k;onClose=opt.onClose||null;prepare(k);
+    $('#xpTitle').textContent=k.name;$('#xpIc').innerHTML=svg(k.icon);$('#xpCap').textContent='';
+    draw(k);$('#xpOv').hidden=false;document.body.style.overflow='hidden';
+    play();$('#xpGo').focus({preventScroll:true});
+  }
+  function close(){clear();$('#xpOv').hidden=true;document.body.style.overflow='';const f=onClose;onClose=null;K=null;if(f)f()}
+  $('#xpAgain').onclick=()=>play();
+  $('#xpGo').onclick=close;
+  $('#xpMute').onclick=()=>{LS.set('laxmotorn:voice',!voiceOn());play()};
+  $('#xpOv').addEventListener('keydown',e=>{if(e.key==='Escape')close()});
+  return {open,close,isOpen:()=>!$('#xpOv').hidden};
+})();
+// Förklaringsklipp till en läxa som saknar dem (äldre läxor).
+async function makeClips(){
+  const b=$('#mkClips'),qz=QZ;if(!b||!sample||!qz)return;
+  b.disabled=true;b.textContent='Claude gör klippen…';
+  try{
+    const data=await sample.json({action:'concepts',grade:qz.grade||(KIDS.find(k=>k.id===KID)||{}).grade||4,quiz:{title:qz.title,stations:qz.stations,flash:qz.flash||[]}},{});
+    const concepts=cleanConcepts(data.concepts),ids=new Set(concepts.map(k=>k.id)),map=data.map||{};
+    if(!concepts.length)throw {code:'bad_shape'};
+    const stations=qz.stations.map((s,si)=>({...s,qs:s.qs.map((q,qi)=>{const c=map[`${si}.${qi}`];return ids.has(c)?{...q,c}:q})}));
+    const q=await Store.patch(qz.id,{content:{stations,flash:qz.flash||[],notes:qz.notes||[],links:qz.links||[],concepts}});
+    if(!q)throw {code:'save'};
+    if(QZ&&QZ.id===q.id){QZ=q;STATIONS=q.stations;FLASH=q.flash||[];renderHome()}
+    toast(`${concepts.length} förklaringsklipp klara`);
+  }catch(e){toast(e&&e.code==='save'?'Kunde inte spara klippen.':(ERR[e&&e.code]||'Kunde inte skapa klippen. Försök igen.'));if($('#mkClips')){$('#mkClips').disabled=false;$('#mkClips').innerHTML=svg('play')+'Skapa förklaringsklipp'}}
+}
+const conceptOf=(qz,q)=>q&&q.c&&qz&&Array.isArray(qz.concepts)?qz.concepts.find(k=>k.id===q.c)||null:null;
 
 /* ---------- Rundor ---------- */
 let R=null;
@@ -1368,15 +1643,29 @@ function answer(ok,extra=''){
   if(ok)R.kinds[g.kind]=(R.kinds[g.kind]||0)+1;
   markDay();if(pts>0){R.xp+=pts;addXP(pts)}
   if(G.fixed>=10)award('fix10');if(G.reviews>=25)award('rev25');
-  const requeue=!ok&&!it.second&&!R.boss;if(requeue)R.items.push({...it,second:true});
+  // Fel svar: kommer tillbaka i slutet, helst som en annan fråga om samma begrepp.
+  const qzo=it.qzObj||QZ,kc=!ok?conceptOf(qzo,q):null;
+  const requeue=!ok&&!it.second&&!R.boss;let sib=null;
+  if(requeue){
+    // Syskonfrågor som redan väntar längre fram i rundan räknas inte; då kommer samma fråga igen.
+    if(q.c){const used=new Set([it.ref.qid,...R.items.slice(R.i+1).map(x=>x.ref.qid)]);const pool=allQ(qzo).filter(x=>x.q.c===q.c&&!used.has(x.qid));if(pool.length)sib=pool[Math.floor(Math.random()*pool.length)]}
+    R.items.push(sib?{q:sib.q,ref:{qz:qzo.id,qid:sib.qid},qzObj:qzo,second:true,sib:true}:{...it,second:true});
+  }
   renderStreak();$('#lives').textContent='♥'.repeat(Math.max(R.lives,0))+'♡'.repeat(3-Math.max(R.lives,0));
   const last=R.i===R.items.length-1||(R.boss&&R.lives<=0);
   const head=ok?(KIND_HEAD[g.kind]||CHEERS[Math.floor(Math.random()*CHEERS.length)]):'Inte riktigt';
-  const sub=ok?(KIND_SUB[g.kind]||''):(requeue?'Frågan kommer tillbaka i slutet av rundan.':'');
-  $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span>${pts>0?`<span class="pts">+${pts} XP</span>`:''}</h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${last?'Se resultat':'Nästa fråga →'}</button></div></div>`;
+  const sub=ok?(KIND_SUB[g.kind]||''):(requeue?(sib?'En liknande fråga kommer i slutet av rundan.':'Frågan kommer tillbaka i slutet av rundan.'):'');
+  const nextLast=R.i===R.items.length-1||(R.boss&&R.lives<=0);
+  $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span>${pts>0?`<span class="pts">+${pts} XP</span>`:''}</h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${nextLast?'Se resultat':'Nästa fråga →'}</button>${kc?`<button class="btn ghost" id="xpBtn">${svg('play')}Förklaring: ${esc(kc.name)}</button>`:''}</div></div>`;
   $('#nextBtn').focus({preventScroll:true});
   $('#feedback').scrollIntoView({behavior:'smooth',block:'nearest'});
-  $('#nextBtn').onclick=()=>{if(last)finish();else{R.i++;renderQ()}};
+  $('#nextBtn').onclick=()=>{if(nextLast)finish();else{R.i++;renderQ()}};
+  if(kc){
+    $('#xpBtn').onclick=()=>Explainer.open(kc,{onClose:()=>$('#nextBtn').focus({preventScroll:true})});
+    // Första missen på ett begrepp i rundan: klippet startar direkt (inte i slutprovet).
+    R.seenK=R.seenK||new Set();
+    if(!R.boss&&!R.seenK.has(kc.id)&&!extra.includes('Tiden tog slut')){R.seenK.add(kc.id);Explainer.open(kc,{onClose:()=>$('#nextBtn').focus({preventScroll:true})})}
+  }
 }
 function finish(){
   clearInterval(R.tick);
@@ -1487,7 +1776,7 @@ async function afterLogin(){
   if(hm.length)HH=hm[0].household_id;
   else{const r=await sb.rpc('create_household',{hh_name:'Familjen'});if(r.error){$('#loadMsg').textContent='Kunde inte skapa familjen. Ladda om sidan.';return}HH=r.data}
   sample=makeSample();imgLimits={maxCount:20};canWrite=true;booted=true;
-  const [k]=await Promise.all([sb.from('children').select('id,name,grade,stats').order('created_at'),Store.load()]);
+  const [k]=await Promise.all([sb.from('children').select('id,name,grade,stats,class_codes').order('created_at'),Store.load()]);
   KIDS=k.error?[]:k.data;
   const saved=LS.get('laxmotorn:kid',null);
   const pick=KIDS.find(x=>x.id===saved)||(KIDS.length===1?KIDS[0]:null);
@@ -1498,15 +1787,30 @@ function showKids(){
     return `<button class="qz kid ${k.id===KID?'cur':''}" data-kid="${esc(k.id)}"><span class="qz-main"><span class="lvl">${L}</span><span class="qz-txt"><h3>${esc(k.name)}</h3><small>Årskurs ${k.grade} · ${esc(levelName(L))}</small></span></span></button>`}).join('')
     :'<div class="empty">Lägg till barnen som ska öva.</div>';
   $('#kidsBack').hidden=!KID;
+  $('#codeList').innerHTML=KIDS.map(k=>`<label class="mat" style="padding:8px 12px"><span class="mat-txt"><b>${esc(k.name)}</b><input class="inp sm" data-codes="${esc(k.id)}" value="${esc((k.class_codes||[]).join(', '))}" placeholder="t.ex. RG16C" aria-label="Klasskoder för ${esc(k.name)}"></span></label>`).join('');
   show('kids');
 }
+$('#codeList').addEventListener('change',async e=>{
+  const i=e.target.closest('[data-codes]');if(!i)return;
+  const codes=[...new Set(i.value.split(/[,\s]+/).map(s=>s.trim().toUpperCase()).filter(Boolean))].slice(0,10);
+  const {error}=await sb.from('children').update({class_codes:codes}).eq('id',i.dataset.codes);
+  if(error){toast('Kunde inte spara klasskoderna.');return}
+  const k=KIDS.find(x=>x.id===i.dataset.codes);if(k)k.class_codes=codes;i.value=codes.join(', ');toast('Klasskoderna är sparade');
+});
+$('#tokenBtn').onclick=async()=>{
+  const b=$('#tokenBtn');
+  if(b.dataset.tok){try{await navigator.clipboard.writeText(b.dataset.tok);toast('Nyckeln är kopierad')}catch(e){toast('Markera och kopiera nyckeln')}return}
+  const {data,error}=await sb.from('households').select('ingest_token').eq('id',HH).single();
+  if(error||!data){toast('Kunde inte hämta nyckeln.');return}
+  b.dataset.tok=data.ingest_token;$('#tokenOut').textContent=data.ingest_token;b.textContent='Kopiera';
+};
 $('#kidList').addEventListener('click',e=>{const b=e.target.closest('[data-kid]');if(b)selectKid(b.dataset.kid)});
 $('#kidsBack').onclick=()=>{renderLib();show('lib')};
 $('#switchKid').onclick=()=>{flush();showKids()};
 $('#kidForm').addEventListener('submit',async e=>{
   e.preventDefault();const name=$('#kidName').value.trim(),grade=+$('#kidGrade').value;if(!name)return;
   const b=$('#kidAdd');b.disabled=true;
-  const {data,error}=await sb.from('children').insert({household_id:HH,name:name.slice(0,40),grade}).select('id,name,grade,stats').single();
+  const {data,error}=await sb.from('children').insert({household_id:HH,name:name.slice(0,40),grade}).select('id,name,grade,stats,class_codes').single();
   b.disabled=false;
   if(error){toast('Kunde inte lägga till barnet.');return}
   KIDS.push(data);$('#kidName').value='';showKids();
