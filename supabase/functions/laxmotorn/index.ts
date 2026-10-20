@@ -106,15 +106,16 @@ async function ingest(hh: { id: string }, m: Any) {
   const sent = typeof m?.date === "string" && !isNaN(Date.parse(m.date)) ? new Date(m.date) : new Date();
   if (!id || !body) return fail(400, "bad_request");
 
-  const { data: done } = await admin.from("mail_imports").select("message_id").eq("household_id", hh.id).eq("message_id", id).maybeSingle();
-  if (done) return json({ skipped: "already_imported", items: [] });
+  // Mejl som tidigare saknade barn läses om (t.ex. när ett barn eller en klasskod har lagts till).
+  const { data: done } = await admin.from("mail_imports").select("message_id,result").eq("household_id", hh.id).eq("message_id", id).maybeSingle();
+  if (done && done.result?.skipped !== "no_child") return json({ skipped: "already_imported", items: [] });
 
   const { data: kids } = await admin.from("children").select("id,name,grade,class_codes,languages").eq("household_id", hh.id);
   const hay = (subject + "\n" + body.slice(0, 600)).toUpperCase();
   const child = (kids ?? []).find((k: Any) => (k.class_codes ?? []).some((c: string) => c && hay.includes(c.toUpperCase())));
   const log = (result: unknown, childId: string | null = null) =>
-    admin.from("mail_imports").insert({ household_id: hh.id, message_id: id, received_at: sent.toISOString(), subject, child_id: childId, result });
-  if (!child) { await log({ skipped: "no_child" }); return json({ skipped: "no_child", items: [] }); }
+    admin.from("mail_imports").upsert({ household_id: hh.id, message_id: id, received_at: sent.toISOString(), subject, child_id: childId, result });
+  if (!child) { if (!done) await log({ skipped: "no_child" }); return json({ skipped: done ? "already_imported" : "no_child", items: [] }); }
 
   const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" });
   const prompt = mailPrompt({

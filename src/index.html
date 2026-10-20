@@ -845,7 +845,7 @@ const Store={db:true,remote:[],ready:false,
   // Det barnet ser: godkända läxor för barnet eller för alla.
   all(){return this.remote.filter(q=>q.status==='ready'&&(!q.childId||q.childId===KID))},
   // Vuxnas inkorg: kommande prov från skolmejl och förslag som väntar på godkännande.
-  inbox(){return this.remote.filter(q=>q.status!=='ready')},
+  inbox(){return this.remote.filter(q=>q.status==='pending'||q.status==='draft')},
   async load(){
     const {data,error}=await sb.from('quizzes').select(QZ_COLS).order('created_at',{ascending:false});
     if(error)toast('Kunde inte hämta läxorna.');else this.remote=data.map(rowToQuiz);
@@ -968,14 +968,14 @@ function renderInbox(){
       return `<div class="qz inb ${st.cls}" data-subj="${subj}"><button class="qz-main" data-inb="${esc(q.id)}"><span class="qz-ic">${svg(SUBJ_ICON[subj])}</span><span class="qz-txt">
         <span class="qz-meta"><span class="subj">${SUBJ[subj]}</span><span>${esc(kidName(q.childId))}</span>${whenLabel(q)?`<span>${esc(whenLabel(q))}</span>`:''}</span>
         <h3>${esc(q.title)}</h3><small class="st">${esc(st.label)}</small></span></button>
-        <span class="qz-side"><button class="icon-btn" data-inbdel="${esc(q.id)}" aria-label="Ta bort ${esc(q.title)}">${svg('x')}</button></span></div>`}).join('')}</div></details>`;
+        <span class="qz-side"><button class="icon-btn" data-inbdel="${esc(q.id)}" aria-label="Avfärda ${esc(q.title)}" title="Avfärda">${svg('x')}</button></span></div>`}).join('')}</div></details>`;
   box.querySelector('details').addEventListener('toggle',e=>{inboxOpen=e.target.open;LS.set('laxmotorn:inboxOpen',inboxOpen)});
   clearTimeout(pollT);
   if(list.some(q=>inboxState(q).cls==='busy'))pollT=setTimeout(async()=>{if($('#lib').hidden)return;await Store.load();renderLib()},20000);
 }
 $('#inboxBox').addEventListener('click',async e=>{
   const o=e.target.closest('[data-inb]'),d=e.target.closest('[data-inbdel]');
-  if(d){const q=Store.remote.find(x=>x.id===d.dataset.inbdel);if(q&&await Store.remove(q))toast('Borttagen');renderLib();return}
+  if(d){const q=await Store.patch(d.dataset.inbdel,{status:'dismissed'});toast(q?'Avfärdad. Den kommer inte tillbaka från nya mejl.':'Kunde inte avfärda. Försök igen.');renderLib();return}
   if(!o)return;const q=Store.remote.find(x=>x.id===o.dataset.inb);if(!q)return;
   if(q.status==='draft'){
     FROM=q;DRAFT={title:q.title,subject:q.subject,summary:q.summary,stations:q.stations||[],flash:q.flash||[],notes:q.notes||[],links:q.links||[],concepts:q.concepts||[],
