@@ -7,6 +7,10 @@
 //   {action:"concepts", grade, quiz:{title,stations,flash}}    förklaringsklipp till ett befintligt förhör
 // Fel: JSON {code} med status ≥ 400, eller "\n\u0000ERR:<code>" sist i strömmen.
 //
+// Barnkonton (JSON):
+//   {action:"kid_account", child_id, username, password}  förälder skapar eller ändrar barnets inloggning
+//   {action:"kid_login", username, password}              barnet loggar in; svarar med session
+//
 // Apps Script (body.token = households.ingest_token), svarar JSON:
 //   {action:"ping", token}
 //   {action:"ingest", token, message:{id, subject, date, body}}  Unikum-mejl → kommande prov hos rätt barn
@@ -99,6 +103,66 @@ const LANGS: Record<string, string[]> = {
 
 const str = (v: unknown, m: number) => (typeof v === "string" ? v.replace(/\s+/g, " ").trim().slice(0, m) : "");
 const slug = (s: string) => s.toLowerCase().normalize("NFKD").replace(/[^a-z0-9åäö]+/g, "-").replace(/^-|-$/g, "").slice(0, 40);
+
+// ---------- Barnkonton ----------
+// Barnet loggar in med användarnamn. Bakom finns ett vanligt konto med förälderns e-post plus en tagg
+// (förälder+lm-namn@...), så att eventuella mejl från inloggningen hamnar hos föräldern.
+const USERNAME = /^[a-z0-9][a-z0-9._-]{2,29}$/;
+const normUser = (s: unknown) => (typeof s === "string" ? s.trim().toLowerCase().normalize("NFKD").replace(/[\u0300-\u036f]/g, "") : "");
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
+async function kidAccount(parent: { user: Any; email: string }, b: Any) {
+  const childId = typeof b.child_id === "string" && UUID.test(b.child_id) ? b.child_id : "";
+  const username = normUser(b.username), password = typeof b.password === "string" ? b.password : "";
+  if (!childId || !USERNAME.test(username)) return fail(400, "bad_username");
+  if (password.length < 6 || password.length > 72) return fail(400, "bad_password");
+  const { data: kid } = await admin.from("children").select("id,name,household_id").eq("id", childId).maybeSingle();
+  if (!kid) return fail(404, "not_found");
+  const { count } = await admin.from("household_members").select("user_id", { count: "exact", head: true })
+    .eq("household_id", kid.household_id).eq("user_id", parent.user.id).in("role", ["owner", "parent"]);
+  if (!count) return fail(403, "not_parent");
+
+  const { data: taken } = await admin.from("kid_logins").select("child_id").eq("username", username).maybeSingle();
+  if (taken && taken.child_id !== childId) return fail(409, "username_taken");
+  const { data: existing } = await admin.from("kid_logins").select("user_id,username").eq("child_id", childId).maybeSingle();
+
+  if (existing) {
+    const { error } = await admin.auth.admin.updateUserById(existing.user_id, { password });
+    if (error) { console.error(error); return fail(400, "bad_password"); }
+    if (existing.username !== username) await admin.from("kid_logins").update({ username }).eq("child_id", childId);
+    return json({ ok: true, username, created: false });
+  }
+
+  const [local, domain] = parent.email.split("@");
+  const email = `${local.split("+")[0]}+lm-${username}@${domain}`;
+  const { data: created, error } = await admin.auth.admin.createUser({
+    email, password, email_confirm: true, user_metadata: { role: "child", child_id: childId, username },
+  });
+  if (error || !created?.user) { console.error(error); return fail(400, /already/i.test(error?.message ?? "") ? "username_taken" : "create_failed"); }
+  const uid = created.user.id;
+  const m = await admin.from("household_members").insert({ household_id: kid.household_id, user_id: uid, role: "child", child_id: childId });
+  const l = m.error ? m : await admin.from("kid_logins").insert({ username, user_id: uid, child_id: childId, household_id: kid.household_id });
+  if (m.error || l.error) {
+    console.error(m.error ?? l.error);
+    await admin.auth.admin.deleteUser(uid);
+    return fail(500, "create_failed");
+  }
+  return json({ ok: true, username, created: true });
+}
+
+async function kidLogin(b: Any) {
+  const username = normUser(b.username), password = typeof b.password === "string" ? b.password : "";
+  const bad = async () => { await sleep(700); return fail(401, "bad_login"); };
+  if (!USERNAME.test(username) || !password) return bad();
+  const { data: row } = await admin.from("kid_logins").select("user_id").eq("username", username).maybeSingle();
+  if (!row) return bad();
+  const { data: u } = await admin.auth.admin.getUserById(row.user_id);
+  if (!u?.user?.email) return bad();
+  const anon = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, { auth: { persistSession: false } });
+  const { data, error } = await anon.auth.signInWithPassword({ email: u.user.email, password });
+  if (error || !data.session) return bad();
+  return json({ access_token: data.session.access_token, refresh_token: data.session.refresh_token });
+}
 
 // ---------- Mejl → kommande prov ----------
 async function ingest(hh: { id: string }, m: Any) {
@@ -242,11 +306,16 @@ Deno.serve(async (req) => {
       return await prepare(hh, body.quiz_id);
     }
 
+    if (action === "kid_login") return await kidLogin(body);
+
     const who = await userAuth(req);
     if (!who) return fail(401, "session_expired");
-    if (!who.allowed) return fail(403, "not_granted");
-    const { count } = await admin.from("household_members").select("user_id", { count: "exact", head: true }).eq("user_id", who.user.id);
+    // Bara föräldrar: barnkonton får aldrig skapa förhör eller konton.
+    const { count } = await admin.from("household_members").select("user_id", { count: "exact", head: true })
+      .eq("user_id", who.user.id).in("role", ["owner", "parent"]);
     if (!count) return fail(403, "no_household");
+    if (action === "kid_account") return await kidAccount(who, body);
+    if (!who.allowed) return fail(403, "not_granted");
 
     const grade = String(Math.min(9, Math.max(1, Number(body.grade) || 4)));
     if (action === "transcribe") {

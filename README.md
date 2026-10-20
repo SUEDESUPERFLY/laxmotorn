@@ -18,6 +18,12 @@ Gamifierat läxförhör: fota läxan, Claude gör ett förhör med stationer, me
 
 Prov och läxförhör hamnar under "Från skolan" hos rätt barn. Räcker mejlet till ett förhör görs ett förslag i bakgrunden; annars visas vad som saknas. Inget syns för barnen förrän en vuxen godkänt det.
 
+## Konton
+
+- **Vuxna** loggar in med e-post och lösenord och har full åtkomst: Från skolan, godkännande, alla barn och översikten.
+- **Barn** loggar in med användarnamn och lösenord som en vuxen skapar under Byt barn → Barnens inloggning. Barnet ser bara sina egna godkända läxor. Spärrarna ligger i databasen (RLS): ett barnkonto kan inte läsa förslag, ändra läxor, se syskons framsteg eller läsa nyckeln till Apps Script.
+- Bakom ett barns användarnamn finns ett vanligt konto med förälderns e-post plus en tagg (`namn+lm-erik@…`).
+
 ## Förklaringsklipp
 
 Varje förhör har begrepp (`content.concepts`) med ett kort talat manus och en kodritad bild (lista, steg, kretslopp, jämförelse eller begrepp). Vid fel svar spelas klippet: talsyntesen läser manuset och varje del av bilden dyker upp när rösten säger sitt ord. Saknas svensk röst används uppskattad tid och texten visas. Efter klippet kommer en liknande fråga om samma begrepp i slutet av rundan.

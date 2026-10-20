@@ -11,6 +11,11 @@ const SHOTS = process.env.SHOTS || '/tmp';
 const log = [], calls = [], fails = [];
 const check = (ok, msg) => { console.log(`  ${ok ? '✓' : '✗'} ${msg}`); if (!ok) fails.push(msg); };
 
+// Låtsad JWT (supabase-js läser exp ur token vid setSession).
+const b64 = (o) => Buffer.from(JSON.stringify(o)).toString('base64url');
+const KIDTOK = `${b64({ alg: 'HS256', typ: 'JWT' })}.${b64({ sub: 'u2', role: 'authenticated', exp: Math.floor(Date.now() / 1000) + 3600, kid: 'kidtok' })}.sig`;
+const kidUser = { id: 'u2', aud: 'authenticated', role: 'authenticated', email: 'test+lm-erik@example.com', app_metadata: {}, user_metadata: { role: 'child' }, created_at: new Date().toISOString() };
+const kidSession = { access_token: 'kidtok', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'kr', user: kidUser };
 const user = { id: 'u1', aud: 'authenticated', role: 'authenticated', email: 'test@example.com', app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
 const session = { access_token: 'tok', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'r', user };
 const stats = () => ({ xp: 0, days: [], badges: [], fixed: 0, reviews: 0 });
@@ -34,7 +39,8 @@ const quizJson = (title) => ({
 const oldQuiz = { stations: quizJson('x').stations.map((s) => ({ ...s, id: 's1', qs: s.qs.map(({ c, ...q }) => q) })), flash: [], notes: [], links: [] };
 
 const db = {
-  members: [{ household_id: 'hh1' }],
+  members: [{ household_id: 'hh1', user_id: 'u1', role: 'owner', child_id: null }],
+  logins: [],
   households: [{ id: 'hh1', name: 'Familjen', ingest_token: '11111111-2222-3333-4444-555555555555' }],
   children: [
     { id: 'k1', household_id: 'hh1', name: 'Isabelle', grade: 6, stats: stats(), class_codes: ['RG14A', 'RG14/'], created_at: now },
@@ -90,27 +96,42 @@ await page.route('**/*', async (route) => {
   if (method === 'OPTIONS') return route.fulfill({ status: 200, headers: { 'access-control-allow-origin': '*', 'access-control-allow-headers': '*', 'access-control-allow-methods': '*' } });
   const single = (req.headers()['accept'] || '').includes('vnd.pgrst.object');
   const eq = (k) => (url.searchParams.get(k) || '').replace(/^eq\./, '');
+  const isKid = (req.headers()['authorization'] || '').includes(KIDTOK.split('.')[1]);
+  const kidMember = db.members.find((m) => m.user_id === 'u2');
   if (p === '/auth/v1/token') return json(session);
-  if (p === '/auth/v1/user') return json(user);
+  if (p === '/auth/v1/user') return json(isKid ? kidUser : user);
   if (p === '/auth/v1/logout') return route.fulfill({ status: 204 });
-  if (p === '/rest/v1/household_members') return json(db.members);
+  if (p === '/rest/v1/household_members') return json(db.members.filter((m) => !eq('user_id') || m.user_id === eq('user_id')));
+  if (p === '/rest/v1/rpc/get_ingest_token') return json(isKid ? null : db.households[0].ingest_token);
+  if (p === '/rest/v1/kid_logins') return json(isKid ? [] : db.logins.map((l) => ({ child_id: l.child_id, username: l.username })));
   if (p === '/rest/v1/households') { const h = db.households.find((x) => x.id === eq('id')); return json(single ? h : [h]); }
   if (p === '/rest/v1/children') {
-    if (method === 'GET') return json(db.children);
+    if (method === 'GET') return json(isKid ? db.children.filter((c) => c.id === kidMember?.child_id) : db.children);
     if (method === 'PATCH') { const k = db.children.find((c) => c.id === eq('id')); Object.assign(k, req.postDataJSON()); return route.fulfill({ status: 204 }); }
   }
   if (p === '/rest/v1/quizzes') {
-    if (method === 'GET') return json(db.quizzes.map((q) => ({ ...q, content: JSON.parse(JSON.stringify(q.content)) })));
+    if (method === 'GET') return json(db.quizzes.filter((q) => !isKid || (q.status === 'ready' && (!q.child_id || q.child_id === kidMember?.child_id))).map((q) => ({ ...q, content: JSON.parse(JSON.stringify(q.content)) })));
     if (method === 'POST') { const r = { id: 'q' + (db.quizzes.length + 1), created_at: now, ...req.postDataJSON() }; db.quizzes.unshift(r); return json(single ? r : [r], 201); }
     if (method === 'PATCH') { const q = db.quizzes.find((x) => x.id === eq('id')); Object.assign(q, req.postDataJSON()); return json(single ? q : [q]); }
     if (method === 'DELETE') { db.quizzes = db.quizzes.filter((q) => q.id !== eq('id')); return route.fulfill({ status: 204 }); }
   }
   if (p === '/rest/v1/progress') {
-    if (method === 'GET') return json(Object.values(db.progress).filter((r) => r.child_id === eq('child_id')));
+    if (method === 'GET') return json(Object.values(db.progress).filter((r) => !eq('child_id') || r.child_id === eq('child_id')).map((r) => ({ ...r, updated_at: now })));
     if (method === 'POST') { for (const r of [].concat(req.postDataJSON())) db.progress[r.child_id + '/' + r.quiz_id] = r; return route.fulfill({ status: 201 }); }
   }
   if (p === '/functions/v1/laxmotorn') {
     const b = req.postDataJSON();
+    if (b.action === 'kid_login') {
+      const l = db.logins.find((x) => x.username === b.username && x.password === b.password);
+      return l ? json({ access_token: KIDTOK, refresh_token: 'kr' }) : json({ code: 'bad_login' }, 401);
+    }
+    if (b.action === 'kid_account') {
+      if (isKid) return json({ code: 'no_household' }, 403);
+      if (b.password.length < 6) return json({ code: 'bad_password' }, 400);
+      db.logins = db.logins.filter((x) => x.child_id !== b.child_id).concat({ child_id: b.child_id, username: b.username, password: b.password });
+      if (!db.members.some((m) => m.user_id === 'u2')) db.members.push({ household_id: 'hh1', user_id: 'u2', role: 'child', child_id: b.child_id });
+      return json({ ok: true, username: b.username, created: true });
+    }
     calls.push(`  action=${b.action} ${b.text ? `text=${b.text.length} tecken` : ''} grade=${b.grade ?? ''}`);
     if (!req.headers()['authorization']?.startsWith('Bearer ')) return json({ code: 'session_expired' }, 401);
     if ('prompt' in b) return json({ code: 'unknown_action' }, 400);
@@ -242,6 +263,53 @@ await page.click('[data-kid="k1"]');
 await page.waitForSelector('#lib:not([hidden])');
 const titles = await page.locator('#libList h3').allTextContents();
 check(titles.includes('Lag och rätt') && !titles.includes('Skogen'), `Isabelle ser sin läxa men inte Eriks (${titles.join(', ')})`);
+
+step('översikt för vuxna');
+await page.click('#overviewBtn');
+await page.waitForSelector('#overview:not([hidden]) .ov');
+const ov = await page.textContent('#ovBox');
+check(/Erik/.test(ov) && /Isabelle/.test(ov) && /Skogen/.test(ov), 'översikten visar barnen och deras läxor');
+check(/Lag och rätt/.test(ov) && /Behöver öva inför provet/.test(ov), 'prov inom tre dagar med låg beredskap flaggas');
+await shot('e2e-7-overview');
+await page.click('#ovBack');
+
+step('skapa inloggning för Erik');
+await page.click('#switchKid');
+await page.waitForSelector('#kids:not([hidden])');
+check(await page.evaluate(() => document.querySelector('#loginSetup').open), 'inloggningsrutan är öppen när barn saknar inloggning');
+check(await page.inputValue('[data-login="k2"] [name="u"]') === 'erik', 'användarnamnet föreslås från namnet');
+await page.fill('[data-login="k2"] [name="p"]', 'abc');
+await page.click('[data-login="k2"] button');
+await page.waitForTimeout(200);
+check(!db.logins.length, 'för kort lösenord stoppas');
+await page.fill('[data-login="k2"] [name="p"]', 'drake77');
+await page.click('[data-login="k2"] button');
+await page.waitForSelector('[data-login="k2"] >> text=loggar in som erik');
+check(db.logins[0]?.username === 'erik', 'inloggningen skapas');
+await shot('e2e-8-logins');
+
+step('Erik loggar in själv');
+await page.click('[data-kid="k2"]');
+await page.click('#logoutBtn');
+await page.waitForSelector('#auth:not([hidden])');
+await page.fill('#authEmail', 'erik');
+await page.fill('#authPass', 'fel');
+await page.click('#loginBtn');
+await page.waitForSelector('#authMsg >> text=Fel användarnamn');
+check(true, 'fel lösenord ger felmeddelande');
+await page.fill('#authPass', 'drake77');
+await page.click('#loginBtn');
+await page.waitForSelector('#lib:not([hidden])');
+check(await page.textContent('#kidNow') === 'Erik' && (await page.textContent('#kidLabel')) === 'Hej', 'barnet hälsas med namn');
+check(!(await vis('#newBtn')) && !(await vis('#switchKid')) && !(await vis('#overviewBtn')), 'Ny läxa, Byt barn och Översikt är dolda');
+check((await page.locator('#inboxBox .qz').count()) === 0, 'Från skolan syns inte');
+check((await page.locator('#libList [data-del]').count()) === 0, 'barnet kan inte ta bort läxor');
+const kidTitles = await page.locator('#libList h3').allTextContents();
+check(kidTitles.includes('Skogen') && !kidTitles.includes('Lag och rätt'), `barnet ser bara sina läxor (${kidTitles.join(', ')})`);
+await page.click('[data-open="qPend"]');
+await page.waitForSelector('#home:not([hidden])');
+check(!(await vis('#adultBox details.adult-only')) && !(await vis('#resetBtn')), 'vuxendelar på läxsidan är dolda');
+await shot('e2e-9-kid');
 
 console.log('\nAnrop till servern:\n' + calls.filter((c) => /laxmotorn|action/.test(c)).join('\n'));
 console.log('\nKonsolfel:\n' + (log.filter((l) => !/ERR_FAILED|404/.test(l)).join('\n') || '(inga)'));

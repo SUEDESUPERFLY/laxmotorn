@@ -352,6 +352,21 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .qz.inb.busy .st{color:var(--moss)}
 .qz.inb.need .st{color:var(--muted)}
 .qz.inb.wait .st{color:var(--moss)}
+.kidmode .adult-only{display:none!important}
+.ov{gap:12px}
+.ov-head{display:flex;gap:12px;align-items:center}
+.ov-head h2{font-size:22px}
+.ov-head small{color:var(--muted);font-weight:700;font-size:13px;display:inline-flex;gap:4px;align-items:center;flex-wrap:wrap}
+.ov-head small svg{width:14px;height:14px;color:var(--lingon)}
+.ov-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+.ov-list li{display:grid;grid-template-columns:1fr auto;gap:4px 12px;background:var(--surface2);border:2px solid var(--line);border-radius:14px;padding:10px 12px}
+.ov-list li.warn{border-color:var(--lingon);background:var(--lingon-soft)}
+.ov-t{display:flex;gap:8px;align-items:baseline;flex-wrap:wrap;min-width:0}
+.ov-t b{font-size:16px;overflow-wrap:anywhere}
+.ov-t small{color:var(--muted);font-weight:700;font-size:13px}
+.ov-t .subj{background:var(--moss)}
+.ov-r{display:flex;align-items:center;gap:8px;font-variant-numeric:tabular-nums}
+.ov-s{grid-column:1/-1;color:var(--muted);font-weight:600;font-size:13px}
 .kidbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700;color:var(--muted)}
 .kidbar b{color:var(--ink)}
 .qz.kid{width:100%;text-align:left;padding:0}
@@ -416,11 +431,11 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
   <!-- INLOGGNING -->
   <section id="auth" class="wrap" hidden>
     <div class="panel">
-      <div class="intro"><h1>Läxmotorn</h1><p>Logga in för att se familjens läxor.</p></div>
+      <div class="intro"><h1>Läxmotorn</h1><p>Barn loggar in med sitt användarnamn. Vuxna med e-post.</p></div>
       <form id="authForm" class="panel" style="padding:0;border:0;background:none" novalidate>
-        <label class="field" for="authEmail"><span>E-post</span><input class="inp" id="authEmail" type="email" autocomplete="email" inputmode="email" required></label>
+        <label class="field" for="authEmail"><span>E-post eller användarnamn</span><input class="inp" id="authEmail" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required></label>
         <label class="field" for="authPass"><span>Lösenord</span><input class="inp" id="authPass" type="password" autocomplete="current-password" minlength="8" required></label>
-        <div class="row"><button class="btn" id="loginBtn" type="submit">Logga in</button><button class="btn ghost" id="signupBtn" type="button">Skapa konto</button></div>
+        <div class="row"><button class="btn" id="loginBtn" type="submit">Logga in</button><button class="btn ghost" id="signupBtn" type="button">Skapa vuxenkonto</button></div>
         <p class="hint" id="authMsg" aria-live="polite"></p>
       </form>
     </div>
@@ -439,6 +454,10 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
         <button class="btn" id="kidAdd" type="submit">Lägg till barn</button>
       </form>
     </div>
+    <details class="adult" id="loginSetup"><summary>Barnens inloggning</summary>
+      <p class="hint" style="margin:8px 0">Barnen loggar in med användarnamn och lösenord. De ser bara sina egna godkända läxor, inte Från skolan, och kan inte godkänna förslag eller byta barn.</p>
+      <div id="loginList" class="mats"></div>
+    </details>
     <details class="adult" id="mailSetup"><summary>Koppla skolmejlen (Unikum)</summary>
       <p class="hint" style="margin:8px 0">Läxmotorn läser mejl från Unikum och kopplar dem till rätt barn via klasskoden i ämnesraden, till exempel <b>RG16C</b> i "Veckobrev v. 42 - RG16C". Flera koder skiljs med kommatecken. En kod som slutar med / tar alla grupper som börjar så (RG14/ tar språkval). Under språkval skriver du vilket modernt språk barnet läser, så hoppas prov i andra språk över.</p>
       <div id="codeList" class="mats"></div>
@@ -448,7 +467,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
     </details>
   </section>
 
-  <div class="kidbar" id="kidbar" hidden><span>Övar: <b id="kidNow"></b></span><span class="row"><button class="btn ghost small" id="switchKid">Byt barn</button><button class="btn ghost small" id="logoutBtn">Logga ut</button></span></div>
+  <div class="kidbar" id="kidbar" hidden><span><span id="kidLabel">Övar:</span> <b id="kidNow"></b></span><span class="row"><button class="btn ghost small adult-only" id="overviewBtn">Översikt</button><button class="btn ghost small adult-only" id="switchKid">Byt barn</button><button class="btn ghost small" id="logoutBtn">Logga ut</button></span></div>
   <div class="hud" id="hud" hidden>
     <div class="lvl" id="lvlNum">1</div>
     <div class="hud-main">
@@ -457,6 +476,13 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
       <div class="hud-sub"><span id="rankInfo"></span><span class="streakc" id="streakChip" hidden></span></div>
     </div>
   </div>
+
+  <!-- ÖVERSIKT (vuxna) -->
+  <section id="overview" class="wrap" hidden>
+    <div class="qtop"><button class="back" id="ovBack">← Läxorna</button></div>
+    <div class="intro"><h1>Översikt</h1><p>Så går det för barnen. Provberedd bygger på hur många gånger varje fråga har gått rätt, med pauser emellan.</p></div>
+    <div id="ovBox" class="wrap" style="gap:16px"><div class="empty">Hämtar…</div></div>
+  </section>
 
   <!-- LIBRARY -->
   <section id="lib" class="wrap" hidden>
@@ -685,6 +711,7 @@ const SB_URL='https://qmmannehhntwjpcharmz.supabase.co';
 const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtbWFubmVoaG50d2pwY2hhcm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MzMxODEsImV4cCI6MjEwODAwOTE4MX0._5uBoCo_2qQijw2N06O5hjHGCX-cB0-dPaUTCiubmgE';
 const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
 let HH=null,KIDS=[],KID=null;   // familj, barn, barnet som övar nu
+let ROLE=null,LOGINS={};        // 'parent' eller 'child'; barnens användarnamn (child_id → username)
 
 /* XP och märken per barn (children.stats), framsteg per barn och läxa (progress.state) */
 const freshG=()=>({xp:0,days:[],badges:[],fixed:0,reviews:0});
@@ -707,23 +734,23 @@ async function flush(){
 }
 addEventListener('pagehide',()=>{flush()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
+function normP(raw){
+  const p=Object.assign({q:{},medals:{},played:{},known:{},goals:[],seen:[],bossBest:0,repDone:false},raw&&typeof raw==='object'?JSON.parse(JSON.stringify(raw)):{});
+  if(Array.isArray(p.known)){const k={};p.known.forEach(i=>{k[i]=''});p.known=k}
+  ['q','medals','played','known'].forEach(f=>{if(!p[f]||typeof p[f]!=='object'||Array.isArray(p[f]))p[f]={}});
+  if(!Array.isArray(p.goals))p.goals=[];if(!Array.isArray(p.seen))p.seen=[];
+  delete p.stars;delete p.badges;
+  return p;
+}
 function getP(id){
-  if(!PC[id]){
-    const raw=RAW[id]||{};
-    const p=Object.assign({q:{},medals:{},played:{},known:{},goals:[],seen:[],bossBest:0,repDone:false},raw);
-    if(Array.isArray(p.known)){const k={};p.known.forEach(i=>{k[i]=''});p.known=k}
-    ['q','medals','played','known'].forEach(f=>{if(!p[f]||typeof p[f]!=='object'||Array.isArray(p[f]))p[f]={}});
-    if(!Array.isArray(p.goals))p.goals=[];if(!Array.isArray(p.seen))p.seen=[];
-    delete p.stars;delete p.badges;
-    PC[id]=p;
-  }
+  if(!PC[id])PC[id]=normP(RAW[id]);
   return PC[id];
 }
 const saveP=id=>{dirtyP.add(id);scheduleFlush()};
 let QZ=null,STATIONS=[],FLASH=[],P=null;
 
-function show(id){['auth','loading','kids','lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);
-  const pre=['auth','loading','kids'].includes(id);$('#hud').hidden=pre;$('#kidbar').hidden=pre;window.scrollTo(0,0)}
+function show(id){['auth','loading','kids','overview','lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);
+  const pre=['auth','loading','kids'].includes(id);$('#hud').hidden=pre||id==='overview';$('#kidbar').hidden=pre;window.scrollTo(0,0)}
 const TQ=[];let tBusy=false;
 function toast(msg){if(TQ[TQ.length-1]===msg)return;if(TQ.length>=3)TQ.shift();TQ.push(msg);if(!tBusy)nextToast()}
 function nextToast(){const t=$('#toast'),m=TQ.shift();if(!m){tBusy=false;return}tBusy=true;t.textContent=m;t.classList.add('show');setTimeout(()=>{t.classList.remove('show');setTimeout(nextToast,320)},2300)}
@@ -909,7 +936,7 @@ function renderLib(){
   updateHUD();renderInbox();
   $('#app').removeAttribute('data-subj');
   const nb=$('#newBtn');nb.innerHTML=svg('plus')+'Ny läxa';
-  nb.hidden=!booted||!sample;
+  nb.hidden=!booted||!sample||ROLE==='child';
   $('#libNote').textContent='';
   const list=sortQuizzes(Store.all());
   let dn=0,dq=0;list.forEach(qz=>{const c=dues(qz,getP(qz.id)).length;if(c){dn+=c;dq++}});
@@ -921,7 +948,7 @@ function renderLib(){
     box.innerHTML=list.map(q=>{
       const subj=SUBJ[q.subject]?q.subject:'annat',nq=(q.stations||[]).reduce((a,s)=>a+s.qs.length,0);
       const pp=getP(q.id),rd=Math.round(readiness(q,pp)*100),n=daysTo(q.testDate),past=n!==null&&n<0;
-      const canDel=q.localOnly||canWrite!==false;
+      const canDel=ROLE!=='child';
       const conf=pendingDel===q.id?`<div class="qz-confirm"><span>Ta bort <b>${esc(q.title)}</b> för hela familjen?</span><button class="btn danger small" data-yes="${esc(q.id)}">Ta bort</button><button class="btn ghost small" data-no="1">Avbryt</button></div>`:'';
       return `<div class="qz-wrap"><div class="qz ${past?'past':''}" data-subj="${subj}">
         <button class="qz-main" data-open="${esc(q.id)}">
@@ -958,6 +985,7 @@ function whenLabel(q){
   const w=q.source&&q.source.week;return w?`Vecka ${w}`:(q.source&&q.source.kind==='övning'?'Övning':'');
 }
 function renderInbox(){
+  if(ROLE==='child'){$('#inboxBox').innerHTML='';return}
   const list=Store.inbox().sort((a,b)=>(parseDate(a.testDate)||9e15)-(parseDate(b.testDate)||9e15));
   const box=$('#inboxBox');
   if(!list.length){box.innerHTML='';clearTimeout(pollT);return}
@@ -1348,14 +1376,14 @@ function renderHome(){
     <li>Repetera i rätt tid, efter en paus: dubbelt så mycket.</li>
     <li>Fråga du redan kan samma dag: nästan inget. Spela hellre missar eller repetera i morgon.</li>
     <li>Rätt i rad: upp till +50 %. Medaljer: brons 30, silver 60, guld 120. Delmål ger extra.</li></ul></details>
-   <details class="adult"><summary>För vuxna</summary>
+   <details class="adult adult-only"><summary>För vuxna</summary>
     <p class="hint" style="margin-top:8px">Provberedd bygger på hur många gånger varje fråga har gått rätt, och med vilka pauser emellan. En fråga räknas helt när den har gått rätt tre olika dagar.</p>
     ${hard.length?`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Svåraste frågorna</p><ul>${hard.map(x=>`<li>${esc(x.q.q)} <span class="hint">(fel ${x.s.w} ${x.s.w===1?'gång':'gånger'}) Rätt svar: ${esc(ansText(x.q))}</span></li>`).join('')}</ul>`:''}
     ${QZ.notes&&QZ.notes.length?`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Att dubbelkolla</p><ul>${QZ.notes.map(n=>`<li>${esc(n)}</li>`).join('')}</ul>`:''}
     ${(QZ.concepts||[]).length?'':`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Förklaringsklipp</p><p class="hint" style="margin:0 0 8px">Den här läxan har inga klipp än. Claude kan göra dem utifrån frågorna (ungefär en minut).</p><button class="btn small" id="mkClips" ${sample?'':'disabled'}>${svg('play')}Skapa förklaringsklipp</button>`}
    </details>`;
   const mk=$('#mkClips');if(mk)mk.onclick=makeClips;
-  $('#resetBox').innerHTML='<button class="reset" id="resetBtn">Nollställ medaljer, missar och delmål för den här läxan</button>';
+  $('#resetBox').innerHTML=ROLE==='child'?'':'<button class="reset" id="resetBtn">Nollställ medaljer, missar och delmål för den här läxan</button>';
   updateHUD();
 }
 function runStep(){if(!NS)return;if(NS.act==='miss')startRound('miss');else if(NS.act==='rep')startRound('rep');else if(NS.act==='st')startRound('station',{si:NS.i});else if(NS.act==='boss')startRound('boss')}
@@ -1753,37 +1781,56 @@ function confetti(n){
 /* ---------- Inloggning ---------- */
 function authMsg(t,bad){const m=$('#authMsg');m.textContent=t||'';m.style.color=bad?'var(--lingon)':''}
 function authBusy(on){['#loginBtn','#signupBtn'].forEach(s=>$(s).disabled=on)}
-function authInput(){const email=$('#authEmail').value.trim(),password=$('#authPass').value;
-  if(!/^\S+@\S+\.\S+$/.test(email)){authMsg('Skriv en giltig e-postadress.',true);return null}
+function authInput(signup){const email=$('#authEmail').value.trim(),password=$('#authPass').value;
+  if(!/^\S+@\S+\.\S+$/.test(email)){authMsg(signup?'Skriv en giltig e-postadress.':'Skriv din e-post eller ditt användarnamn.',true);return null}
   if(password.length<8){authMsg('Lösenordet måste ha minst 8 tecken.',true);return null}
   return {email,password}}
+// Barn loggar in med användarnamn (utan @) via serverfunktionen.
+async function kidLogin(username,password){
+  let res;try{res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY},body:JSON.stringify({action:'kid_login',username,password})})}catch(e){return 'Kunde inte nå servern.'}
+  if(!res.ok)return res.status===401?'Fel användarnamn eller lösenord.':'Något gick fel. Försök igen.';
+  const t=await res.json();const {error}=await sb.auth.setSession({access_token:t.access_token,refresh_token:t.refresh_token});
+  return error?'Kunde inte logga in.':null;
+}
 $('#authForm').addEventListener('submit',async e=>{
-  e.preventDefault();const c=authInput();if(!c)return;authBusy(true);authMsg('Loggar in…');
+  e.preventDefault();const id=$('#authEmail').value.trim(),pw=$('#authPass').value;
+  if(id&&!id.includes('@')){
+    if(!pw){authMsg('Skriv ditt lösenord.',true);return}
+    authBusy(true);authMsg('Loggar in…');const err=await kidLogin(id,pw);authBusy(false);
+    if(err){authMsg(err,true);return}
+    authMsg('');$('#authPass').value='';afterLogin();return;
+  }
+  const c=authInput(false);if(!c)return;authBusy(true);authMsg('Loggar in…');
   const {error}=await sb.auth.signInWithPassword(c);authBusy(false);
   if(error){authMsg(/confirm/i.test(error.message)?'Bekräfta e-postadressen via länken i mejlet först.':'Fel e-post eller lösenord.',true);return}
   authMsg('');$('#authPass').value='';afterLogin();
 });
 $('#signupBtn').onclick=async()=>{
-  const c=authInput();if(!c)return;authBusy(true);authMsg('Skapar konto…');
+  const c=authInput(true);if(!c)return;authBusy(true);authMsg('Skapar konto…');
   const {data,error}=await sb.auth.signUp({...c,options:{emailRedirectTo:location.origin+location.pathname}});authBusy(false);
   if(error){authMsg(/registered|exists/i.test(error.message)?'Det finns redan ett konto med den adressen. Logga in i stället.':'Kunde inte skapa kontot: '+error.message,true);return}
   if(data.session){authMsg('');afterLogin();return}
   authMsg('Klart! Öppna mejlet och klicka på länken. Logga sedan in här.');
 };
 $('#logoutBtn').onclick=async()=>{await flush();await sb.auth.signOut();resetState();show('auth')};
-function resetState(){HH=null;KIDS=[];KID=null;G=freshG();RAW={};Object.keys(PC).forEach(k=>delete PC[k]);dirtyP.clear();gDirty=false;
+function resetState(){HH=null;KIDS=[];KID=null;ROLE=null;LOGINS={};document.body.classList.remove('kidmode');G=freshG();RAW={};Object.keys(PC).forEach(k=>delete PC[k]);dirtyP.clear();gDirty=false;
   Store.remote=[];Store.ready=false;sample=null;booted=false;QZ=null}
 
 /* ---------- Familj och barn ---------- */
 async function afterLogin(){
   show('loading');
-  let {data:hm,error}=await sb.from('household_members').select('household_id').limit(1);
+  const {data:{user}}=await sb.auth.getUser();
+  let {data:hm,error}=await sb.from('household_members').select('household_id,role,child_id').eq('user_id',user?user.id:'').limit(1);
   if(error){$('#loadMsg').textContent='Kunde inte nå databasen. Ladda om sidan.';return}
-  if(hm.length)HH=hm[0].household_id;
-  else{const r=await sb.rpc('create_household',{hh_name:'Familjen'});if(r.error){$('#loadMsg').textContent='Kunde inte skapa familjen. Ladda om sidan.';return}HH=r.data}
-  sample=makeSample();imgLimits={maxCount:20};canWrite=true;booted=true;
+  if(hm.length){HH=hm[0].household_id;ROLE=hm[0].role==='child'?'child':'parent'}
+  else{const r=await sb.rpc('create_household',{hh_name:'Familjen'});if(r.error){$('#loadMsg').textContent='Kunde inte skapa familjen. Ladda om sidan.';return}HH=r.data;ROLE='parent'}
+  document.body.classList.toggle('kidmode',ROLE==='child');
+  sample=ROLE==='child'?null:makeSample();imgLimits={maxCount:20};canWrite=ROLE!=='child';booted=true;
   const [k]=await Promise.all([sb.from('children').select('id,name,grade,stats,class_codes,languages').order('created_at'),Store.load()]);
   KIDS=k.error?[]:k.data;
+  // Barnkonto: alltid det egna barnet.
+  if(ROLE==='child'){await selectKid(hm[0].child_id);return}
+  loadLogins();
   const saved=LS.get('laxmotorn:kid',null);
   const pick=KIDS.find(x=>x.id===saved)||(KIDS.length===1?KIDS[0]:null);
   if(pick)await selectKid(pick.id);else showKids();
@@ -1796,8 +1843,41 @@ function showKids(){
   $('#codeList').innerHTML=KIDS.map(k=>`<div class="mat" style="padding:8px 12px"><span class="mat-txt" style="gap:6px"><b>${esc(k.name)}</b>
     <input class="inp sm" data-codes="${esc(k.id)}" value="${esc((k.class_codes||[]).join(', '))}" placeholder="Klasskoder, t.ex. RG16C" aria-label="Klasskoder för ${esc(k.name)}">
     <input class="inp sm" data-langs="${esc(k.id)}" value="${esc((k.languages||[]).join(', '))}" placeholder="Språkval, t.ex. tyska (tomt = alla)" aria-label="Språkval för ${esc(k.name)}"></span></div>`).join('');
+  renderLogins();
   show('kids');
 }
+const slugName=n=>String(n||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'').slice(0,20);
+async function loadLogins(){
+  const {data}=await sb.from('kid_logins').select('child_id,username');
+  LOGINS={};(data||[]).forEach(r=>{LOGINS[r.child_id]=r.username});
+  if(!$('#kids').hidden)renderLogins();
+}
+function renderLogins(){
+  $('#loginList').innerHTML=KIDS.map(k=>{const u=LOGINS[k.id];
+    return `<form class="mat" data-login="${esc(k.id)}" style="padding:8px 12px;flex-wrap:wrap"><span class="mat-txt" style="gap:6px;flex:1 1 220px">
+      <b>${esc(k.name)} ${u?`<span class="hint" style="font-weight:700">· loggar in som ${esc(u)}</span>`:'<span class="hint" style="font-weight:700">· ingen inloggning än</span>'}</b>
+      <input class="inp sm" name="u" value="${esc(u||slugName(k.name))}" autocomplete="off" autocapitalize="none" spellcheck="false" aria-label="Användarnamn för ${esc(k.name)}" placeholder="Användarnamn">
+      <input class="inp sm" name="p" type="text" autocomplete="off" aria-label="Lösenord för ${esc(k.name)}" placeholder="${u?'Nytt lösenord (minst 6 tecken)':'Lösenord (minst 6 tecken)'}"></span>
+      <button class="btn small" type="submit">${u?'Spara':'Skapa'}</button></form>`}).join('');
+  if(KIDS.some(k=>!LOGINS[k.id]))$('#loginSetup').open=true;
+}
+const LOGIN_ERR={bad_username:'Användarnamnet ska vara 3–30 tecken: små bokstäver, siffror, punkt eller bindestreck.',bad_password:'Lösenordet måste ha minst 6 tecken.',username_taken:'Användarnamnet är upptaget. Välj ett annat.',not_parent:'Bara vuxna kan skapa inloggningar.'};
+$('#loginList').addEventListener('submit',async e=>{
+  e.preventDefault();const f=e.target.closest('[data-login]');if(!f)return;
+  const username=f.u.value.trim().toLowerCase(),password=f.p.value,had=!!LOGINS[f.dataset.login];
+  if(had&&!password&&username===LOGINS[f.dataset.login]){toast('Skriv ett nytt lösenord.');return}
+  if(password.length<6){toast(LOGIN_ERR.bad_password);return}
+  const b=f.querySelector('button');b.disabled=true;
+  try{
+    const {data:{session}}=await sb.auth.getSession();
+    const res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token,apikey:SB_KEY},body:JSON.stringify({action:'kid_account',child_id:f.dataset.login,username,password})});
+    const j=await res.json().catch(()=>({}));
+    if(!res.ok){toast(LOGIN_ERR[j.code]||'Kunde inte spara inloggningen.');return}
+    LOGINS[f.dataset.login]=j.username;renderLogins();
+    toast(j.created?`Klart! ${KIDS.find(k=>k.id===f.dataset.login).name} loggar in med ${j.username}`:'Inloggningen är uppdaterad');
+  }catch(err){toast('Kunde inte nå servern.')}
+  finally{b.disabled=false}
+});
 $('#codeList').addEventListener('change',async e=>{
   const l=e.target.closest('[data-langs]');
   if(l){
@@ -1815,11 +1895,41 @@ $('#codeList').addEventListener('change',async e=>{
 $('#tokenBtn').onclick=async()=>{
   const b=$('#tokenBtn');
   if(b.dataset.tok){try{await navigator.clipboard.writeText(b.dataset.tok);toast('Nyckeln är kopierad')}catch(e){toast('Markera och kopiera nyckeln')}return}
-  const {data,error}=await sb.from('households').select('ingest_token').eq('id',HH).single();
+  const {data,error}=await sb.rpc('get_ingest_token');
   if(error||!data){toast('Kunde inte hämta nyckeln.');return}
-  b.dataset.tok=data.ingest_token;$('#tokenOut').textContent=data.ingest_token;b.textContent='Kopiera';
+  b.dataset.tok=data;$('#tokenOut').textContent=data;b.textContent='Kopiera';
 };
 $('#kidList').addEventListener('click',e=>{const b=e.target.closest('[data-kid]');if(b)selectKid(b.dataset.kid)});
+
+/* ---------- Översikt för vuxna ---------- */
+function streakOf(days){const set=new Set(days||[]);let n=0,t=Date.now();if(!set.has(dayKey(t)))t-=DAY;while(set.has(dayKey(t))){n++;t-=DAY}return n}
+function agoLabel(t){if(!t)return 'aldrig';const n=Math.round((dayStart()-dayStart(t))/DAY);return n<=0?'idag':n===1?'igår':`${n} dagar sedan`}
+async function renderOverview(){
+  await flush();show('overview');
+  const [k,pr]=await Promise.all([sb.from('children').select('id,name,grade,stats').order('created_at'),sb.from('progress').select('child_id,quiz_id,state,updated_at'),Store.load()]);
+  if(k.error||pr.error){$('#ovBox').innerHTML='<div class="errbox">Kunde inte hämta översikten.</div>';return}
+  const byKid={};pr.data.forEach(r=>{(byKid[r.child_id]=byKid[r.child_id]||{})[r.quiz_id]=r});
+  $('#ovBox').innerHTML=k.data.map(kid=>{
+    const g=normG(kid.stats),L=levelOf(g.xp),st=streakOf(g.days),rows=byKid[kid.id]||{};
+    const last=Math.max(0,...g.days.map(d=>parseDate(d)?parseDate(d).getTime():0));
+    const qs=Store.remote.filter(q=>q.status==='ready'&&(!q.childId||q.childId===kid.id)).map(q=>{
+      const r=rows[q.id],p=normP(r&&r.state),rd=Math.round(readiness(q,p)*100),m=misses(q,p).length,d=dues(q,p).length;
+      const lastQ=Math.max(0,...Object.values(p.q).map(s=>s.last||0));
+      const med=(q.stations||[]).map(s=>p.medals[s.id]||0),n=daysTo(q.testDate);
+      return {q,rd,m,d,lastQ,med,n,started:!!lastQ};
+    }).sort((a,b)=>((a.n!==null&&a.n>=0)?a.n:999)-((b.n!==null&&b.n>=0)?b.n:999)||a.rd-b.rd);
+    const warn=x=>x.n!==null&&x.n>=0&&x.n<=3&&x.rd<70;
+    return `<div class="panel ov">
+      <div class="ov-head"><span class="lvl">${L}</span><div><h2>${esc(kid.name)}</h2><small>${esc(levelName(L))} · ${fmt(g.xp)} XP · ${st?`${svg('flame')}${st} ${st===1?'dag':'dagar'} i rad`:'ingen svit'} · övade senast ${agoLabel(last)}</small></div></div>
+      ${qs.length?`<ul class="ov-list">${qs.map(x=>`<li class="${warn(x)?'warn':''}">
+        <div class="ov-t"><span class="subj" data-subj="${esc(x.q.subject)}">${SUBJ[x.q.subject]||'Övrigt'}</span><b>${esc(x.q.title)}</b>${x.q.testDate?`<small>${esc(dateLabel(x.q.testDate))}</small>`:''}</div>
+        <div class="ov-r"><span class="mini"><i style="width:${x.rd}%"></i></span><b>${x.rd} %</b></div>
+        <small class="ov-s">${x.started?`${x.med.filter(v=>v>=1).length}/${x.med.length} stationer klara · ${x.m?`<span class="miss-tag">${x.m} ${x.m===1?'miss':'missar'}</span>`:'inga missar'}${x.d?` · ${x.d} att repetera`:''} · senast ${agoLabel(x.lastQ)}`:'Inte påbörjad'}${warn(x)?' · <b class="miss-tag">Behöver öva inför provet</b>':''}</small>
+      </li>`).join('')}</ul>`:'<p class="hint">Inga godkända läxor än.</p>'}
+    </div>`}).join('')||'<div class="empty">Inga barn än.</div>';
+}
+$('#overviewBtn').onclick=renderOverview;
+$('#ovBack').onclick=()=>{renderLib();show('lib')};
 $('#kidsBack').onclick=()=>{renderLib();show('lib')};
 $('#switchKid').onclick=()=>{flush();showKids()};
 $('#kidForm').addEventListener('submit',async e=>{
@@ -1837,7 +1947,7 @@ async function selectKid(id){
   RAW={};Object.keys(PC).forEach(x=>delete PC[x]);
   const {data,error}=await sb.from('progress').select('quiz_id,state').eq('child_id',id);
   if(error)toast('Kunde inte hämta framstegen.');else data.forEach(r=>{RAW[r.quiz_id]=r.state});
-  $('#kidNow').textContent=k.name;$('#gradeIn').value=String(k.grade);
+  $('#kidNow').textContent=k.name;$('#kidLabel').textContent=ROLE==='child'?'Hej':'Övar:';$('#gradeIn').value=String(k.grade);
   QZ=null;renderLib();updateGen();show('lib');
 }
 document.addEventListener('visibilitychange',async()=>{
