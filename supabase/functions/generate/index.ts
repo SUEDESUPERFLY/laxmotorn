@@ -10,10 +10,14 @@
 //   ANTHROPIC_API_KEY  krävs
 //   ALLOWED_EMAILS     kommaseparerad lista; bara dessa konton får använda funktionen
 //   CLAUDE_MODEL       valfri, standard claude-sonnet-5-5
+//   CLAUDE_EFFORT      valfri, low|medium|high, standard medium (gratisplanen stoppar funktionen efter 150 s)
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 
 const MODEL = Deno.env.get("CLAUDE_MODEL") ?? "claude-sonnet-5-5";
+const EFFORT = ["low", "medium", "high"].includes(Deno.env.get("CLAUDE_EFFORT") ?? "")
+  ? Deno.env.get("CLAUDE_EFFORT")!
+  : "medium";
 const MAX_PROMPT = 200_000; // tecken
 const MAX_IMAGES = 20; // över 20 gäller hårdare pixelgränser i API:t
 const MAX_IMAGE_B64 = 10 * 1024 * 1024;
@@ -94,6 +98,7 @@ Deno.serve(async (req) => {
       model: MODEL,
       max_tokens: maxTokens,
       stream: true,
+      output_config: { effort: EFFORT },
       messages: [{ role: "user", content }],
     }),
     signal: req.signal,
@@ -108,11 +113,13 @@ Deno.serve(async (req) => {
     return fail(502, "upstream", "Claude svarade med ett fel.");
   }
 
-  // SSE → ren text. Bara text_delta skickas vidare.
+  // SSE → ren text. Bara text_delta skickas vidare. waitUntil håller arbetaren vid liv under strömmen.
   const enc = new TextEncoder();
   const dec = new TextDecoder();
-  const stream = new ReadableStream({
-    async start(ctl) {
+  const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
+  const writer = writable.getWriter();
+  const ctl = { enqueue: (b: Uint8Array) => { writer.write(b).catch(() => {}); } };
+  const pump = (async () => {
       const reader = upstream.body!.getReader();
       let buf = "", stop = "";
       try {
@@ -143,12 +150,13 @@ Deno.serve(async (req) => {
       } catch (e) {
         if ((e as Error)?.name !== "AbortError") ctl.enqueue(enc.encode("\n\u0000ERR:upstream"));
       } finally {
-        ctl.close();
+        await writer.close().catch(() => {});
       }
-    },
-  });
+  })();
+  // deno-lint-ignore no-explicit-any
+  (globalThis as any).EdgeRuntime?.waitUntil(pump);
 
-  return new Response(stream, {
+  return new Response(readable, {
     headers: { ...CORS, "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-cache" },
   });
 });

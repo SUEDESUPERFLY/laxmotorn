@@ -341,12 +341,46 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .toast.show{transform:translateX(-50%) translateY(0)}
 #fx{position:fixed;inset:0;pointer-events:none;z-index:15}
 .confirm{background:var(--lingon-soft);border:2px solid var(--lingon);border-radius:14px;padding:12px 14px;display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.kidbar{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;font-weight:700;color:var(--muted)}
+.kidbar b{color:var(--ink)}
+.qz.kid{width:100%;text-align:left;padding:0}
+.qz.kid .lvl{width:44px;height:44px;font-size:18px}
+.qz.kid.cur{border-color:var(--moss)}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 
 <canvas id="fx"></canvas>
 <div class="wrap" id="app">
-  <div class="hud">
+  <!-- INLOGGNING -->
+  <section id="auth" class="wrap" hidden>
+    <div class="panel">
+      <div class="intro"><h1>Läxmotorn</h1><p>Logga in för att se familjens läxor.</p></div>
+      <form id="authForm" class="panel" style="padding:0;border:0;background:none" novalidate>
+        <label class="field" for="authEmail"><span>E-post</span><input class="inp" id="authEmail" type="email" autocomplete="email" inputmode="email" required></label>
+        <label class="field" for="authPass"><span>Lösenord</span><input class="inp" id="authPass" type="password" autocomplete="current-password" minlength="8" required></label>
+        <div class="row"><button class="btn" id="loginBtn" type="submit">Logga in</button><button class="btn ghost" id="signupBtn" type="button">Skapa konto</button></div>
+        <p class="hint" id="authMsg" aria-live="polite"></p>
+      </form>
+    </div>
+  </section>
+  <section id="loading" class="wrap" hidden><div class="empty" id="loadMsg">Hämtar familjen…</div></section>
+
+  <!-- BARN -->
+  <section id="kids" class="wrap" hidden>
+    <div class="qtop"><button class="back" id="kidsBack" hidden>← Läxorna</button></div>
+    <div class="panel">
+      <h2>Vem ska öva?</h2>
+      <div class="lib-list" id="kidList"></div>
+      <form id="kidForm" class="grid2" style="align-items:end">
+        <label class="field" for="kidName"><span>Namn</span><input class="inp" id="kidName" maxlength="40" autocomplete="off" required></label>
+        <label class="field" for="kidGrade"><span>Årskurs</span><select class="inp" id="kidGrade"><option>1</option><option>2</option><option>3</option><option selected>4</option><option>5</option><option>6</option><option>7</option><option>8</option><option>9</option></select></label>
+        <button class="btn" id="kidAdd" type="submit">Lägg till barn</button>
+      </form>
+    </div>
+  </section>
+
+  <div class="kidbar" id="kidbar" hidden><span>Övar: <b id="kidNow"></b></span><span class="row"><button class="btn ghost small" id="switchKid">Byt barn</button><button class="btn ghost small" id="logoutBtn">Logga ut</button></span></div>
+  <div class="hud" id="hud" hidden>
     <div class="lvl" id="lvlNum">1</div>
     <div class="hud-main">
       <div class="hud-top"><span class="lvl-name" id="lvlName">Nybörjare I</span><span class="xp" id="xpText">0 XP</span></div>
@@ -356,7 +390,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
   </div>
 
   <!-- LIBRARY -->
-  <section id="lib" class="wrap">
+  <section id="lib" class="wrap" hidden>
     <div class="lib-head">
       <div class="intro">
         <h1>Läxmotorn</h1>
@@ -485,6 +519,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 </div>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
 /* ---------- Ikoner ---------- */
 const ICONS={
@@ -563,13 +598,36 @@ const READY=[0,.5,.8,1,1,1];            // hur mycket en fråga i varje låda bi
 const BASE={tf:6,mc:10,multi:14,order:14,write:18};
 const MEDAL=['','Brons','Silver','Guld'],MEDAL_XP=[0,30,60,120];
 
-let G=Object.assign({xp:0,days:[],badges:[],fixed:0,reviews:0},LS.get('laxmotorn:xp',{})||{});
-if(!Array.isArray(G.days))G.days=[];if(!Array.isArray(G.badges))G.badges=[];
-const saveG=()=>LS.set('laxmotorn:xp',G);
-const PC={};
+/* ---------- Supabase ---------- */
+const SB_URL='https://qmmannehhntwjpcharmz.supabase.co';
+const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFtbWFubmVoaG50d2pwY2hhcm16Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTI0MzMxODEsImV4cCI6MjEwODAwOTE4MX0._5uBoCo_2qQijw2N06O5hjHGCX-cB0-dPaUTCiubmgE';
+const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}});
+let HH=null,KIDS=[],KID=null;   // familj, barn, barnet som övar nu
+
+/* XP och märken per barn (children.stats), framsteg per barn och läxa (progress.state) */
+const freshG=()=>({xp:0,days:[],badges:[],fixed:0,reviews:0});
+function normG(s){const g=Object.assign(freshG(),s&&typeof s==='object'?s:{});if(!Array.isArray(g.days))g.days=[];if(!Array.isArray(g.badges))g.badges=[];g.xp=Number(g.xp)||0;return g}
+let G=freshG();
+let RAW={};const PC={};
+const dirtyP=new Set();let gDirty=false,flushT=null,failT=null,failShown=false;
+const saveG=()=>{gDirty=true;scheduleFlush()};
+function scheduleFlush(ms=800){clearTimeout(flushT);flushT=setTimeout(flush,ms)}
+async function flush(){
+  clearTimeout(flushT);if(!KID)return;
+  const kid=KID,ids=[...dirtyP].filter(id=>PC[id]),g=gDirty;dirtyP.clear();gDirty=false;
+  const rows=ids.map(id=>({child_id:kid,quiz_id:id,state:PC[id]}));
+  const jobs=[];if(rows.length)jobs.push(sb.from('progress').upsert(rows));if(g)jobs.push(sb.from('children').update({stats:G}).eq('id',kid));
+  if(!jobs.length)return;
+  let bad=false;try{bad=(await Promise.all(jobs)).some(r=>r.error)}catch(e){bad=true}
+  if(bad){if(KID===kid){ids.forEach(id=>dirtyP.add(id));if(g)gDirty=true;scheduleFlush(10000)}
+    if(!failShown){failShown=true;toast('Kunde inte spara just nu. Försöker igen.');clearTimeout(failT);failT=setTimeout(()=>{failShown=false},60000)}}
+  else{const k=KIDS.find(x=>x.id===kid);if(k&&g)k.stats=JSON.parse(JSON.stringify(G))}
+}
+addEventListener('pagehide',()=>{flush()});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
 function getP(id){
   if(!PC[id]){
-    const raw=LS.get('laxmotorn:p:'+id,{})||{};
+    const raw=RAW[id]||{};
     const p=Object.assign({q:{},medals:{},played:{},known:{},goals:[],seen:[],bossBest:0,repDone:false},raw);
     if(Array.isArray(p.known)){const k={};p.known.forEach(i=>{k[i]=''});p.known=k}
     ['q','medals','played','known'].forEach(f=>{if(!p[f]||typeof p[f]!=='object'||Array.isArray(p[f]))p[f]={}});
@@ -579,10 +637,11 @@ function getP(id){
   }
   return PC[id];
 }
-const saveP=id=>LS.set('laxmotorn:p:'+id,PC[id]);
+const saveP=id=>{dirtyP.add(id);scheduleFlush()};
 let QZ=null,STATIONS=[],FLASH=[],P=null;
 
-function show(id){['lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);window.scrollTo(0,0)}
+function show(id){['auth','loading','kids','lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);
+  const pre=['auth','loading','kids'].includes(id);$('#hud').hidden=pre;$('#kidbar').hidden=pre;window.scrollTo(0,0)}
 const TQ=[];let tBusy=false;
 function toast(msg){if(TQ[TQ.length-1]===msg)return;if(TQ.length>=3)TQ.shift();TQ.push(msg);if(!tBusy)nextToast()}
 function nextToast(){const t=$('#toast'),m=TQ.shift();if(!m){tBusy=false;return}tBusy=true;t.textContent=m;t.classList.add('show');setTimeout(()=>{t.classList.remove('show');setTimeout(nextToast,320)},2300)}
@@ -697,23 +756,51 @@ function dateLabel(s){
 
 /* ---------- Lagring ---------- */
 let sample=null,canWrite=null,imgLimits=null,booted=false;
-const Store={db:null,remote:[],ready:false,
-  local(){return LS.get('laxmotorn:quizzes',[])},
-  all(){return [...this.remote,...this.local().map(q=>({...q,localOnly:true}))]},
+const QZ_COLS='id,title,subject,summary,grade,test_date,content,created_at';
+const rowToQuiz=r=>({...(r.content||{}),id:r.id,title:r.title,subject:r.subject,summary:r.summary||'',grade:r.grade?String(r.grade):null,testDate:r.test_date,createdAt:Date.parse(r.created_at)});
+const Store={db:true,remote:[],ready:false,
+  all(){return this.remote},
+  async load(){
+    const {data,error}=await sb.from('quizzes').select(QZ_COLS).order('created_at',{ascending:false});
+    if(error)toast('Kunde inte hämta läxorna.');else this.remote=data.map(rowToQuiz);
+    this.ready=true;
+  },
   async add(doc){
-    if(this.db&&canWrite!==false){
-      try{const ref=await this.db.collection('quizzes').add(doc);return {id:ref.id||String(ref.path).split('/').pop(),local:false}}
-      catch(e){if(e&&e.code==='invalid_argument')canWrite=false}
-    }
-    const id='l'+Date.now().toString(36);const list=this.local();list.push({...doc,id});LS.set('laxmotorn:quizzes',list);
-    return {id,local:true};
+    const {title,subject,summary,grade,testDate,stations,flash,notes,links,concepts}=doc;
+    const {data,error}=await sb.from('quizzes').insert({household_id:HH,title,subject,summary:summary||null,grade:+grade||null,test_date:testDate||null,
+      content:{stations,flash,notes,links,...(concepts?{concepts}:{})}}).select(QZ_COLS).single();
+    if(error){console.error(error);return null}
+    const q=rowToQuiz(data);this.remote.unshift(q);return {id:q.id,local:false};
   },
   async remove(q){
-    if(q.localOnly){LS.set('laxmotorn:quizzes',this.local().filter(x=>x.id!==q.id));try{localStorage.removeItem('laxmotorn:p:'+q.id)}catch(e){}return true}
-    try{await this.db.doc('quizzes/'+q.id).delete();try{localStorage.removeItem('laxmotorn:p:'+q.id)}catch(e){}return true}
-    catch(e){toast(e&&e.code==='invalid_argument'?'Du har inte behörighet att ta bort den här läxan.':'Kunde inte ta bort läxan. Försök igen.');return false}
+    const {error}=await sb.from('quizzes').delete().eq('id',q.id);
+    if(error){toast('Kunde inte ta bort läxan. Försök igen.');return false}
+    this.remote=this.remote.filter(x=>x.id!==q.id);delete RAW[q.id];delete PC[q.id];dirtyP.delete(q.id);return true;
   }
 };
+
+/* ---------- Claude via edge function (ersätter window.claude sample) ---------- */
+async function blobToB64(b){const u=new Uint8Array(await b.arrayBuffer());let s='';for(let i=0;i<u.length;i+=0x8000)s+=String.fromCharCode.apply(null,u.subarray(i,i+0x8000));return btoa(s)}
+function extractJson(t){t=String(t||'').trim().replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'');const a=t.indexOf('{'),b=t.lastIndexOf('}');if(a<0||b<=a)return null;try{return JSON.parse(t.slice(a,b+1))}catch(e){return null}}
+function makeSample(){
+  const call=async(prompt,opt={})=>{
+    const {data:{session}}=await sb.auth.getSession();if(!session)throw {code:'session_expired'};
+    const images=opt.images?await Promise.all(opt.images.map(async b=>({media_type:b.type||'image/jpeg',data:await blobToB64(b)}))):[];
+    let res;
+    try{res=await fetch(SB_URL+'/functions/v1/generate',{method:'POST',signal:opt.signal,
+      headers:{'Content-Type':'application/json',Authorization:'Bearer '+session.access_token,apikey:SB_KEY},body:JSON.stringify({prompt,images})})}
+    catch(e){throw {code:e&&e.name==='AbortError'?'cancelled':'network'}}
+    if(!res.ok){let j={};try{j=await res.json()}catch(e){}throw {code:j.code||(res.status===401?'session_expired':res.status===546||res.status===504?'timeout':'upstream')}}
+    const rd=res.body.getReader(),dec=new TextDecoder();let text='';
+    try{while(true){const {value,done}=await rd.read();if(done)break;text+=dec.decode(value,{stream:true});if(opt.onText&&text.indexOf('\u0000ERR:')<0)opt.onText({text})}}
+    catch(e){throw {code:e&&e.name==='AbortError'?'cancelled':'network'}}
+    const k=text.indexOf('\u0000ERR:');if(k>=0)throw {code:text.slice(k+5).trim()||'upstream'};
+    if(!text.trim())throw {code:'empty_completion'};
+    return {text};
+  };
+  call.json=async(prompt,opt)=>{const {text}=await call(prompt,opt);const j=extractJson(text);if(!j)throw {code:'invalid_json'};return j};
+  return call;
+}
 
 function sortQuizzes(list){
   const up=list.filter(q=>{const n=daysTo(q.testDate);return n!==null&&n>=0}).sort((a,b)=>parseDate(a.testDate)-parseDate(b.testDate));
@@ -727,7 +814,7 @@ function renderLib(){
   $('#app').removeAttribute('data-subj');
   const nb=$('#newBtn');nb.innerHTML=svg('plus')+'Ny läxa';
   nb.hidden=!booted||!sample;
-  $('#libNote').textContent=booted&&!sample?'Nya förhör kan bara skapas när sidan är öppen i Claude. Befintliga läxor går att spela som vanligt.':'';
+  $('#libNote').textContent='';
   const list=sortQuizzes(Store.all());
   let dn=0,dq=0;list.forEach(qz=>{const c=dues(qz,getP(qz.id)).length;if(c){dn+=c;dq++}});
   $('#dailyBox').innerHTML=dn?`<div class="daily">${svg('cycle')}<div><b>Dagens repetition</b><small>${Math.min(dn,15)} ${Math.min(dn,15)===1?'fråga':'frågor'} från ${dq} ${dq===1?'läxa':'läxor'} är redo att repeteras · 2× XP</small></div><button class="btn" id="dailyBtn">Kör</button></div>`:'';
@@ -739,7 +826,7 @@ function renderLib(){
       const subj=SUBJ[q.subject]?q.subject:'annat',nq=(q.stations||[]).reduce((a,s)=>a+s.qs.length,0);
       const pp=getP(q.id),rd=Math.round(readiness(q,pp)*100),n=daysTo(q.testDate),past=n!==null&&n<0;
       const canDel=q.localOnly||canWrite!==false;
-      const conf=pendingDel===q.id?`<div class="qz-confirm"><span>Ta bort <b>${esc(q.title)}</b> för alla som har sidan?</span><button class="btn danger small" data-yes="${esc(q.id)}">Ta bort</button><button class="btn ghost small" data-no="1">Avbryt</button></div>`:'';
+      const conf=pendingDel===q.id?`<div class="qz-confirm"><span>Ta bort <b>${esc(q.title)}</b> för hela familjen?</span><button class="btn danger small" data-yes="${esc(q.id)}">Ta bort</button><button class="btn ghost small" data-no="1">Avbryt</button></div>`:'';
       return `<div class="qz-wrap"><div class="qz ${past?'past':''}" data-subj="${subj}">
         <button class="qz-main" data-open="${esc(q.id)}">
           <span class="qz-ic">${svg(q.stations&&q.stations[0]?q.stations[0].icon:SUBJ_ICON[subj])}</span>
@@ -755,7 +842,7 @@ function renderLib(){
     }).join('');
   }
   $('#badges').innerHTML=BADGES.map(b=>`<div class="badge ${G.badges.includes(b.id)?'':'locked'}"><span class="b-ic">${b.ic}</span><div><b>${b.n}</b><span>${b.d}</span></div></div>`).join('');
-  $('#libWhere').textContent=!booted?'':Store.db?'Läxorna sparas på sidan och syns för alla du delar den med. XP, medaljer och märken sparas i varje webbläsare.':'Läxorna sparas bara i den här webbläsaren.';
+  $('#libWhere').textContent=booted?'Läxorna delas av hela familjen. XP, medaljer och märken sparas per barn.':'';
 }
 $('#dailyBox').addEventListener('click',e=>{if(e.target.closest('#dailyBtn')){QZ=null;startRound('daily')}});
 $('#libList').addEventListener('click',async e=>{
@@ -944,7 +1031,12 @@ function sanitize(d){
   return {title:clean(d.title,60)||'Ny läxa',subject:SUBJ[d.subject]?d.subject:'annat',summary:clean(d.summary,220),stations,flash,notes};
 }
 const ERR={
-  not_granted:'Sidan fick inte använda Claude. Tillåt det när frågan visas och försök igen.',
+  not_granted:'Ditt konto får inte skapa förhör. Lägg till e-postadressen i ALLOWED_EMAILS i Supabase.',
+  network:'Kunde inte nå servern. Kontrollera nätet och försök igen.',
+  upstream:'Claude svarade med ett fel. Försök igen.',
+  timeout:'Det tog för lång tid. Försök igen, gärna med färre sidor eller Lagom svårighet.',
+  not_configured:'API-nyckeln saknas i Supabase (ANTHROPIC_API_KEY).',
+  no_household:'Familjen är inte skapad. Ladda om sidan.',
   sampling_disabled:'Claude är inte tillgängligt för det här kontot.',
   rate_limited:'För många förfrågningar just nu, eller så är användningsgränsen nådd. Vänta en stund och försök igen.',
   session_expired:'Du behöver logga in i Claude igen.',
@@ -1056,7 +1148,8 @@ async function saveDraft(){
   const doc={v:1,title:d.title||'Ny läxa',subject:d.subject,summary:d.summary,grade:d.grade,testDate:d.testDate,createdAt:Date.now(),
     stations:d.stations.map((s,i)=>({...s,id:'s'+(i+1)})),flash:d.flash,notes:d.notes,links:(d.links||[]).map(({url,title,kind})=>({url,title,kind}))};
   const r=await Store.add(doc);
-  if(r.local&&Store.db)toast('Sparat bara på den här enheten');else toast('Läxan är sparad');
+  if(!r){b.disabled=false;b.textContent='Spara och spela';toast('Kunde inte spara läxan. Försök igen.');return}
+  toast('Läxan är sparad');
   MAT.forEach(it=>it.urls.forEach(u=>URL.revokeObjectURL(u)));MAT=[];renderMat();
   ['#pasteIn','#titleIn','#dateIn','#linksIn'].forEach(s=>$(s).value='');renderLinkChips();$('#subjIn').value='auto';
   DRAFT=null;revOpen.clear();
@@ -1131,7 +1224,7 @@ $('#matBox').addEventListener('click',e=>{
 $('#trail').addEventListener('click',e=>{const n=e.target.closest('.node');if(n)startRound('station',{si:+n.dataset.st})});
 $('#resetBox').addEventListener('click',e=>{
   if(e.target.id==='resetBtn'){$('#resetBox').innerHTML='<div class="confirm"><span>Radera medaljer, missar, repetitioner och delmål för den här läxan? XP och märken finns kvar.</span><button class="btn danger small" id="yesReset">Nollställ</button><button class="btn ghost small" id="noReset">Avbryt</button></div>'}
-  if(e.target.id==='yesReset'){try{localStorage.removeItem('laxmotorn:p:'+QZ.id)}catch(err){}delete PC[QZ.id];P=getP(QZ.id);saveP(QZ.id);renderHome();toast('Läxan är nollställd')}
+  if(e.target.id==='yesReset'){delete RAW[QZ.id];delete PC[QZ.id];P=getP(QZ.id);saveP(QZ.id);renderHome();toast('Läxan är nollställd')}
   if(e.target.id==='noReset')renderHome();
 });
 $('#homeBack').onclick=()=>{QZ=null;renderLib();show('lib')};
@@ -1362,24 +1455,82 @@ function confetti(n){
 }
 
 /* ---------- Start ---------- */
-async function boot(){
-  renderLib();
-  const use=n=>window.claude&&window.claude.use?window.claude.use(n).catch(()=>null):Promise.resolve(null);
-  const [db,smp,user]=await Promise.all([use('db'),use('sample'),use('user')]);
-  sample=smp;
-  if(user){try{canWrite=await user.can('data.write')}catch(e){}}
-  if(smp){try{const l=await smp.limits();imgLimits=l&&l.images?l.images:null}catch(e){imgLimits=null}}
-  booted=true;
-  if(db){
-    Store.db=db;
-    db.collection('quizzes').orderBy('createdAt','desc').onSnapshot(snap=>{
-      Store.remote=snap.docs.filter(d=>d.exists).map(d=>({...d.data(),id:d.id}));Store.ready=true;
-      if(!$('#lib').hidden)renderLib();
-      if(QZ&&!QZ.localOnly&&!Store.remote.some(q=>q.id===QZ.id)&&!$('#home').hidden){QZ=null;renderLib();show('lib');toast('Läxan har tagits bort')}
-    },()=>{Store.ready=true;if(!$('#lib').hidden)renderLib()});
-  }else Store.ready=true;
-  renderLib();updateGen();
+/* ---------- Inloggning ---------- */
+function authMsg(t,bad){const m=$('#authMsg');m.textContent=t||'';m.style.color=bad?'var(--lingon)':''}
+function authBusy(on){['#loginBtn','#signupBtn'].forEach(s=>$(s).disabled=on)}
+function authInput(){const email=$('#authEmail').value.trim(),password=$('#authPass').value;
+  if(!/^\S+@\S+\.\S+$/.test(email)){authMsg('Skriv en giltig e-postadress.',true);return null}
+  if(password.length<8){authMsg('Lösenordet måste ha minst 8 tecken.',true);return null}
+  return {email,password}}
+$('#authForm').addEventListener('submit',async e=>{
+  e.preventDefault();const c=authInput();if(!c)return;authBusy(true);authMsg('Loggar in…');
+  const {error}=await sb.auth.signInWithPassword(c);authBusy(false);
+  if(error){authMsg(/confirm/i.test(error.message)?'Bekräfta e-postadressen via länken i mejlet först.':'Fel e-post eller lösenord.',true);return}
+  authMsg('');$('#authPass').value='';afterLogin();
+});
+$('#signupBtn').onclick=async()=>{
+  const c=authInput();if(!c)return;authBusy(true);authMsg('Skapar konto…');
+  const {data,error}=await sb.auth.signUp({...c,options:{emailRedirectTo:location.origin+location.pathname}});authBusy(false);
+  if(error){authMsg(/registered|exists/i.test(error.message)?'Det finns redan ett konto med den adressen. Logga in i stället.':'Kunde inte skapa kontot: '+error.message,true);return}
+  if(data.session){authMsg('');afterLogin();return}
+  authMsg('Klart! Öppna mejlet och klicka på länken. Logga sedan in här.');
+};
+$('#logoutBtn').onclick=async()=>{await flush();await sb.auth.signOut();resetState();show('auth')};
+function resetState(){HH=null;KIDS=[];KID=null;G=freshG();RAW={};Object.keys(PC).forEach(k=>delete PC[k]);dirtyP.clear();gDirty=false;
+  Store.remote=[];Store.ready=false;sample=null;booted=false;QZ=null}
+
+/* ---------- Familj och barn ---------- */
+async function afterLogin(){
+  show('loading');
+  let {data:hm,error}=await sb.from('household_members').select('household_id').limit(1);
+  if(error){$('#loadMsg').textContent='Kunde inte nå databasen. Ladda om sidan.';return}
+  if(hm.length)HH=hm[0].household_id;
+  else{const r=await sb.rpc('create_household',{hh_name:'Familjen'});if(r.error){$('#loadMsg').textContent='Kunde inte skapa familjen. Ladda om sidan.';return}HH=r.data}
+  sample=makeSample();imgLimits={maxCount:20};canWrite=true;booted=true;
+  const [k]=await Promise.all([sb.from('children').select('id,name,grade,stats').order('created_at'),Store.load()]);
+  KIDS=k.error?[]:k.data;
+  const saved=LS.get('laxmotorn:kid',null);
+  const pick=KIDS.find(x=>x.id===saved)||(KIDS.length===1?KIDS[0]:null);
+  if(pick)await selectKid(pick.id);else showKids();
 }
+function showKids(){
+  $('#kidList').innerHTML=KIDS.length?KIDS.map(k=>{const L=levelOf(normG(k.stats).xp);
+    return `<button class="qz kid ${k.id===KID?'cur':''}" data-kid="${esc(k.id)}"><span class="qz-main"><span class="lvl">${L}</span><span class="qz-txt"><h3>${esc(k.name)}</h3><small>Årskurs ${k.grade} · ${esc(levelName(L))}</small></span></span></button>`}).join('')
+    :'<div class="empty">Lägg till barnen som ska öva.</div>';
+  $('#kidsBack').hidden=!KID;
+  show('kids');
+}
+$('#kidList').addEventListener('click',e=>{const b=e.target.closest('[data-kid]');if(b)selectKid(b.dataset.kid)});
+$('#kidsBack').onclick=()=>{renderLib();show('lib')};
+$('#switchKid').onclick=()=>{flush();showKids()};
+$('#kidForm').addEventListener('submit',async e=>{
+  e.preventDefault();const name=$('#kidName').value.trim(),grade=+$('#kidGrade').value;if(!name)return;
+  const b=$('#kidAdd');b.disabled=true;
+  const {data,error}=await sb.from('children').insert({household_id:HH,name:name.slice(0,40),grade}).select('id,name,grade,stats').single();
+  b.disabled=false;
+  if(error){toast('Kunde inte lägga till barnet.');return}
+  KIDS.push(data);$('#kidName').value='';showKids();
+});
+async function selectKid(id){
+  await flush();
+  const k=KIDS.find(x=>x.id===id);if(!k)return showKids();
+  KID=id;LS.set('laxmotorn:kid',id);G=normG(k.stats);
+  RAW={};Object.keys(PC).forEach(x=>delete PC[x]);
+  const {data,error}=await sb.from('progress').select('quiz_id,state').eq('child_id',id);
+  if(error)toast('Kunde inte hämta framstegen.');else data.forEach(r=>{RAW[r.quiz_id]=r.state});
+  $('#kidNow').textContent=k.name;$('#gradeIn').value=String(k.grade);
+  QZ=null;renderLib();updateGen();show('lib');
+}
+document.addEventListener('visibilitychange',async()=>{
+  if(document.hidden||!booted||!KID||$('#lib').hidden)return;
+  await Store.load();if(!$('#lib').hidden)renderLib();
+});
+
+async function boot(){
+  const {data:{session}}=await sb.auth.getSession();
+  if(session)afterLogin();else show('auth');
+}
+sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&booted){resetState();show('auth')}});
 boot();
 </script>
 
