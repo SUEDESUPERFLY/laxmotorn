@@ -392,6 +392,9 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .xp-kick{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
 .xp-stage{width:100%;max-width:max(300px,calc((100dvh - 240px)*1.6));margin:0 auto;aspect-ratio:8/5;border:3px solid var(--ink);border-radius:16px;overflow:hidden;background:var(--film-paper)}
 .xp-stage svg{display:block;width:100%;height:100%}
+.xp-stage video{display:block;width:100%;height:100%;object-fit:contain;background:#f7f3ea}
+.xp-ov:not(.vid) #xpVid,.xp-ov.vid #xpStage{display:none}
+.xp-ov.vid .xp-stage{aspect-ratio:16/9;max-width:max(300px,calc((100dvh - 240px)*1.78))}
 .xp-bar{position:relative;height:6px;border-radius:99px;background:var(--line)}
 .xp-bar>i{display:block;height:100%;width:0;background:var(--moss);border-radius:99px}
 .xp-ticks i{position:absolute;top:-3px;width:3px;height:12px;margin-left:-1.5px;border-radius:2px;background:var(--ink);opacity:.3}
@@ -607,7 +610,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 <div class="xp-ov" id="xpOv" hidden>
   <div class="xp-card" role="dialog" aria-modal="true" aria-labelledby="xpTitle">
     <div class="xp-band"><span class="xp-ic" id="xpIc"></span><h3 id="xpTitle"></h3><span class="xp-kick">Förklaring</span></div>
-    <div class="xp-stage"><svg id="xpStage" viewBox="0 0 800 500" role="img" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="xp-stage"><svg id="xpStage" viewBox="0 0 800 500" role="img" preserveAspectRatio="xMidYMid meet"></svg><video id="xpVid" playsinline preload="auto"></video></div>
     <div class="xp-bar" aria-hidden="true"><i id="xpBar"></i><span class="xp-ticks" id="xpTicks"></span></div>
     <div class="xp-cap" id="xpCap" hidden></div>
     <p class="hint" id="xpNote" style="margin:0"></p>
@@ -1850,6 +1853,8 @@ const Explainer=(()=>{
   let K=null,F=null,R=null,raf=0,ft=0,last=0,playing=false,ended=false,onClose=null;
   let say='',TT=[],END=0,sents=[0],wstarts=[];
   let useVoice=false,tok=0,pend=null,lastB=null,spoken=0,spokenDone=true,speakT0=0,noBound=false;
+  // Videoläge: en renderad film (k.video) spelas i stället för den ritade. Går den inte att spela tar den ritade över.
+  const vid=$('#xpVid');let vmode=false,cues=[],vnote='',vStart=0;
   const voiceOn=()=>LS.get('laxmotorn:voice',true)!==false;
   const textPref=()=>LS.get('laxmotorn:filmtext','auto');
   function svVoice(){
@@ -1909,24 +1914,72 @@ const Explainer=(()=>{
     const p=$('#xpPlay');p.innerHTML=svg(ended?'cycle':playing?'pause':'play');p.setAttribute('aria-label',ended?'Spela igen':playing?'Pausa':'Spela');
     $('#xpMute').innerHTML=svg(voiceOn()?'music':'x')+(voiceOn()?'Ljud på':'Ljud av');
     const tp=textPref(),showText=tp==='on'||(tp==='auto'&&!useVoice);$('#xpCap').hidden=!showText;$('#xpTxt').setAttribute('aria-pressed',String(showText));
-    $('#xpNote').textContent=voiceOn()&&!svVoice()?'Ingen svensk röst på den här enheten. Texten visas i stället.':'';
+    $('#xpNote').textContent=vmode?vnote:voiceOn()&&!svVoice()?'Ingen svensk röst på den här enheten. Texten visas i stället.':'';
     $('#xpOv').classList.toggle('end',ended);
   }
   function play(fromChar=0){
     stopSpeech();ended=false;playing=true;useVoice=voiceOn()&&!!svVoice();spokenDone=!useVoice;lastB=null;
     ft=fromChar?T(fromChar)-250:-F_LEAD;pend={c:fromChar,t:fromChar?T(fromChar):0};R.penAt=null;ui();
   }
-  function pause(){if(!playing)return;playing=false;stopSpeech();spokenDone=true;pend=null;ui()}
-  function resume(){if(ended){play(0);return}const c=sentOf(charAt(ft));play(c)}
-  function back(){const c=charAt(ft),s=sentOf(c);const i=sents.indexOf(s);play(c-s<12&&i>0?sents[i-1]:s)}
+  function pause(){if(vmode){playing=false;vid.pause();ui();return}if(!playing)return;playing=false;stopSpeech();spokenDone=true;pend=null;ui()}
+  function resume(){if(vmode){if(ended){vid.currentTime=0;ended=false}vplay();return}if(ended){play(0);return}const c=sentOf(charAt(ft));play(c)}
+  function back(){
+    if(vmode){
+      // Till början av meningen (eller förra meningen om vi nyss började på den).
+      const t=vid.currentTime,st=cues.filter((c,i)=>!i||/[.!?]$/.test(cues[i-1].t)).map(c=>c.a);
+      let s=0,i=-1;st.forEach((x,j)=>{if(x<=t+.05){s=x;i=j}});
+      vid.currentTime=Math.max(0,(t-s<1.5&&i>0?st[i-1]:st.length?s:t-5)-.15);ended=false;vplay();return}
+    const c=charAt(ft),s=sentOf(c);const i=sents.indexOf(s);play(c-s<12&&i>0?sents[i-1]:s)}
   function finish(){if(ended)return;ended=true;playing=false;ft=END+F_HOLD;ui();$('#xpGo').focus({preventScroll:true})}
+  function setVideo(on){
+    vmode=on;$('#xpOv').classList.toggle('vid',on);
+    if(!on&&vid.getAttribute('src')){try{vid.pause()}catch(e){}vid.removeAttribute('src');vid.removeAttribute('poster');try{vid.load()}catch(e){}}
+  }
+  function vplay(){
+    playing=true;vid.muted=!voiceOn();useVoice=voiceOn();vnote='';vStart=performance.now();ui();const k=K;
+    let p;try{p=vid.play()}catch(e){p=Promise.reject(e)}
+    if(p&&p.catch)p.catch(e=>{if(K!==k||!vmode)return;
+      if(e&&e.name==='NotAllowedError'){playing=false;vnote='Tryck på spela för att starta filmen.';ui()}
+      else if(!e||e.name!=='AbortError')toDrawn()});
+  }
+  function vcaption(t){
+    let c=null;for(const x of cues)if(x.a<=t+.05)c=x;
+    const h=c&&t<c.b+1.5?esc(c.t):'',cap=$('#xpCap');if(cap.dataset.h!==h){cap.innerHTML=h;cap.dataset.h=h}
+  }
+  function vtick(){
+    raf=requestAnimationFrame(vtick);
+    const d=vid.duration||(K&&K.video&&K.video.dur)||1,t=vid.currentTime||0;
+    $('#xpBar').style.width=(cl01(t/d)*100).toFixed(1)+'%';
+    if(!$('#xpCap').hidden)vcaption(t);
+    // Laddar den inte inom tio sekunder tar den ritade filmen över.
+    if(playing&&!(t>0)&&performance.now()-vStart>10000)toDrawn();
+  }
+  // Videon gick inte att spela: visa den ritade filmen i stället.
+  function toDrawn(){const k=K;if(!k)return;const o={onClose,subj:$('#xpOv').dataset.subj,drawn:true};onClose=null;setVideo(false);cancelAnimationFrame(raf);open(k,o)}
+  vid.addEventListener('ended',()=>{if(vmode&&K)finish()});
+  vid.addEventListener('error',()=>{if(vmode&&K&&vid.getAttribute('src'))toDrawn()});
+  function openVideo(k){
+    const v=k.video;setVideo(true);stopSpeech();cancelAnimationFrame(raf);
+    cues=(Array.isArray(v.cues)?v.cues:[]).filter(c=>c&&isFinite(c.a)&&isFinite(c.b)&&typeof c.t==='string');
+    say=v.narration||k.say||'';ended=false;
+    vid.setAttribute('aria-label',`${k.name}. ${say}`);
+    if(v.poster)vid.poster=v.poster;else vid.removeAttribute('poster');
+    vid.src=v.url;
+    const d=+v.dur||0,st=cues.filter((c,i)=>i&&/[.!?]$/.test(cues[i-1].t)).map(c=>c.a);
+    $('#xpTicks').innerHTML=d?st.map(t=>`<i style="left:${(cl01(t/d)*100).toFixed(1)}%"></i>`).join(''):'';
+    $('#xpBar').style.width='0%';
+    last=0;raf=requestAnimationFrame(vtick);
+    vplay();$('#xpGo').focus({preventScroll:true});
+  }
   async function open(k,opt={}){
     K=k;onClose=opt.onClose||null;
-    F=fNorm(k.film,k.say)||fNorm(filmFromShow(k),k.say);say=F.say;timeline();
     $('#xpTitle').textContent=k.name;$('#xpIc').innerHTML=svg(PROPS[k.icon]?k.icon:'book');$('#xpCap').textContent='';$('#xpCap').dataset.h='';
     $('#xpOv').dataset.subj=opt.subj||((QZ&&QZ.subject)||(DRAFT&&DRAFT.subject)||'annat');
-    $('#xpStage').setAttribute('aria-label',`${k.name}. ${say}`);
     $('#xpOv').hidden=false;document.body.style.overflow='hidden';
+    if(!opt.drawn&&k.video&&typeof k.video.url==='string'&&/^https:\/\//.test(k.video.url)){openVideo(k);return}
+    setVideo(false);
+    F=fNorm(k.film,k.say)||fNorm(filmFromShow(k),k.say);say=F.say;timeline();
+    $('#xpStage').setAttribute('aria-label',`${k.name}. ${say}`);
     // Typsnittet måste finnas innan texten mäts.
     try{await Promise.race([document.fonts.load('800 28px Nunito'),new Promise(r=>setTimeout(r,600))])}catch(e){}
     if(K!==k)return;
@@ -1935,16 +1988,16 @@ const Explainer=(()=>{
     cancelAnimationFrame(raf);last=0;raf=requestAnimationFrame(tick);
     play(0);$('#xpGo').focus({preventScroll:true});
   }
-  function close(){stopSpeech();cancelAnimationFrame(raf);playing=false;$('#xpOv').hidden=true;document.body.style.overflow='';const f=onClose;onClose=null;K=null;if(f)f()}
+  function close(){stopSpeech();cancelAnimationFrame(raf);playing=false;setVideo(false);$('#xpOv').hidden=true;document.body.style.overflow='';const f=onClose;onClose=null;K=null;if(f)f()}
   $('#xpPlay').onclick=()=>{if(playing)pause();else resume()};
   $('#xpBack').onclick=back;
   $('#xpGo').onclick=close;
-  $('#xpMute').onclick=()=>{LS.set('laxmotorn:voice',!voiceOn());if(!ended)resume();else ui()};
+  $('#xpMute').onclick=()=>{LS.set('laxmotorn:voice',!voiceOn());if(vmode){vid.muted=!voiceOn();useVoice=voiceOn();ui();return}if(!ended)resume();else ui()};
   $('#xpTxt').onclick=()=>{const on=$('#xpCap').hidden;LS.set('laxmotorn:filmtext',on?'on':'off');ui()};
   $('#xpOv').addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(e.key===' '&&e.target.tagName!=='BUTTON'){e.preventDefault();$('#xpPlay').click()}else if(e.key==='ArrowLeft')back()});
   // För granskning och test: stoppa och visa filmen vid en viss tid (ms).
-  function seek(ms){pause();ended=false;ft=ms;filmRender(R,ft,END,performance.now());$('#xpBar').style.width=(cl01(ft/END)*100)+'%';caption(Math.min(charAt(ft),say.length-1))}
-  return {open,close,seek,isOpen:()=>!$('#xpOv').hidden,info:()=>({end:END,steps:R?R.stepT:[],say})};
+  function seek(ms){if(vmode){pause();ended=false;vid.currentTime=ms/1000;vcaption(ms/1000);return}pause();ended=false;ft=ms;filmRender(R,ft,END,performance.now());$('#xpBar').style.width=(cl01(ft/END)*100)+'%';caption(Math.min(charAt(ft),say.length-1))}
+  return {open,close,seek,isOpen:()=>!$('#xpOv').hidden,info:()=>vmode?{video:true,src:vid.currentSrc||vid.src,time:vid.currentTime,playing,ended,say}:{video:false,end:END,steps:R?R.stepT:[],say}};
 })();
 // Förklaringsklipp till en läxa som saknar dem (äldre läxor).
 async function makeClips(){

@@ -50,6 +50,25 @@ Studierna gäller mest äldre elever och vuxna, och effekterna är små till må
 
 **Granska filmer:** `node tests/film-review.mjs src/index.html 8` gör kontaktark för de gyllene filmerna i `tests/golden-films.mjs` (förebilder; "Avrunda till tiotal" är exemplet i prompten). Med en JSON-fil som tredje argument granskas andra filmer, t.ex. sådana som hämtats ur databasen.
 
+### Videofilmer (HyperFrames)
+
+Godkända läxor får också riktiga videofilmer (1920 × 1080, 25–40 s) med inspelad röst. Finns en video spelas den; annars, eller om den inte går att ladda inom tio sekunder, spelas den ritade filmen ovan.
+
+**Så görs de.** Arbetsflödet `.github/workflows/films.yml` körs varje halvtimme (och vid ändringar i `films/`). Det frågar servern vilka begrepp som saknar video (närmast prov först) och gör varje film i ett eget jobb med `films/render.mjs`:
+
+1. **Manus och röst** (`video_voice`): Claude skriver ett manus på 45–75 ord och en plan för bilden. Rösten görs av ElevenLabs via Speko och sparas i lagringen `films`.
+2. **Ordtider:** pauserna i ljudet (ffmpeg) paras ihop med manusets fraser; orden får tider efter sin längd. Ingen taligenkänning behövs eftersom texten är känd.
+3. **Komposition** (`video_compose`): Claude skriver filmen som HTML, SVG och GSAP med ett gemensamt kit (`films/kit/`: färger, färgverlopp, kamera, rita fram, landa, flöden längs banor) och en förebild (`films/golden/fotosyntes.film`). Allt tidsätts med ordtiderna.
+4. **Kontroll och rendering:** `hyperframes check` (fel skickas tillbaka till Claude en gång) och `hyperframes render`. Lagren som slutar sist förlängs till filmens slut så att sammanfattningen står kvar.
+5. **Granskning** (`video_review`): nio stillbilder ur den renderade filmen läggs på ett kontaktark som Claude granskar (avklippt eller överlappande text, tomma bilder, fel fakta). Blockerande fel ger ett nytt försök; godkänns inte filmen publiceras den inte.
+6. **Publicering:** MP4, textning (WebVTT) och omslagsbild laddas upp; begreppet får `video: {url, vtt, poster, dur, cues, narration}`.
+
+Inga hemligheter ligger på GitHub: jobbet loggar in hos servern med GitHubs OIDC-token, och servern släpper bara in `films.yml` på `main` i det här repot. Claude- och Speko-nycklarna (`ANTHROPIC_API_KEY`, `SPEKO_API_KEY`) finns bara i Supabase. Varje steg loggas i tabellen `film_log`. Ett begrepp försöks högst två gånger (med två timmars mellanrum).
+
+**Prova lokalt:** `cd films && npm ci && node try-golden.mjs <röstfil>` bygger förebilden i `films/work/golden`; `npx hyperframes render` renderar den. `prototyp/fotosyntes/` är den första provfilmen.
+
+Kostnad ungefär 0,2 USD per film (Claude) plus 0,04 USD (röst).
+
 ## Nivåer: svårare och djupare
 
 När barnet kan läxan blir det svårare, inom samma område och årskurs:

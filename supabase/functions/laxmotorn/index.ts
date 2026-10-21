@@ -32,6 +32,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { ClaudeError, complete, FAST_MODEL, open, pump } from "./claude.ts";
 import { conceptsPrompt, FILM_PROPS, filmPrompt, gradePrompt, LEVEL_NAMES, levelPrompt, mailPrompt, quizPrompt, SUBJECTS, transcribePrompt } from "./prompts.ts";
 import { extractJson, sanitize, sanitizeFilm, sanitizeLevel } from "./quiz.ts";
+import { verifyGithub, videoAction } from "./video.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -89,7 +90,7 @@ function imageBlocks(imgs: unknown) {
 }
 
 // Strömmar Claudes text till klienten. waitUntil håller arbetaren vid liv tills strömmen är klar.
-async function streamOut(content: Any[], signal: AbortSignal, o: { effort?: string; maxTokens?: number } = {}) {
+async function streamOut(content: Any[], signal: AbortSignal, o: { effort?: string; maxTokens?: number; prefill?: string } = {}) {
   const body = await open(content, { ...o, signal });
   const enc = new TextEncoder();
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();
@@ -479,6 +480,12 @@ Deno.serve(async (req) => {
       }
       if (action === "ingest") return await ingest(hh, body.message);
       return await prepare(hh, body.quiz_id);
+    }
+
+    // Förklaringsvideor: bara GitHub Actions (films.yml på main) via OIDC.
+    if (typeof action === "string" && action.startsWith("video_")) {
+      if (!(await verifyGithub(req))) return fail(401, "bad_token");
+      return await videoAction(admin, action, body, req, json, fail, streamOut);
     }
 
     if (action === "kid_login") return await kidLogin(body);

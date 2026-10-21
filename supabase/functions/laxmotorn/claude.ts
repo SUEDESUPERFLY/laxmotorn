@@ -9,7 +9,7 @@ export class ClaudeError extends Error {
 }
 
 // deno-lint-ignore no-explicit-any
-export async function open(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal; model?: string } = {}) {
+export async function open(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal; model?: string; prefill?: string } = {}) {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
   if (!key) throw new ClaudeError("not_configured", 500);
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -20,7 +20,7 @@ export async function open(content: any[], o: { effort?: string; maxTokens?: num
       max_tokens: o.maxTokens ?? 32000,
       stream: true,
       output_config: { effort: o.effort ?? DEFAULT_EFFORT },
-      messages: [{ role: "user", content }],
+      messages: [{ role: "user", content }, ...(o.prefill ? [{ role: "assistant", content: o.prefill }] : [])],
     }),
     signal: o.signal,
   });

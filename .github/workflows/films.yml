@@ -1,0 +1,75 @@
+# Förklaringsfilmer som video (HyperFrames). Varje halvtimme hämtas begrepp som saknar video; varje film
+# görs i ett eget jobb. Inga hemligheter här: jobben loggar in hos servern med GitHubs OIDC-token, och
+# servern (Supabase edge function) anropar Claude och Speko. Se films/render.mjs.
+name: Förklaringsfilmer
+
+on:
+  schedule:
+    - cron: "7,37 * * * *"
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ["films/**", ".github/workflows/films.yml"]
+
+permissions:
+  id-token: write
+  contents: read
+
+concurrency:
+  group: films
+  cancel-in-progress: false
+
+jobs:
+  plan:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    outputs:
+      items: ${{ steps.todo.outputs.items }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - id: todo
+        run: node films/render.mjs list
+
+  render:
+    needs: plan
+    if: needs.plan.outputs.items != '' && needs.plan.outputs.items != '[]'
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        item: ${{ fromJSON(needs.plan.outputs.items) }}
+    defaults:
+      run:
+        working-directory: films
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: films/package-lock.json
+      - name: ffmpeg
+        run: sudo apt-get update -qq && sudo apt-get install -y -qq ffmpeg
+      - run: npm ci --no-audit --no-fund
+      - name: Webbläsare för HyperFrames
+        run: npx hyperframes browser ensure
+      - name: Gör filmen
+        env:
+          QUIZ: ${{ matrix.item.quiz_id }}
+          CONCEPT: ${{ matrix.item.concept_id }}
+        run: node render.mjs one "$QUIZ" "$CONCEPT"
+      - name: Spara kontaktark och logg
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: film-${{ strategy.job-index }}-${{ github.run_attempt }}
+          path: |
+            films/work/*-tmp/sheet.jpg
+            films/work/*/index.html
+          retention-days: 7
+          if-no-files-found: ignore

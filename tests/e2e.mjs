@@ -5,10 +5,18 @@ import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
 import { golden } from './golden-films.mjs';
+import { spawnSync } from 'node:child_process';
+import os from 'node:os';
 
 const APP = process.argv[2];
 const SB = 'https://qmmannehhntwjpcharmz.supabase.co';
 const SHOTS = process.env.SHOTS || '/tmp';
+// En kort testvideo (VP8/Opus; testwebbläsaren saknar H.264) för videoläget i förklaringen.
+const TESTVID = (() => {
+  const f = path.join(os.tmpdir(), 'laxmotorn-test.webm');
+  const r = spawnSync('ffmpeg', ['-v', 'error', '-y', '-f', 'lavfi', '-i', 'testsrc=size=640x360:rate=30', '-f', 'lavfi', '-i', 'sine=frequency=330', '-t', '3', '-c:v', 'libvpx', '-b:v', '300k', '-c:a', 'libopus', f]);
+  return r.status === 0 && fs.existsSync(f) ? f : null;
+})();
 const log = [], calls = [], fails = [];
 const check = (ok, msg) => { console.log(`  ${ok ? '✓' : '✗'} ${msg}`); if (!ok) fails.push(msg); };
 
@@ -98,6 +106,11 @@ await page.route('**/*', async (route) => {
   if (url.host === 'cdn.jsdelivr.net' && url.pathname.includes('@supabase')) {
     const f = path.join(process.cwd(), 'node_modules/@supabase/supabase-js/dist/umd', path.basename(url.pathname));
     return route.fulfill({ contentType: 'application/javascript', body: fs.readFileSync(f) });
+  }
+  if (url.origin === SB && url.pathname.startsWith('/storage/v1/object/public/films/')) {
+    calls.push(`GET ${url.pathname}`);
+    const f = url.pathname.endsWith('/test.webm') && TESTVID;
+    return f ? route.fulfill({ status: 200, contentType: 'video/webm', body: fs.readFileSync(f), headers: { 'access-control-allow-origin': '*' } }) : route.fulfill({ status: 404, body: 'nej' });
   }
   if (url.origin !== SB) return route.abort();
   const p = url.pathname;
@@ -307,6 +320,36 @@ check(await page.locator('#xpStage .fe:not(.on)').count() === 0, 'slutbilden vis
 await page.click('#xpTxt');
 check(await vis('#xpCap'), 'texten kan slås på');
 await page.click('#xpGo');
+
+step('renderad video i förklaringen');
+if (!TESTVID) console.log('  (hoppar över: ffmpeg saknas)');
+else {
+  await page.evaluate((sb) => {
+    const k = QZ.concepts.find((x) => x.name === 'Fotosyntes');
+    Explainer.open({ ...k, video: { v: 1, url: sb + '/storage/v1/object/public/films/test.webm', dur: 3, narration: 'Fotosyntes är när växten gör sin egen mat. Bladen fångar ljuset.',
+      cues: [{ a: 0.2, b: 1.4, t: 'Fotosyntes är när växten gör sin egen mat.' }, { a: 1.4, b: 2.8, t: 'Bladen fångar ljuset.' }] } });
+  }, SB);
+  await page.waitForSelector('#xpOv.vid:not([hidden])');
+  check(await page.locator('#xpVid').isVisible() && !(await page.locator('#xpStage').isVisible()), 'videon visas i stället för den ritade filmen');
+  await page.waitForTimeout(800);
+  if (!(await page.evaluate(() => Explainer.info().playing))) await page.click('#xpPlay'); // om webbläsaren kräver ett tryck
+  await page.waitForFunction(() => Explainer.info().time > 0.3, null, { timeout: 5000 }).catch(() => {});
+  check(await page.evaluate(() => Explainer.info().time > 0.3), 'videon spelas');
+  check(await vis('#xpCap') && /Fotosyntes|Bladen/.test(await page.textContent('#xpCap')), 'textraden följer videon');
+  await page.screenshot({ path: path.join(SHOTS, 'e2e-6c-video.png') });
+  await page.waitForSelector('#xpOv.end', { timeout: 8000 });
+  check(true, 'videon tar slut och Fortsätt väntar');
+  await page.click('#xpBack');
+  check(await page.evaluate(() => Explainer.info().time < 2.9 && !Explainer.info().ended), 'bakåt spelar om sista meningen');
+  await page.click('#xpGo');
+  check(await page.locator('#xpOv').isHidden() && await page.evaluate(() => !document.querySelector('#xpVid').getAttribute('src')), 'stängs och släpper videon');
+  // Trasig video: den ritade filmen tar över.
+  await page.evaluate((sb) => { const k = QZ.concepts.find((x) => x.name === 'Fotosyntes'); Explainer.open({ ...k, video: { v: 1, url: sb + '/storage/v1/object/public/films/saknas.mp4', dur: 30 } }); }, SB);
+  await page.waitForSelector('#xpOv:not(.vid):not([hidden])', { timeout: 5000 }).catch(() => {});
+  await page.waitForFunction(() => document.querySelectorAll('#xpStage .fe').length >= 10, null, { timeout: 5000 }).catch(() => {});
+  check(await page.evaluate(() => !Explainer.info().video) && await page.locator('#xpStage .fe').count() >= 10, 'går videon inte att ladda visas den ritade filmen');
+  await page.click('#xpGo');
+}
 
 step('äldre läxa utan klipp → skapa klipp');
 await page.click('#quitBtn').catch(() => {});
