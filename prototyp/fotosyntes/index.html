@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="sv">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <script src="assets/gsap.min.js"></script>
+    <script src="assets/MotionPathPlugin.min.js"></script>
+    <style>
+      /* Läxmotorn · förklaringsfilm "Fotosyntes" (provfilm).
+         Lugn, saklig stil: en bild som växer fram del för del när rösten säger den,
+         inzoomning i bladet, ingen musik (koherensprincipen). */
+      :root {
+        --sky1: #dceef7; --sky2: #f7f3e6;
+        --soil1: #9c6b45; --soil2: #6e4429; --soil3: #4e2e1b;
+        --leaf1: #6cbf5a; --leaf2: #2f8a3e; --leaf3: #1e5e2b;
+        --sun1: #ffe27a; --sun2: #f6b31b;
+        --water: #2f8fd8; --waterL: #9fd0f3;
+        --co2: #4a4f57; --o: #e0523f;
+        --sugar: #f09a2b;
+        --ink: #1b2430; --paper: #fbfaf5; --muted: #6a7480;
+      }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: var(--sky2); }
+      #root { position: relative; width: 100%; height: 100%; font-family: "Nunito", sans-serif; overflow: hidden; }
+      .layer { position: absolute; inset: 0; }
+      .full { position: absolute; left: 0; top: 0; width: 1920px; height: 1080px; }
+      #world { transform-origin: 0 0; }
+      .pill {
+        position: absolute; transform: translate(-50%, -50%);
+        background: #ffffff; color: var(--ink); border: 4px solid var(--ink); border-radius: 999px;
+        padding: 10px 30px 12px; font-weight: 800; font-size: 46px; line-height: 1; white-space: nowrap;
+        box-shadow: 0 6px 0 rgba(27,36,48,.18);
+      }
+      .pill i { font-style: normal; display: inline-block; width: 22px; height: 22px; border-radius: 50%; margin-right: 14px; vertical-align: 2px; }
+      .big { font-weight: 900; color: var(--ink); line-height: 1.05; }
+      #title { position: absolute; left: 110px; top: 92px; font-size: 104px; letter-spacing: -0.02em; }
+      #title span { display: inline-block; }
+      .cap { position: absolute; font-weight: 800; font-size: 50px; color: var(--ink); white-space: nowrap; }
+      .eq { position: absolute; left: 50%; top: 560px; transform: translateX(-50%); display: flex; align-items: center; gap: 26px; }
+      .tok { display: flex; flex-direction: column; align-items: center; gap: 12px; font-weight: 800; font-size: 48px; color: var(--ink); }
+      .tok svg { width: 180px; height: 180px; }
+      .op { font-weight: 900; font-size: 84px; color: var(--muted); margin-bottom: 60px; }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="36" data-width="1920" data-height="1080">
+      <audio id="vo" class="clip" src="assets/voice.wav" data-start="0.6" data-duration="32.6" data-volume="1"></audio>
+
+      <!-- ============ VÄRLDEN: himmel, mark, växt, sol, vatten, barn ============ -->
+      <div id="worldClip" class="clip layer" data-start="0" data-duration="36">
+        <div id="world" class="full">
+          <svg class="full" viewBox="0 0 1920 1080">
+            <defs>
+              <linearGradient id="gSky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#cfe7f4"/><stop offset="1" stop-color="#f6f1e2"/></linearGradient>
+              <linearGradient id="gSoil" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#a57249"/><stop offset=".45" stop-color="#7a4b2d"/><stop offset="1" stop-color="#4f2e1b"/></linearGradient>
+              <linearGradient id="gLeaf" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#8fd46f"/><stop offset=".55" stop-color="#4ea84a"/><stop offset="1" stop-color="#2b7c39"/></linearGradient>
+              <linearGradient id="gStem" x1="0" y1="0" x2="1" y2="0"><stop offset="0" stop-color="#3f9145"/><stop offset=".5" stop-color="#5fb556"/><stop offset="1" stop-color="#2f7a38"/></linearGradient>
+              <radialGradient id="gSun" cx=".45" cy=".4" r=".6"><stop offset="0" stop-color="#fff6c4"/><stop offset=".55" stop-color="#ffd64a"/><stop offset="1" stop-color="#f4a915"/></radialGradient>
+              <radialGradient id="gGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffe680" stop-opacity=".75"/><stop offset="1" stop-color="#ffe680" stop-opacity="0"/></radialGradient>
+              <radialGradient id="gLeafGlow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#fff59a" stop-opacity=".85"/><stop offset="1" stop-color="#fff59a" stop-opacity="0"/></radialGradient>
+            </defs>
+            <rect width="1920" height="1080" fill="url(#gSky)"/>
+            <!-- mark i genomskärning -->
+            <path id="soil" d="M0 760 C 320 742 640 776 960 760 S 1600 744 1920 762 V1080 H0 Z" fill="url(#gSoil)"/>
+            <path d="M0 760 C 320 742 640 776 960 760 S 1600 744 1920 762" fill="none" stroke="#5a3a22" stroke-width="5"/>
+            <g fill="#5d3920" opacity=".35">
+              <ellipse cx="180" cy="860" rx="16" ry="9"/><ellipse cx="420" cy="930" rx="11" ry="7"/><ellipse cx="640" cy="840" rx="14" ry="8"/>
+              <ellipse cx="820" cy="1010" rx="18" ry="10"/><ellipse cx="1560" cy="880" rx="15" ry="9"/><ellipse cx="1760" cy="990" rx="12" ry="7"/>
+              <ellipse cx="300" cy="1030" rx="13" ry="8"/><ellipse cx="1450" cy="1040" rx="16" ry="9"/>
+            </g>
+            <!-- vattendroppar i jorden -->
+            <g id="drops" fill="var(--water)">
+              <path class="drop" d="M930 900c0 0 -16 20 -16 31a16 16 0 0 0 32 0c0-11-16-31-16-31z"/>
+              <path class="drop" d="M1440 880c0 0 -14 18 -14 28a14 14 0 0 0 28 0c0-10-14-28-14-28z"/>
+              <path class="drop" d="M1060 980c0 0 -13 16 -13 25a13 13 0 0 0 26 0c0-9-13-25-13-25z"/>
+              <path class="drop" d="M1330 990c0 0 -12 15 -12 23a12 12 0 0 0 24 0c0-8-12-23-12-23z"/>
+            </g>
+            <!-- rötter -->
+            <g id="roots" opacity="0" fill="none" stroke="#e9dcc4" stroke-linecap="round" stroke-linejoin="round">
+              <path class="root" stroke-width="12" d="M1180 762 C 1176 830 1188 880 1170 960"/>
+              <path class="root" stroke-width="8" d="M1178 820 C 1130 850 1080 880 1040 950"/>
+              <path class="root" stroke-width="8" d="M1182 840 C 1240 870 1300 900 1340 960"/>
+              <path class="root" stroke-width="6" d="M1172 900 C 1130 930 1010 930 950 935"/>
+              <path class="root" stroke-width="6" d="M1176 930 C 1230 950 1380 920 1440 915"/>
+            </g>
+            <!-- solens sken och sol -->
+            <g transform="translate(330 250)"><g id="sun">
+              <circle r="300" fill="url(#gGlow)"/>
+              <g id="rays" stroke="#f6b31b" stroke-width="14" stroke-linecap="round">
+                <line x1="0" y1="-150" x2="0" y2="-190"/><line x1="0" y1="150" x2="0" y2="190"/><line x1="-150" y1="0" x2="-190" y2="0"/><line x1="150" y1="0" x2="190" y2="0"/>
+                <line x1="106" y1="106" x2="134" y2="134"/><line x1="-106" y1="-106" x2="-134" y2="-134"/><line x1="106" y1="-106" x2="134" y2="-134"/><line x1="-106" y1="106" x2="-134" y2="134"/>
+              </g>
+              <circle r="118" fill="url(#gSun)" stroke="#e7a213" stroke-width="6"/>
+            </g></g>
+            <!-- ljusstrålar mot bladen -->
+            <g id="beams" opacity="0" fill="none" stroke="#f8c53a" stroke-width="10" stroke-linecap="round">
+              <path class="beam" d="M470 330 L 1010 520"/>
+              <path class="beam" d="M480 270 L 1090 380"/>
+              <path class="beam" d="M470 210 L 1270 330"/>
+            </g>
+            <!-- växten -->
+            <g id="plant">
+              <path id="stem" d="M1180 762 C 1176 660 1188 540 1182 420 C 1180 380 1182 350 1184 318" fill="none" stroke="url(#gStem)" stroke-width="22" stroke-linecap="round"/>
+              <g id="leafL1" transform="translate(1180 600)"><path d="M0 0 C -60 -70 -190 -80 -250 -20 C -190 40 -70 50 0 0 Z" fill="url(#gLeaf)" stroke="#2b6e35" stroke-width="5"/><path d="M0 0 C -80 -12 -160 -18 -240 -20" fill="none" stroke="#2b6e35" stroke-width="4"/></g>
+              <g id="leafR1" transform="translate(1182 520)"><path d="M0 0 C 60 -70 190 -80 250 -20 C 190 40 70 50 0 0 Z" fill="url(#gLeaf)" stroke="#2b6e35" stroke-width="5"/><path d="M0 0 C 80 -12 160 -18 240 -20" fill="none" stroke="#2b6e35" stroke-width="4"/></g>
+              <g id="leafL2" transform="translate(1183 410)"><path d="M0 0 C -50 -60 -160 -66 -210 -16 C -160 34 -60 40 0 0 Z" fill="url(#gLeaf)" stroke="#2b6e35" stroke-width="5"/><path d="M0 0 C -70 -10 -140 -14 -200 -16" fill="none" stroke="#2b6e35" stroke-width="4"/></g>
+              <g id="leafR2" transform="translate(1184 330)"><path d="M0 0 C 50 -60 170 -66 220 -16 C 170 34 60 40 0 0 Z" fill="url(#gLeaf)" stroke="#2b6e35" stroke-width="5"/><path d="M0 0 C 70 -10 145 -14 210 -16" fill="none" stroke="#2b6e35" stroke-width="4"/></g>
+              <ellipse id="leafGlow" cx="1190" cy="440" rx="330" ry="230" fill="url(#gLeafGlow)" opacity="0"/>
+            </g>
+            <!-- vatten som stiger: banor -->
+            <path id="wpath1" d="M930 930 C 1010 935 1130 930 1172 900 C 1176 860 1180 800 1180 760 C 1180 640 1184 520 1182 420 C 1240 380 1320 350 1390 316" fill="none" stroke="none"/>
+            <path id="wpath2" d="M1440 905 C 1380 920 1230 950 1176 930 C 1178 860 1180 800 1180 760 C 1180 660 1180 600 1180 600 C 1100 590 1020 590 960 580" fill="none" stroke="none"/>
+            <g id="wdots" fill="var(--water)">
+              <circle class="wd" r="11"/><circle class="wd" r="11"/><circle class="wd" r="11"/><circle class="wd" r="11"/><circle class="wd" r="11"/><circle class="wd" r="11"/>
+            </g>
+            <!-- syre som lämnar bladen -->
+            <g id="o2s">
+              <g class="o2"><circle cx="-18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/><circle cx="18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/></g>
+              <g class="o2"><circle cx="-18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/><circle cx="18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/></g>
+              <g class="o2"><circle cx="-18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/><circle cx="18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/></g>
+              <g class="o2"><circle cx="-18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/><circle cx="18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/></g>
+              <g class="o2"><circle cx="-18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/><circle cx="18" r="19" fill="var(--o)" stroke="#9e2c1e" stroke-width="3"/></g>
+            </g>
+            <path id="opath1" d="M1400 300 C 1500 280 1540 470 1630 535" fill="none" stroke="none"/>
+            <path id="opath2" d="M1380 360 C 1470 420 1540 500 1630 540" fill="none" stroke="none"/>
+            <path id="opath3" d="M1360 250 C 1480 230 1560 440 1630 530" fill="none" stroke="none"/>
+            <!-- barnet som andas -->
+            <g transform="translate(1700 420)"><g id="kid">
+              <path d="M-40 360 C -40 250 -10 210 40 200 C 100 210 130 250 130 360 Z" fill="#5b7fc2" stroke="var(--ink)" stroke-width="5"/>
+              <circle cx="40" cy="110" r="88" fill="#f2c9a0" stroke="var(--ink)" stroke-width="5"/>
+              <path d="M-46 92 C -40 30 10 10 50 14 C 100 18 130 50 128 96 C 100 70 40 64 -46 92 Z" fill="#7a4b2d" stroke="var(--ink)" stroke-width="5"/>
+              <path d="M-46 118 l -20 14 l 22 4" fill="#f2c9a0" stroke="var(--ink)" stroke-width="5" stroke-linejoin="round"/>
+              <circle cx="0" cy="104" r="7" fill="var(--ink)"/>
+              <path d="M-18 150 C -6 158 6 158 14 152" fill="none" stroke="var(--ink)" stroke-width="5" stroke-linecap="round"/>
+            </g></g>
+          </svg>
+          <!-- etiketter i världen -->
+          <div id="labLjus" class="pill" style="left:760px; top:300px"><i style="background:#f6b31b"></i>Ljus</div>
+          <div id="labVatten" class="pill" style="left:790px; top:930px"><i style="background:var(--water)"></i>Vatten</div>
+          <div id="labSyre" class="pill" style="left:1560px; top:200px"><i style="background:var(--o)"></i>Syre</div>
+        </div>
+        <div id="title" class="big"><span>Foto</span><span>syntes</span></div>
+      </div>
+
+      <!-- ============ NÄRBILD: bladets yta och ett litet hål ============ -->
+      <div id="closeClip" class="clip layer" data-start="9.8" data-duration="6.4">
+        <div id="close" class="full" style="opacity:0">
+          <svg class="full" viewBox="0 0 1920 1080">
+            <defs>
+              <radialGradient id="gCell" cx=".5" cy=".45" r=".6"><stop offset="0" stop-color="#9ad97c"/><stop offset="1" stop-color="#4f9e45"/></radialGradient>
+            </defs>
+            <rect width="1920" height="1080" fill="#3a8238"/>
+            <g id="cells"></g>
+            <rect width="1920" height="1080" fill="#1e4d22" opacity=".18"/>
+            <!-- klyvöppning: två läppceller runt ett hål -->
+            <g id="stoma" transform="translate(1180 560)">
+              <ellipse rx="230" ry="300" fill="#1c3f1f" opacity=".25"/>
+              <g id="guardL"><path d="M-10 -250 C -190 -240 -230 -60 -230 0 C -230 60 -190 240 -10 250 C -70 160 -80 60 -80 0 C -80 -60 -70 -160 -10 -250 Z" fill="#7ccf63" stroke="#245c26" stroke-width="8"/></g>
+              <g id="guardR"><path d="M10 -250 C 190 -240 230 -60 230 0 C 230 60 190 240 10 250 C 70 160 80 60 80 0 C 80 -60 70 -160 10 -250 Z" fill="#7ccf63" stroke="#245c26" stroke-width="8"/></g>
+              <ellipse id="pore" rx="10" ry="200" fill="#0f2611"/>
+            </g>
+            <!-- koldioxid -->
+            <g id="co2s">
+              <g class="co2"><line x1="-36" x2="36" stroke="#2c2f35" stroke-width="10"/><circle cx="-40" r="26" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/><circle r="30" fill="var(--co2)" stroke="#23262b" stroke-width="4"/><circle cx="40" r="26" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/></g>
+              <g class="co2"><line x1="-36" x2="36" stroke="#2c2f35" stroke-width="10"/><circle cx="-40" r="26" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/><circle r="30" fill="var(--co2)" stroke="#23262b" stroke-width="4"/><circle cx="40" r="26" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/></g>
+              <g class="co2"><line x1="-36" x2="36" stroke="#2c2f35" stroke-width="10"/><circle cx="-40" r="26" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/><circle r="30" fill="var(--co2)" stroke="#23262b" stroke-width="4"/><circle cx="40" r="26" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/></g>
+            </g>
+          </svg>
+          <div id="labHal" class="pill" style="left:1180px; top:180px">Litet hål i bladet</div>
+          <div id="labCo2" class="pill" style="left:420px; top:300px"><i style="background:var(--co2)"></i>Koldioxid</div>
+        </div>
+      </div>
+
+      <!-- ============ I BLADET: ljus + vatten + koldioxid blir socker ============ -->
+      <div id="factClip" class="clip layer" data-start="15.2" data-duration="8.6">
+        <div id="fact" class="full" style="opacity:0; background: radial-gradient(ellipse at 50% 45%, #eaf6dc 0%, #cfe8b8 70%, #b5d99a 100%)">
+          <svg class="full" viewBox="0 0 1920 1080">
+            <!-- kloroplasten: växtens kök -->
+            <g id="chloro" transform="translate(960 470)">
+              <ellipse rx="330" ry="190" fill="#7cc865" stroke="#2d6e2f" stroke-width="10"/>
+              <ellipse rx="300" ry="162" fill="none" stroke="#a6dc8e" stroke-width="6"/>
+              <g fill="#3f9a3f" stroke="#2a6a2c" stroke-width="5">
+                <g transform="translate(-170 0)"><rect x="-38" y="-62" width="76" height="22" rx="11"/><rect x="-38" y="-34" width="76" height="22" rx="11"/><rect x="-38" y="-6" width="76" height="22" rx="11"/><rect x="-38" y="22" width="76" height="22" rx="11"/></g>
+                <g transform="translate(0 -20)"><rect x="-38" y="-62" width="76" height="22" rx="11"/><rect x="-38" y="-34" width="76" height="22" rx="11"/><rect x="-38" y="-6" width="76" height="22" rx="11"/><rect x="-38" y="22" width="76" height="22" rx="11"/></g>
+                <g transform="translate(170 10)"><rect x="-38" y="-62" width="76" height="22" rx="11"/><rect x="-38" y="-34" width="76" height="22" rx="11"/><rect x="-38" y="-6" width="76" height="22" rx="11"/><rect x="-38" y="22" width="76" height="22" rx="11"/></g>
+              </g>
+            </g>
+            <!-- ingredienser som flyger in -->
+            <g transform="translate(300 200)"><g id="inSun"><circle r="70" fill="url(#gSun)" stroke="#e7a213" stroke-width="6"/></g></g>
+            <g transform="translate(300 850)"><g id="inDrop"><path d="M0 -80c0 0 -52 62 -52 96a52 52 0 0 0 104 0c0-34-52-96-52-96z" fill="var(--water)" stroke="#1d5f93" stroke-width="6"/></g></g>
+            <g transform="translate(1640 220)"><g id="inCo2"><line x1="-44" x2="44" stroke="#2c2f35" stroke-width="12"/><circle cx="-50" r="32" fill="var(--o)" stroke="#9e2c1e" stroke-width="5"/><circle r="38" fill="var(--co2)" stroke="#23262b" stroke-width="5"/><circle cx="50" r="32" fill="var(--o)" stroke="#9e2c1e" stroke-width="5"/></g></g>
+            <!-- socker: sexkantiga ringar -->
+            <g id="sugar" transform="translate(960 470)">
+              <g id="hex1"><path d="M0 -90 L78 -45 L78 45 L0 90 L-78 45 L-78 -45 Z" fill="#ffd28a" stroke="#c46f10" stroke-width="10" stroke-linejoin="round"/></g>
+              <g id="hex2" transform="translate(-160 0)"><path d="M0 -70 L61 -35 L61 35 L0 70 L-61 35 L-61 -35 Z" fill="#ffd28a" stroke="#c46f10" stroke-width="9" stroke-linejoin="round"/></g>
+              <g id="hex3" transform="translate(160 0)"><path d="M0 -70 L61 -35 L61 35 L0 70 L-61 35 L-61 -35 Z" fill="#ffd28a" stroke="#c46f10" stroke-width="9" stroke-linejoin="round"/></g>
+              <g id="energy" stroke="#f4a915" stroke-width="10" stroke-linecap="round" fill="none">
+                <path d="M0 -130 V -190"/><path d="M110 -100 L150 -140"/><path d="M-110 -100 L-150 -140"/><path d="M250 -40 L300 -60"/><path d="M-250 -40 L-300 -60"/>
+              </g>
+            </g>
+          </svg>
+          <div id="labSocker" class="pill" style="left:960px; top:780px"><i style="background:var(--sugar)"></i>Socker</div>
+          <div id="labEnergi" class="cap" style="left:960px; top:870px; transform:translateX(-50%)">= växtens energi</div>
+          <div id="labKok" class="cap" style="left:960px; top:130px; transform:translateX(-50%); color:#2d6e2f; font-size:44px">Inne i bladet</div>
+        </div>
+      </div>
+
+      <!-- ============ AVSLUT: missuppfattningen vänds, sammanfattning ============ -->
+      <div id="endClip" class="clip layer" data-start="28" data-duration="8">
+        <div id="end" class="full" style="opacity:0; background: var(--paper)">
+          <div id="myth" class="big" style="position:absolute; left:50%; top:200px; transform:translateX(-50%); font-size:84px; white-space:nowrap">
+            <span id="mythTxt" style="color:var(--muted)">Växten äter jord</span>
+            <div id="strike" style="position:absolute; left:-24px; right:-24px; top:52%; height:12px; border-radius:6px; background:#d93a2b; transform-origin:0 50%"></div>
+          </div>
+          <div id="truth" class="big" style="position:absolute; left:50%; top:360px; transform:translateX(-50%); font-size:84px; white-space:nowrap; color:#2d6e2f">Växten gör sin mat själv</div>
+          <div class="eq">
+            <div class="tok" id="t1"><svg viewBox="-70 -70 140 140"><circle r="50" fill="url(#gSun)" stroke="#e7a213" stroke-width="6"/></svg>Ljus</div>
+            <div class="op" id="p1">+</div>
+            <div class="tok" id="t2"><svg viewBox="-70 -70 140 140"><path d="M0 -60c0 0 -40 48 -40 74a40 40 0 0 0 80 0c0-26-40-74-40-74z" fill="var(--water)" stroke="#1d5f93" stroke-width="6"/></svg>Vatten</div>
+            <div class="op" id="p2">+</div>
+            <div class="tok" id="t3"><svg viewBox="-70 -70 140 140"><line x1="-36" x2="36" stroke="#2c2f35" stroke-width="10"/><circle cx="-40" r="24" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/><circle r="28" fill="var(--co2)" stroke="#23262b" stroke-width="4"/><circle cx="40" r="24" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/></svg>Koldioxid</div>
+            <div class="op" id="p3">→</div>
+            <div class="tok" id="t4"><svg viewBox="-70 -70 140 140"><path d="M0 -56 L48 -28 L48 28 L0 56 L-48 28 L-48 -28 Z" fill="#ffd28a" stroke="#c46f10" stroke-width="8" stroke-linejoin="round"/></svg>Socker</div>
+            <div class="op" id="p4">+</div>
+            <div class="tok" id="t5"><svg viewBox="-70 -70 140 140"><circle cx="-18" r="20" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/><circle cx="18" r="20" fill="var(--o)" stroke="#9e2c1e" stroke-width="4"/></svg>Syre</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      gsap.registerPlugin(MotionPathPlugin);
+      // Bladets celler: förskjutet rutnät med seedad slump, rundade oregelbundna former (ritas en gång).
+      (() => {
+        let seed = 7; const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
+        const cells = document.getElementById("cells"), NS = "http://www.w3.org/2000/svg";
+        for (let r = -1; r < 10; r++) for (let c = -1; c < 13; c++) {
+          const cx = c * 160 + (r % 2 ? 80 : 0) + (rnd() - .5) * 40, cy = r * 120 + (rnd() - .5) * 30;
+          const pts = []; const n = 7;
+          for (let k = 0; k < n; k++) { const a = k / n * Math.PI * 2, rx = 70 + rnd() * 12, ry = 52 + rnd() * 10; pts.push([cx + Math.cos(a) * rx, cy + Math.sin(a) * ry]); }
+          let d = ""; pts.forEach((p, k) => { const q2 = pts[(k + 1) % n], m = [(p[0] + q2[0]) / 2, (p[1] + q2[1]) / 2]; d += (k ? " Q" : "M" + ((pts[n - 1][0] + p[0]) / 2) + " " + ((pts[n - 1][1] + p[1]) / 2) + " Q") + p[0].toFixed(1) + " " + p[1].toFixed(1) + " " + m[0].toFixed(1) + " " + m[1].toFixed(1); });
+          const el = document.createElementNS(NS, "path"); el.setAttribute("d", d + "Z"); el.setAttribute("fill", "url(#gCell)"); el.setAttribute("stroke", "#2a6a2b"); el.setAttribute("stroke-width", "6"); cells.appendChild(el);
+          if (rnd() > .35) { const g = document.createElementNS(NS, "g"); g.setAttribute("fill", "#3f9a3a"); g.setAttribute("opacity", ".75");
+            for (let j = 0; j < 4; j++) { const e = document.createElementNS(NS, "ellipse"); e.setAttribute("cx", (cx + (rnd() - .5) * 80).toFixed(1)); e.setAttribute("cy", (cy + (rnd() - .5) * 54).toFixed(1)); e.setAttribute("rx", "11"); e.setAttribute("ry", "7"); g.appendChild(e); }
+            cells.appendChild(g); }
+        }
+      })();
+      const L = 0.6;                       // rösten börjar 0,6 s in
+      const W = (s) => L + s;              // ordets start i ljudfilen → filmtid
+      const tl = gsap.timeline({ paused: true });
+      const q = (s) => document.querySelector(s), qa = (s) => [...document.querySelectorAll(s)];
+      const draw = (el) => { const n = el.getTotalLength(); el.style.strokeDasharray = n + " " + n; return n; };
+      const cam = (scale, cx, cy) => ({ scale, x: Math.min(0, Math.max(1920 - 1920 * scale, 960 - cx * scale)), y: Math.min(0, Math.max(1080 - 1080 * scale, 540 - cy * scale)) });
+
+      // ---- Början: en grodd växer upp (”växten gör sin egen mat”) ----
+      tl.fromTo("#world", cam(1.45, 1180, 560), { ...cam(1.45, 1180, 560), duration: 0.01 }, 0);
+      const stem = q("#stem"), sl = draw(stem);
+      tl.fromTo(stem, { strokeDashoffset: sl }, { strokeDashoffset: 0, duration: 1.6, ease: "power2.inOut" }, W(0.9));
+      [["#leafL1", 1.7], ["#leafR1", 2.0], ["#leafL2", 2.3], ["#leafR2", 2.55]].forEach(([id, t], i) => {
+        tl.fromTo(id + " path", { scale: 0, transformOrigin: "0px 0px" }, { scale: 1, duration: 0.9, ease: "back.out(1.3)" }, W(t));
+      });
+      tl.fromTo("#title span", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.22, stagger: 0.12, ease: "power4.out" }, 0.25);
+      // Kameran drar sig bakåt när solen kommer in
+      tl.to("#world", { ...cam(1.0, 960, 540), duration: 1.4, ease: "power2.inOut" }, W(2.9));
+      tl.to("#title", { scale: 0.55, x: -40, y: -40, transformOrigin: "0 0", duration: 0.9, ease: "power2.inOut" }, W(3.0));
+
+      // ---- Ljus: solen och strålarna (”Bladen fångar ljuset från solen”) ----
+      tl.fromTo("#sun", { x: -460, y: -320 }, { x: 0, y: 0, duration: 1.3, ease: "expo.out" }, W(3.4));
+      tl.fromTo("#rays", { rotation: 0, svgOrigin: "0 0" }, { rotation: 40, svgOrigin: "0 0", duration: 33, ease: "none" }, W(3.4));
+      tl.set("#beams", { opacity: 1 }, W(4.7));
+      qa(".beam").forEach((b, i) => {
+        const n = draw(b);
+        tl.fromTo(b, { strokeDashoffset: n }, { strokeDashoffset: 0, duration: 0.7, ease: "power2.out" }, W(4.7) + i * 0.12);
+        tl.to(b, { strokeDasharray: "26 30", duration: 0.01 }, W(5.6) + i * 0.12);
+        tl.fromTo(b, { strokeDashoffset: 0 }, { strokeDashoffset: -560, duration: 5.2, ease: "none", immediateRender: false }, W(5.6) + i * 0.12);
+        tl.to(b, { opacity: 0, duration: 0.4, ease: "power2.in" }, W(9.4));
+      });
+      tl.fromTo("#leafGlow", { opacity: 0 }, { opacity: 1, duration: 0.8, ease: "power2.out" }, W(5.0));
+      tl.to("#leafGlow", { opacity: 0, duration: 0.6 }, W(9.3));
+      tl.fromTo("#labLjus", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, W(4.7));
+      tl.to("#labLjus", { opacity: 0, duration: 0.3, ease: "power3.in" }, W(9.2));
+
+      // ---- Vatten: rötterna och vattnet som stiger (”Rötterna suger upp vatten ur marken”) ----
+      tl.to("#world", { ...cam(1.18, 1180, 800), duration: 1.2, ease: "power2.inOut" }, W(6.3));
+      tl.set("#roots", { opacity: 1 }, W(6.7));
+      qa(".root").forEach((r, i) => { const n = draw(r); tl.fromTo(r, { strokeDashoffset: n }, { strokeDashoffset: 0, duration: 0.9, ease: "power2.out" }, W(6.7) + i * 0.12); });
+      tl.fromTo(".drop", { scale: 0, transformOrigin: "50% 80%" }, { scale: 1, duration: 0.5, stagger: 0.08, ease: "back.out(2)" }, W(7.5));
+      qa(".wd").forEach((d, i) => {
+        const path = i % 2 ? "#wpath2" : "#wpath1", t0 = W(7.8) + i * 0.32;
+        tl.fromTo(d, { opacity: 0 }, { opacity: 1, duration: 0.2 }, t0);
+        tl.fromTo(d, { motionPath: { path, align: path, alignOrigin: [0.5, 0.5], start: 0, end: 0 } },
+          { motionPath: { path, align: path, alignOrigin: [0.5, 0.5], start: 0, end: 1 }, duration: 2.4, ease: "power1.inOut" }, t0);
+        tl.to(d, { opacity: 0, duration: 0.25 }, t0 + 2.3);
+      });
+      tl.fromTo("#labVatten", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, W(7.7));
+      tl.to("#labVatten", { opacity: 0, duration: 0.3, ease: "power3.in" }, W(9.6));
+
+      // ---- In i bladet: ett litet hål, koldioxid kommer in ----
+      tl.to("#world", { ...cam(5.5, 1390, 316), duration: 1.3, ease: "power3.in" }, W(9.6));
+      tl.to("#title", { opacity: 0, duration: 0.3 }, W(9.6));
+      tl.fromTo("#close", { opacity: 0, scale: 0.6, transformOrigin: "50% 50%" }, { opacity: 1, scale: 1, duration: 0.9, ease: "power2.out" }, W(10.5));
+      tl.fromTo("#guardL", { x: 40 }, { x: 0, duration: 0.9, ease: "power2.inOut" }, W(10.8));
+      tl.fromTo("#guardR", { x: -40 }, { x: 0, duration: 0.9, ease: "power2.inOut" }, W(10.8));
+      tl.fromTo("#pore", { scaleX: 0.2, svgOrigin: "0 0" }, { scaleX: 6, svgOrigin: "0 0", duration: 0.9, ease: "power2.inOut" }, W(10.8));
+      tl.fromTo("#labHal", { opacity: 0, y: -20 }, { opacity: 1, y: 0, duration: 0.45, ease: "expo.out" }, W(10.9));
+      [[140, 300], [200, 520], [110, 760]].forEach(([x, y], i) => {
+        const el = qa(".co2")[i], t0 = W(12.4) + i * 0.35;
+        tl.fromTo(el, { x: x - 300, y, opacity: 0, rotation: -30 }, { x, y, opacity: 1, rotation: 0, duration: 0.6, ease: "expo.out" }, t0);
+        tl.to(el, { x: 1180, y: 560 + (i - 1) * 50, scale: 0.35, rotation: 90, duration: 1.4, ease: "power2.in" }, t0 + 0.9);
+        tl.to(el, { opacity: 0, duration: 0.25 }, t0 + 2.15);
+      });
+      tl.fromTo("#labCo2", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, W(12.6));
+      tl.to(["#labCo2", "#labHal"], { opacity: 0, duration: 0.3, ease: "power3.in" }, W(14.6));
+
+      // ---- Inne i bladet: ljus + vatten + koldioxid → socker ----
+      tl.to("#close", { opacity: 0, filter: "blur(10px)", duration: 0.35, ease: "power3.in" }, W(14.7));
+      tl.fromTo("#fact", { opacity: 0, filter: "blur(10px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.4, ease: "power2.out" }, W(14.9));
+      tl.fromTo("#chloro", { scale: 0.7, svgOrigin: "960 470", opacity: 0 }, { scale: 1, svgOrigin: "960 470", opacity: 1, duration: 0.8, ease: "expo.out" }, W(14.9));
+      tl.fromTo("#labKok", { opacity: 0 }, { opacity: 1, duration: 0.4 }, W(15.0));
+      [["#inSun", 15.7], ["#inDrop", 16.3], ["#inCo2", 17.0]].forEach(([id, t]) => {
+        tl.fromTo(id, { opacity: 0, scale: 0.5, x: 0, y: 0 }, { opacity: 1, scale: 1, duration: 0.45, ease: "back.out(1.8)" }, W(t));
+      });
+      tl.to("#inSun", { x: 660, y: 270, scale: 0.25, duration: 0.9, ease: "power3.in" }, W(18.1));
+      tl.to("#inDrop", { x: 660, y: -380, scale: 0.25, duration: 0.9, ease: "power3.in" }, W(18.2));
+      tl.to("#inCo2", { x: -680, y: 250, scale: 0.25, duration: 0.9, ease: "power3.in" }, W(18.3));
+      tl.to(["#inSun", "#inDrop", "#inCo2"], { opacity: 0, duration: 0.15 }, W(19.15));
+      tl.to("#chloro", { scale: 1.06, svgOrigin: "960 470", duration: 0.18, ease: "power2.out", yoyo: true, repeat: 1 }, W(19.1));
+      tl.to("#chloro", { opacity: 0.25, duration: 0.5 }, W(19.3));
+      tl.fromTo("#hex1", { scale: 0, svgOrigin: "0 0" }, { scale: 1, svgOrigin: "0 0", duration: 0.6, ease: "back.out(1.7)" }, W(19.1));
+      tl.fromTo(["#hex2", "#hex3"], { opacity: 0, scale: 0.4 }, { opacity: 1, scale: 1, duration: 0.5, stagger: 0.12, ease: "back.out(1.7)", transformOrigin: "50% 50%" }, W(19.35));
+      tl.fromTo("#labSocker", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, W(19.2));
+      qa("#energy path").forEach((p) => { const n = draw(p); tl.fromTo(p, { strokeDashoffset: n }, { strokeDashoffset: 0, duration: 0.45, ease: "power2.out" }, W(21.3)); });
+      tl.fromTo("#labEnergi", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power4.out" }, W(21.5));
+      tl.to("#fact", { opacity: 0, filter: "blur(10px)", duration: 0.35, ease: "power3.in" }, W(22.6));
+
+      // ---- Tillbaka ut: syre lämnar bladen och barnet andas ----
+      tl.set("#world", cam(1.0, 960, 540), W(22.5));
+      tl.set(["#beams", "#leafGlow", "#wdots", "#labLjus", "#labVatten"], { opacity: 0 }, W(22.5));
+      tl.fromTo("#kid", { x: 420, opacity: 0 }, { x: 0, opacity: 1, duration: 0.9, ease: "expo.out" }, W(22.9));
+      qa(".o2").forEach((o, i) => {
+        const path = ["#opath1", "#opath2", "#opath3"][i % 3], t0 = W(24.2) + i * 0.35;
+        tl.fromTo(o, { opacity: 0 }, { opacity: 1, duration: 0.2 }, t0);
+        tl.fromTo(o, { motionPath: { path, align: path, alignOrigin: [0.5, 0.5], start: 0, end: 0 } },
+          { motionPath: { path, align: path, alignOrigin: [0.5, 0.5], start: 0, end: 1 }, duration: 1.8, ease: "power1.inOut" }, t0);
+        tl.to(o, { opacity: 0, scale: 0.4, duration: 0.3 }, t0 + 1.6);
+      });
+      tl.fromTo("#labSyre", { opacity: 0, scale: 0.6 }, { opacity: 1, scale: 1, duration: 0.5, ease: "back.out(1.6)" }, W(24.2));
+      tl.to("#kid", { scale: 1.04, transformOrigin: "50% 100%", duration: 0.7, ease: "power2.inOut", yoyo: true, repeat: 1 }, W(26.4));
+
+      // ---- Avslut: missuppfattningen stryks, sammanfattningen byggs ----
+      tl.fromTo("#end", { opacity: 0 }, { opacity: 1, duration: 0.4, ease: "power2.inOut" }, W(27.6));
+      tl.fromTo("#mythTxt", { opacity: 0, filter: "blur(8px)" }, { opacity: 1, filter: "blur(0px)", duration: 0.25, ease: "power4.out" }, W(28.0));
+      tl.fromTo("#strike", { scaleX: 0 }, { scaleX: 1, duration: 0.45, ease: "power3.out" }, W(29.9));
+      tl.fromTo("#truth", { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.6, ease: "expo.out" }, W(31.0));
+      tl.fromTo(["#t1", "#p1", "#t2", "#p2", "#t3", "#p3", "#t4", "#p4", "#t5"], { opacity: 0, y: 30 }, { opacity: 1, y: 0, duration: 0.5, stagger: 0.09, ease: "expo.out" }, W(31.6));
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
