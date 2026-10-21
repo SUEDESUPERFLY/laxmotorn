@@ -202,3 +202,76 @@ Bedöm innehållet, inte stavning eller språk. Egna ord och exempel räknas om 
 
 SVARA MED ENDAST JSON: {"result":"ja","feedback":"…"}`;
 }
+
+// Förklaringsfilmer: en ritning som växer fram medan rösten förklarar (spelas i appen, se src/index.html).
+// Samma namn som PROPS i appen.
+export const FILM_PROPS = [
+  "sun", "cloud", "drop", "wave", "snow", "wind", "fire", "thermometer", "mountain", "tree", "conifer", "leaf", "plant", "flower",
+  "seed", "mushroom", "apple", "fish", "bird", "paw", "person", "people", "house", "building", "car", "boat", "rocket", "globe",
+  "map", "flag", "planet", "moon", "star", "atom", "flask", "magnet", "bulb", "bolt", "eye", "heart", "book", "paper", "news",
+  "pen", "chat", "clock", "calendar", "coin", "calc", "scale", "gavel", "shield", "crown", "lock", "key", "magnifier",
+  "computer", "tv", "music", "tent", "cube", "check", "cross", "question",
+];
+
+const FILM_EXAMPLE = JSON.stringify({
+  id: "k2",
+  say: "När du avrundar till närmaste tiotal tittar du på entalssiffran. Tjugotre ligger närmare tjugo, så det blir tjugo. Tjugosju ligger närmare trettio, så det blir trettio. Är entalet fem eller mer avrundar du uppåt.",
+  steps: [
+    { cue: "närmaste tiotal", els: [
+      { k: "line", x1: 90, y1: 300, x2: 710, y2: 300 },
+      { k: "path", d: "M90 286v28M152 292v16M214 292v16M276 292v16M338 292v16M400 288v24M462 292v16M524 292v16M586 292v16M648 292v16M710 286v28" },
+      { k: "text", t: "20", x: 90, y: 360, size: 2 }, { k: "text", t: "30", x: 710, y: 360, size: 2 }] },
+    { cue: "entalssiffran", els: [{ k: "words", x: 400, y: 120, words: ["2", "3"], hi: [1], tags: ["ental"], size: 3 }] },
+    { cue: "Tjugotre", els: [
+      { k: "circle", x: 276, y: 300, r: 10, tone: "accent" }, { k: "text", t: "23", x: 276, y: 265, size: 1, tone: "accent" },
+      { k: "arrow", x1: 252, y1: 236, x2: 104, y2: 270, bend: -0.45, tone: "accent" }] },
+    { cue: "Tjugosju", els: [
+      { k: "circle", x: 524, y: 300, r: 10, tone: "cool" }, { k: "text", t: "27", x: 524, y: 265, size: 1, tone: "cool" },
+      { k: "arrow", x1: 548, y1: 236, x2: 696, y2: 270, bend: 0.45, tone: "cool" }] },
+    { cue: "fem eller mer", els: [
+      { k: "mark", x: 372, y: 400, w: 330, h: 56 }, { k: "text", t: "5 eller mer → uppåt", x: 537, y: 440, size: 1 },
+      { k: "text", t: "0–4 → nedåt", x: 230, y: 440, size: 1, tone: "muted" }] },
+  ],
+});
+
+export function filmPrompt(o: { grade: string; title: string; concepts: { id: string; name: string; say: string; qs: string[] }[] }) {
+  return `Du gör korta förklaringsfilmer för en elev i årskurs ${o.grade} till läxan "${o.title}". En film visas direkt efter att eleven har svarat fel på en fråga om begreppet. En lugn röst läser manuset ("say") medan en ritning växer fram på skärmen, del för del, precis när rösten säger orden i "cue". Det ska vara som när en lärare förklarar och ritar på tavlan samtidigt.
+
+BEGREPP (med frågor eleven övar på; rätt svar efter →, vanliga felsvar inom [ ])
+${o.concepts.map((k) => `### ${k.id}: ${k.name}\nNuvarande förklaring: ${k.say}\n${k.qs.join("\n")}`).join("\n\n")}
+
+SÅ FUNGERAR EN BRA FÖRKLARINGSFILM (forskning om multimedialärande; följ det)
+- Bilden visar själva innehållet: hur något är uppbyggt, hänger ihop, förändras eller jämförs. Inga dekorationer, inga skämt och inga figurer som inte förklarar något.
+- På skärmen står bara korta etiketter (1–4 ord) intill det de beskriver. Manuset läses upp och ska inte stå på skärmen.
+- Varje del ritas när rösten säger den. Bygg bilden steg för steg i samma ordning som manuset.
+- Rörelse bara när innehållet handlar om förändring eller flöde (pilar med "flow": true).
+- Samma färg betyder samma sak genom hela filmen.
+- Slutbilden är en hel, överskådlig sammanfattning som går att förstå utan ljud.
+
+MANUS ("say")
+- Du-form, lugnt och tydligt talspråk för årskurs ${o.grade}. 2–4 korta meningar, 25–55 ord.
+- Första meningen säger kärnan. Ta konkreta exempel.
+- Om felsvaren visar en vanlig missuppfattning: säg rakt ut vad som inte stämmer och vad som gäller ("Det är inte …, utan …").
+- Fakta ska stämma med frågorna och kursplanen. Hitta inte på detaljer.
+
+RITNINGEN
+Duken är 800 × 500 (x åt höger, y nedåt). Håll 30 px marginal. Ett steg = {"cue": 1–3 ord som står ordagrant i manuset, "els": [1–4 element]}. 3–6 steg, högst 16 element, i manusets ordning.
+Element ("tone" är valfri: "ink" svart standard, "accent" huvudsaken, "cool" blå, "warm" gul, "alert" röd bara för fel, "muted" grå för bakgrund):
+- Figur: {"k":"prop","n":"plant","x":400,"y":250,"s":120,"label":"Växt","lp":"b"}  x,y = mitten, s = storlek 40–260, lp = etikettens sida t/b/l/r. n är en av: ${FILM_PROPS.join(", ")}.
+- Text: {"k":"text","t":"Kort text","x":400,"y":80,"size":2,"a":"m"}  y = baslinjen, a = s (vänsterkant vid x) / m (mitten) / e (högerkant), size 1 = 28 px etikett, 2 = 40 px rubrik, 3 = 60 px enstaka ord eller tal. Bredd ungefär 0,55 × size-px per tecken.
+- Pil: {"k":"arrow","x1":160,"y1":250,"x2":300,"y2":250,"bend":0,"label":"…","flow":true}  bend −1…1 böjer pilen. Från kanten av en sak till kanten av nästa, 60–300 px lång.
+- Linje: {"k":"line","x1":…,"y1":…,"x2":…,"y2":…,"dash":false}
+- Låda: {"k":"box","x":100,"y":200,"w":180,"h":70,"label":"Begrepp"}  x,y = övre vänstra hörnet. Etiketten radbryts inuti.
+- Cirkel: {"k":"circle","x":400,"y":250,"r":60,"label":"…"}  för mängder, delar och punkter (r 8–200).
+- Mening: {"k":"words","x":400,"y":260,"words":["Maja","springer","snabbt"],"hi":[2],"tags":["hur?"]}  hela meningen centrerad kring x. hi = ord som ramas in (index, intilliggande blir en ram), tags = en etikett under varje ram. För att rama in fler delar senare: ett nytt words-element med samma x, y och words plus "hiOnly": true. Använd för språk och grammatik.
+- Tal som räknas upp: {"k":"num","x":400,"y":250,"from":0,"to":365,"dec":0,"suffix":" dagar","size":3}
+- Överstrykning (markeringspenna bakom något): {"k":"mark","x":100,"y":200,"w":300,"h":50}
+- Fri form: {"k":"path","d":"M100 300 C200 200 300 400 400 300","fill":false}  bara M L H V C Q A Z, för t.ex. tallinjens streck, en kurva eller en enkel form.
+Layout: inget får överlappa (håll 20 px luft, räkna med textens bredd). Läsriktning vänster → höger eller uppifrån och ned, orsak före verkan. En sak per plats; låt det som hör ihop stå nära varandra. Matte: tallinje, tal och pilar. Språk: words. NO/SO: figurer, pilar och lådor.
+
+EXEMPEL (Avrunda till tiotal, årskurs 4)
+${FILM_EXAMPLE}
+
+SVARA MED ENDAST JSON:
+{"films":[{"id":"k1","say":"…","steps":[{"cue":"…","els":[…]}]}]}`;
+}

@@ -100,3 +100,45 @@ export function sanitizeLevel(d: Any, n: number, existing: Set<string>) {
   if (!stations.length) return null;
   return { stations, concepts };
 }
+
+// Förklaringsfilm: say + steg med element på en duk 800 × 500. Samma regler som fEl/fNorm i src/index.html.
+const FW = 800, FH = 500;
+const TONES = ["ink", "accent", "warm", "cool", "alert", "muted"];
+const PATH = /^[MLHVCSQTAZmlhvcsqtaz0-9eE.,\s-]{1,900}$/;
+const num = (v: unknown, a: number, b: number, d: number) => { const n = Number(v); return Number.isFinite(n) ? Math.min(b, Math.max(a, Math.round(n * 10) / 10)) : d; };
+function filmEl(e: Any, props: string[]) {
+  if (!e || typeof e !== "object") return null;
+  const tone = TONES.includes(e.tone) ? { tone: e.tone } : {};
+  const X = (v: unknown) => num(v, 0, FW, FW / 2), Y = (v: unknown) => num(v, 0, FH, FH / 2);
+  const to = Array.isArray(e.to) && e.to.length === 2 ? { to: [X(e.to[0]), Y(e.to[1])] } : {};
+  const size = (d: number, ok = [1, 2, 3]) => (ok.includes(Number(e.size)) ? Number(e.size) : d);
+  switch (e.k) {
+    case "prop": return { k: "prop", n: props.includes(e.n) ? e.n : "dot", x: X(e.x), y: Y(e.y), s: num(e.s, 30, 300, 120), label: clean(e.label, 32), lp: ["t", "b", "l", "r"].includes(e.lp) ? e.lp : "b", ...tone, ...to };
+    case "text": { const t = clean(e.t, 90); return t ? { k: "text", t, x: X(e.x), y: Y(e.y), size: size(2), a: ["s", "m", "e"].includes(e.a) ? e.a : "m", w: num(e.w, 80, 780, 720), ...tone, ...to } : null; }
+    case "arrow": case "line": return { k: e.k, x1: X(e.x1), y1: Y(e.y1), x2: X(e.x2), y2: Y(e.y2), bend: num(e.bend, -1, 1, 0), label: clean(e.label, 32), flow: !!e.flow, dash: !!e.dash, ...tone };
+    case "path": { const d = typeof e.d === "string" ? e.d.trim() : ""; return PATH.test(d) ? { k: "path", d, fill: !!e.fill, ...tone } : null; }
+    case "box": { const x = num(e.x, 0, FW - 20, 0), y = num(e.y, 0, FH - 20, 0); return { k: "box", x, y, w: num(e.w, 20, FW - x, 120), h: num(e.h, 20, FH - y, 70), label: clean(e.label, 60), size: size(1, [1, 2]), fill: e.fill !== false, ...tone }; }
+    case "circle": return { k: "circle", x: X(e.x), y: Y(e.y), r: num(e.r, 8, 220, 50), label: clean(e.label, 40), fill: e.fill !== false, ...tone };
+    case "words": {
+      const words = list(e.words, 24).slice(0, 12); if (!words.length) return null;
+      const hi = [...new Set<number>((Array.isArray(e.hi) ? e.hi : []).map(Number))].filter((i) => Number.isInteger(i) && i >= 0 && i < words.length).sort((a, b) => a - b);
+      const tags = (Array.isArray(e.tags) ? e.tags : [e.tag]).map((t: unknown) => clean(t, 24)).slice(0, 6);
+      return { k: "words", x: X(e.x), y: Y(e.y), words, hi, tags, hiOnly: !!e.hiOnly && hi.length > 0, size: size(2), ...tone };
+    }
+    case "num": { const t = Number(e.to); if (!Number.isFinite(t) || Math.abs(t) > 1e9) return null;
+      return { k: "num", x: X(e.x), y: Y(e.y), from: Number.isFinite(Number(e.from)) ? Number(e.from) : 0, to: t, dec: num(e.dec, 0, 3, 0), prefix: clean(e.prefix, 8), suffix: clean(e.suffix, 10), size: size(3), ...tone }; }
+    case "mark": { const x = num(e.x, 0, FW - 10, 0), y = num(e.y, 0, FH - 10, 0); return { k: "mark", x, y, w: num(e.w, 10, FW - x, 100), h: num(e.h, 10, FH - y, 40), tone: TONES.includes(e.tone) ? e.tone : "warm" }; }
+  }
+  return null;
+}
+export function sanitizeFilm(f: Any, props: string[]) {
+  if (!f || typeof f !== "object" || !Array.isArray(f.steps)) return null;
+  const say = clean(f.say, 600); if (say.length < 20) return null;
+  const low = say.toLowerCase(); let total = 0;
+  const steps = f.steps.slice(0, 8).map((s: Any) => {
+    const els = (Array.isArray(s?.els) ? s.els : []).map((e: Any) => filmEl(e, props)).filter(Boolean).slice(0, 8);
+    const cue = clean(s?.cue, 40);
+    return { cue: cue && low.includes(cue.toLowerCase()) ? cue : "", els };
+  }).filter((s: Any) => s.els.length && (total += s.els.length) <= 30);
+  return steps.length ? { v: 1, say, steps } : null;
+}

@@ -8,6 +8,7 @@
   --line:#C9CFD8; --moss:#0F6A73; --moss-ink:#FFFFFF; --lingon:#C9343B; --lingon-soft:#F7DDDE;
   --kant:#E3A400; --kant-soft:#FCEFC0; --ok:#1E7A46; --ok-soft:#D8EFE1; --bark:#161A21;
   --grid:rgba(22,26,33,.05); --shadow:0 2px 0 rgba(22,26,33,.14);
+  --film-paper:#FDFDFA; --film-grid:rgba(46,111,176,.13); --film-cool:#2E6FB0;
 }
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
   color-scheme:dark;
@@ -15,6 +16,7 @@
   --line:#313845; --moss:#6CC3CB; --moss-ink:#0B1517; --lingon:#F07A80; --lingon-soft:#3A1D20;
   --kant:#F2C230; --kant-soft:#3A3112; --ok:#6FCB94; --ok-soft:#173424; --bark:#E7EAF0;
   --grid:rgba(255,255,255,.035); --shadow:0 2px 0 rgba(0,0,0,.45);
+  --film-paper:#1B2129; --film-grid:rgba(127,169,230,.12); --film-cool:#7FA9E6;
 }}
 :root[data-theme="dark"]{
   color-scheme:dark;
@@ -22,6 +24,7 @@
   --line:#313845; --moss:#6CC3CB; --moss-ink:#0B1517; --lingon:#F07A80; --lingon-soft:#3A1D20;
   --kant:#F2C230; --kant-soft:#3A3112; --ok:#6FCB94; --ok-soft:#173424; --bark:#E7EAF0;
   --grid:rgba(255,255,255,.035); --shadow:0 2px 0 rgba(0,0,0,.45);
+  --film-paper:#1B2129; --film-grid:rgba(127,169,230,.12); --film-cool:#7FA9E6;
 }
 /* Ämnesfärger */
 [data-subj="no"]{--moss:#2F6B32} [data-subj="so"]{--moss:#1F4E8C} [data-subj="sv"]{--moss:#A3324A}
@@ -378,52 +381,31 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .qz.kid{width:100%;text-align:left;padding:0}
 .qz.kid .lvl{width:44px;height:44px;font-size:18px}
 .qz.kid.cur{border-color:var(--moss)}
-/* Förklaringsklipp */
-.xp-ov{position:fixed;inset:0;background:rgba(10,14,20,.55);z-index:30;display:grid;place-items:center;padding:16px}
-.xp-card{width:min(640px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--surface);border:3px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 rgba(0,0,0,.25);padding:16px;display:flex;flex-direction:column;gap:12px;animation:xpIn .35s ease-out}
-@keyframes xpIn{from{transform:translateY(24px) rotate(-1.5deg);opacity:0}to{transform:none;opacity:1}}
-.xp-band{display:flex;align-items:center;gap:10px;border-bottom:2px dashed var(--line);padding-bottom:10px}
-.xp-ic{width:40px;height:40px;border-radius:12px;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center;flex:none}
-.xp-ic svg{width:24px;height:24px}
-.xp-band h3{flex:1;font-size:22px}
+/* Förklaringsfilm */
+.xp-ov{position:fixed;inset:0;background:rgba(10,14,20,.6);z-index:30;display:grid;place-items:center;padding:16px}
+.xp-card{width:min(900px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--surface);border:3px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 rgba(0,0,0,.25);padding:14px;display:flex;flex-direction:column;gap:10px;animation:xpIn .3s ease-out}
+@keyframes xpIn{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
+.xp-band{display:flex;align-items:center;gap:10px}
+.xp-ic{width:38px;height:38px;border-radius:12px;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center;flex:none}
+.xp-ic svg{width:22px;height:22px}
+.xp-band h3{flex:1;font-size:21px}
 .xp-kick{font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.08em;color:var(--muted)}
-.xp-win{min-height:230px;background:var(--surface2);border:2px solid var(--line);border-radius:16px;padding:16px;display:flex;flex-direction:column;justify-content:center;gap:12px;position:relative;overflow:hidden;
-  background-image:radial-gradient(var(--line) 1px,transparent 1.2px);background-size:14px 14px}
-.xp-it{opacity:0;transform:translateY(10px);transition:opacity .35s,transform .35s}
-.xp-it.on{opacity:1;transform:none}
-.xp-it.pop{animation:xpPop .45s ease-out}
-@keyframes xpPop{0%{transform:scale(.7)}60%{transform:scale(1.08)}100%{transform:scale(1)}}
-.xp-h{margin:0;font:700 18px "Bricolage Grotesque",sans-serif;color:var(--muted);text-align:center}
-.xp-term{display:flex;flex-direction:column;align-items:center;gap:10px;text-align:center}
-.xp-term b{font:800 clamp(30px,8vw,46px)/1.05 "Bricolage Grotesque",sans-serif;color:var(--moss);background:var(--surface);border:3px solid var(--ink);border-radius:14px;padding:6px 18px}
-.xp-term span{font-weight:700;font-size:19px;max-width:30ch}
-.xp-list{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
-.xp-list li{display:flex;align-items:center;gap:10px;background:var(--surface);border:2px solid var(--ink);border-radius:12px;padding:8px 12px;font-weight:800;font-size:19px}
-.xp-dot{width:28px;height:28px;border-radius:50%;background:var(--kant);color:#161A21;display:grid;place-items:center;flex:none}
-.xp-dot svg{width:16px;height:16px}
-.xp-steps{list-style:none;margin:0;padding:0;display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px}
-.xp-steps li{display:flex;align-items:center;gap:6px}
-.xp-steps span{background:var(--surface);border:2px solid var(--ink);border-radius:12px;padding:8px 12px;font-weight:800;font-size:17px;display:flex;gap:8px;align-items:center}
-.xp-steps em{font-style:normal;width:24px;height:24px;border-radius:50%;background:var(--moss);color:var(--moss-ink);display:grid;place-items:center;font-size:13px}
-.xp-arrow{font-style:normal;font-weight:800;font-size:22px;color:var(--muted)}
-.xp-cyc{position:relative;width:min(340px,100%);aspect-ratio:340/300;margin:0 auto;color:var(--muted)}
-.xp-cyc svg{position:absolute;inset:0;width:100%;height:100%}
-.xp-arc{fill:none;stroke:currentColor;stroke-width:3;stroke-dasharray:6 6}
-.xp-node{position:absolute;transform:translate(-50%,-50%) translateY(10px);background:var(--surface);border:2px solid var(--ink);border-radius:12px;padding:6px 10px;font-weight:800;font-size:15px;color:var(--ink);white-space:nowrap;max-width:46%;white-space:normal;text-align:center}
-.xp-node.on{transform:translate(-50%,-50%)}
-.xp-node.pop{animation:none}
-.xp-cmp{display:grid;grid-template-columns:1fr auto 1fr;gap:10px;align-items:start}
-.xp-col ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:6px}
-.xp-col li{background:var(--surface);border:2px solid var(--ink);border-radius:10px;padding:6px 10px;font-weight:800;text-align:center}
-.xp-vs{align-self:center;font:800 18px "Bricolage Grotesque",sans-serif;color:var(--muted)}
-.xp-cap{min-height:3.2em;font-weight:700;font-size:18px;line-height:1.45;text-align:center}
-.xp-cap span{color:var(--muted);transition:color .15s}
+.xp-stage{width:100%;max-width:max(300px,calc((100dvh - 240px)*1.6));margin:0 auto;aspect-ratio:8/5;border:3px solid var(--ink);border-radius:16px;overflow:hidden;background:var(--film-paper)}
+.xp-stage svg{display:block;width:100%;height:100%}
+.xp-bar{position:relative;height:6px;border-radius:99px;background:var(--line)}
+.xp-bar>i{display:block;height:100%;width:0;background:var(--moss);border-radius:99px}
+.xp-ticks i{position:absolute;top:-3px;width:3px;height:12px;margin-left:-1.5px;border-radius:2px;background:var(--ink);opacity:.3}
+.xp-cap{min-height:2.9em;font-weight:700;font-size:18px;line-height:1.45;text-align:center}
+.xp-cap span{color:var(--muted)}
 .xp-cap span.past{color:var(--ink)}
 .xp-cap span.now{color:var(--ink);background:var(--kant-soft);border-radius:4px;box-shadow:0 0 0 2px var(--kant-soft)}
-.xp-bar{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
-.xp-bar i{display:block;height:100%;width:0;background:var(--moss);transition:width .2s linear}
-.xp-ctl{justify-content:center}
-.xp-ov:not(.end) #xpGo{opacity:.8}
+.xp-ctl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.xp-ctl .grow{flex:1}
+.xp-ctl .icon-btn{width:44px;height:44px;border:2px solid var(--ink);color:var(--ink);background:var(--surface)}
+.xp-ctl .icon-btn svg{width:24px;height:24px}
+.xp-ctl [aria-pressed="true"]{background:var(--kant-soft);border-color:var(--ink)}
+.xp-ov:not(.end) #xpGo{opacity:.85}
+@media (max-width:560px){.xp-ov{padding:6px}.xp-card{padding:10px;border-radius:16px}.xp-band h3{font-size:18px}.xp-kick{display:none}}
 .clips{display:flex;flex-wrap:wrap;gap:8px}
 .clip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:2px solid var(--line);border-radius:99px;padding:6px 12px 6px 8px;font-weight:800;font-size:14px}
 .clip:hover{border-color:var(--moss)}
@@ -625,11 +607,12 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 <div class="xp-ov" id="xpOv" hidden>
   <div class="xp-card" role="dialog" aria-modal="true" aria-labelledby="xpTitle">
     <div class="xp-band"><span class="xp-ic" id="xpIc"></span><h3 id="xpTitle"></h3><span class="xp-kick">Förklaring</span></div>
-    <div class="xp-win" id="xpWin"></div>
-    <div class="xp-cap" id="xpCap"></div>
-    <div class="xp-bar"><i id="xpBar"></i></div>
+    <div class="xp-stage"><svg id="xpStage" viewBox="0 0 800 500" role="img" preserveAspectRatio="xMidYMid meet"></svg></div>
+    <div class="xp-bar" aria-hidden="true"><i id="xpBar"></i><span class="xp-ticks" id="xpTicks"></span></div>
+    <div class="xp-cap" id="xpCap" hidden></div>
     <p class="hint" id="xpNote" style="margin:0"></p>
-    <div class="row xp-ctl"><button class="btn" id="xpGo">Fortsätt</button><button class="btn ghost" id="xpAgain">Spela igen</button><button class="btn ghost small" id="xpMute"></button></div>
+    <div class="xp-ctl"><button class="icon-btn" id="xpPlay" aria-label="Pausa"></button><button class="icon-btn" id="xpBack" aria-label="Förra meningen"><svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5v14"/><path d="M19 6 9 12l10 6z"/></svg></button>
+      <button class="btn ghost small" id="xpTxt" aria-pressed="false">Text</button><button class="btn ghost small" id="xpMute"></button><span class="grow"></span><button class="btn" id="xpGo">Fortsätt</button></div>
   </div>
 </div>
 
@@ -671,6 +654,7 @@ const ICONS={
  doc:'<path d="M6 2h9l4 4v16H6z"/><path d="M15 2v4h4"/><path d="M9 12h7M9 16h5"/>',
  x:'<path d="M6 6l12 12M18 6 6 18"/>',
  play:'<circle cx="12" cy="12" r="9"/><path d="m10 8 6 4-6 4z"/>',
+ pause:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7M14 8.5v7"/>',
  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
  check:'<path d="m5 12 5 5 9-10"/>',
  flame:'<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 1.6 1.2 2.6 2.5 3 0-3-1-5.5 0-8z"/>',
@@ -967,7 +951,28 @@ async function refreshQuiz(id){
   if(error||!data)return null;
   const q=rowToQuiz(data);Store.remote=Store.remote.map(x=>x.id===id?q:x);
   if(QZ&&QZ.id===id){QZ=q;STATIONS=q.stations||[];FLASH=q.flash||[];if(!$('#home').hidden)renderHome()}
+  if(DRAFT&&DRAFT.fromId===id&&q.status==='draft'){DRAFT.concepts=q.concepts||DRAFT.concepts}
   return q;
+}
+// Ritade förklaringsfilmer görs i bakgrunden, några begrepp åt gången, första gången läxan öppnas.
+const FILMREQ={};
+function ensureFilms(qz){
+  if(!qz||!qz.id||!(qz.concepts||[]).some(k=>!k.film)||FILMREQ[qz.id])return;
+  const id=qz.id;FILMREQ[id]=true;
+  (async()=>{
+    let cool=0;
+    try{
+      for(let round=0;round<5;round++){
+        const r=await API.json({action:'films',quiz_id:id},{});
+        if(r.error)cool=10*60000;
+        if(r.ready||r.error)break;
+        let q=null;
+        for(let k=0;k<24;k++){await new Promise(res=>setTimeout(res,k?8000:5000));q=await refreshQuiz(id);if(!q||!(q.filmgen&&q.filmgen.at))break}
+        if(!q||!(q.concepts||[]).some(k=>!k.film))break;
+      }
+    }catch(e){cool=2*60000}
+    finally{if(cool)setTimeout(()=>{delete FILMREQ[id]},cool);else delete FILMREQ[id]}
+  })();
 }
 // Beställer nästa nivå när den närmar sig och hämtar den när den är klar.
 function ensureLevels(qz,p){
@@ -1255,7 +1260,7 @@ function cleanConcepts(v){
     else if(type==='compare'){const side=x=>({title:clean(x&&x.title,30),items:cleanItems(x&&x.items,say,4)});const left=side(s.left),right=side(s.right);
       show=!left.title||!right.title||!left.items.length||!right.items.length?{type:'term',word:name,def:''}:{type,left,right}}
     else{const items=cleanItems(s.items,say,5);show=items.length>=2?{type,title:clean(s.title,40),items}:{type:'term',word:name,def:''}}
-    seen.add(id);out.push({id,name,icon:ICON_KEYS.includes(k.icon)?k.icon:'book',say,show});
+    seen.add(id);out.push({id,name,icon:ICON_KEYS.includes(k.icon)?k.icon:'book',say,show,...(k.film&&typeof k.film==='object'&&Array.isArray(k.film.steps)?{film:k.film}:{})});
   }
   return out.slice(0,12);
 }
@@ -1356,6 +1361,7 @@ function ansText(q){
 }
 function renderReview(){
   const d=DRAFT,nq=d.stations.reduce((a,s)=>a+s.qs.length,0);
+  if(d.fromId&&ROLE!=='child')ensureFilms({id:d.fromId,concepts:d.concepts});
   $('#review').dataset.subj=d.subject;
   $('#revBox').innerHTML=`<h2>Kolla förhöret</h2>
    <label class="field" for="revTitle"><span>Namn</span><input class="inp" id="revTitle" maxlength="60" value="${esc(d.title)}"></label>
@@ -1436,7 +1442,7 @@ function renderHome(){
   const node=s=>{const md=P.medals[s.id]||0,ms=s.qs.filter((_,k)=>{const x=qState(P,qidOf(s,k));return x.box===0&&x.w>0}).length,ex=s.qs.filter(q=>q.t==='explain').length;
     return `<button class="node ${md?'done':''}" data-sid="${esc(s.id)}"><span class="dot">${svg(s.icon)}</span><span class="card-n"><span><h3>${esc(s.name)}</h3><small>${s.sub?esc(s.sub)+' · ':''}${s.qs.length} frågor${ex?` · ${ex} att förklara`:''}${ms?` · <span class="miss-tag">${ms} ${ms===1?'miss':'missar'}</span>`:''}</small></span><span class="medal m${md}" aria-label="${md?MEDAL[md]:'Ingen medalj än'}">${md?MEDAL[md]:'–'}</span></span></button>`};
   $('#trail').innerHTML=STATIONS.map(node).join('');
-  ensureLevels(QZ,P);
+  ensureLevels(QZ,P);ensureFilms(QZ);
   $('#lvBox').innerHTML=[2,3].map(n=>{
     const ls=levelSt(QZ,n),open=lvOpen(QZ,P,n),req=LVREQ[QZ.id+':'+n];
     if(n===3&&!levelSt(QZ,2).length)return '';
@@ -1505,109 +1511,440 @@ $('#homeBack').onclick=()=>{QZ=null;renderLib();show('lib')};
    Infofilm-principen i webbläsaren: rösten läser manuset och varje del av grafiken ritas upp
    exakt när rösten säger sitt ord ("cue"). All text och alla fakta ritas i kod från förhöret.
    Tid: talsyntesens ordgränser (onboundary) när de finns, annars uppskattad tid per tecken. */
+/* ---------- Förklaringsfilm: en ritning växer fram medan rösten förklarar ----------
+   Forskningsgrund (README, "Förklaringsfilmer"):
+   - Talad förklaring + bild, korta etiketter i stället för manus på skärmen (modalitet, redundans).
+   - Varje del ritas när rösten säger ordet, etiketter sitter vid delen (temporal och rumslig närhet).
+   - Det som sägs nu är starkast, det som redan sagts tonas ned, kameran söker sig till delen (signalering).
+   - Inga dekorationer, ingen musik, inga skämtfigurer (koherens).
+   - Bilden ritas fram av en penna, som när en lärare ritar på tavlan (Fiorella & Mayer 2016).
+   - Paus, förra meningen och spela igen (segmentering, elevstyrt tempo). Slutbilden är en överblick.
+   Tekniken kommer från fltman/infofilm: allt som måste stämma ritas i kod, rörelser är tidsatta efter
+   talet (cue) med uppskattad tid som reserv, och filmen spelas alltid (saknas en ritad film byggs en
+   av klippets bildtyp). Filmens tillstånd är en ren funktion av filmtiden, så den går att pausa,
+   spola och granska bild för bild. */
+const FW=800,FH=500,F_LEAD=450,F_HOLD=1400,F_MS=68;
+const FSIZE={1:28,2:40,3:60};
+const FTONES=['ink','accent','warm','cool','alert','muted'];
+const ftone=t=>({accent:'var(--moss)',warm:'var(--kant)',cool:'var(--film-cool)',alert:'var(--lingon)',muted:'var(--muted)'})[t]||'var(--ink)';
+const fbez=(x1,y1,x2,y2)=>t=>{if(t<=0)return 0;if(t>=1)return 1;const ax=1-3*x2+3*x1,bx=3*x2-6*x1,cx=3*x1;let u=t;
+  for(let i=0;i<8;i++){const x=((ax*u+bx)*u+cx)*u-t,d=(3*ax*u+2*bx)*u+cx;if(Math.abs(x)<1e-5||Math.abs(d)<1e-6)break;u-=x/d}
+  u=Math.min(1,Math.max(0,u));return ((1-3*y2+3*y1)*u+(3*y2-6*y1))*u*u+3*y1*u};
+const FEZ={out:fbez(.16,1,.3,1),io:fbez(.65,0,.35,1),back:fbez(.34,1.56,.64,1)};
+const cl01=v=>v<0?0:v>1?1:v;
+const fprog=(t,a,d,fn=FEZ.out)=>fn(cl01((t-a)/Math.max(1,d)));
+const SVGNS='http://www.w3.org/2000/svg';
+function sv(tag,at,parent){const e=document.createElementNS(SVGNS,tag);for(const k in at)if(at[k]!=null)e.setAttribute(k,at[k]);if(parent)parent.appendChild(e);return e}
+let FCTX=null;
+function ftw(text,size){FCTX=FCTX||document.createElement('canvas').getContext('2d');FCTX.font=`800 ${size}px Nunito, system-ui, sans-serif`;return FCTX.measureText(String(text)).width}
+function fwrap(text,size,maxW){const out=[];let cur='';for(const w of String(text).split(/\s+/).filter(Boolean)){const t=cur?cur+' '+w:w;if(cur&&ftw(t,size)>maxW){out.push(cur);cur=w}else cur=t}if(cur)out.push(cur);return out.length?out:['']}
+const fnum=(v,dec)=>Number(v).toLocaleString('sv-SE',{minimumFractionDigits:dec,maximumFractionDigits:dec});
+
+/* Figurer i en 24×24-ruta, samma linjestil som appens ikoner. Bara sådant som föreställer något. */
+const PROPS={
+ sun:ICONS.sun,drop:ICONS.drop,book:ICONS.book,paper:ICONS.paper,pen:ICONS.pen,chat:ICONS.chat,clock:ICONS.clock,heart:ICONS.heart,
+ globe:ICONS.globe,map:ICONS.map,bolt:ICONS.bolt,shield:ICONS.shield,scale:ICONS.scale,flask:ICONS.flask,music:ICONS.music,tv:ICONS.tv,
+ news:ICONS.news,tent:ICONS.tent,paw:ICONS.paw,calc:ICONS.calc,conifer:ICONS.tree,mushroom:ICONS.mush,magnifier:ICONS.glass,flag:ICONS.boss,cross:ICONS.x,
+ cloud:'<path d="M7 18h10.5a4 4 0 0 0 .6-8A6 6 0 0 0 6.6 9.4 4.3 4.3 0 0 0 7 18z"/>',
+ wave:'<path d="M2 9c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.6 5 0"/><path d="M2 15c2.5-2 5-2 7.5 0s5 2 7.5 0 3.5-1.6 5 0"/>',
+ snow:'<path d="M12 2v20M3.3 7l17.4 10M3.3 17 20.7 7"/><path d="m9.5 3.5 2.5 2 2.5-2M9.5 20.5l2.5-2 2.5 2"/>',
+ wind:'<path d="M3 8h10a3 3 0 1 0-3-3"/><path d="M3 12h15a3 3 0 1 1-3 3"/><path d="M3 16h7"/>',
+ fire:'<path d="M12 22c3.3 0 6-2.5 6-6 0-4-3-6.5-4.5-10-1.5 2-2.5 4-2.5 6-1-.8-1.8-2-2-3.5C7.2 10.5 6 13 6 16c0 3.5 2.7 6 6 6z"/>',
+ thermometer:'<path d="M10 14.5V4a2 2 0 0 1 4 0v10.5a4 4 0 1 1-4 0z"/><path d="M12 9v8"/>',
+ mountain:'<path d="M2 20 9 7l4 6.5L16 9l6 11z"/><path d="m7 10.7 2-1.2 2 1.5"/>',
+ tree:'<path d="M12 2.5a5.5 5.5 0 0 0-5.3 7A4.5 4.5 0 0 0 8.5 18h7a4.5 4.5 0 0 0 1.8-8.5A5.5 5.5 0 0 0 12 2.5z"/><path d="M12 21.5V13M12 16l-2.5-2.5M12 14.5l2.5-2.5"/>',
+ leaf:'<path d="M5 19C5 10.5 10.5 5 19 5c0 8.5-5.5 14-14 14z"/><path d="M5 19 13.5 10.5"/>',
+ plant:'<path d="M12 20V9"/><path d="M12 13c-3.5 0-6-2-6-5.5 3.5 0 6 2 6 5.5z"/><path d="M12 10.5c0-3.5 2.5-6 6-6 0 3.5-2.5 6-6 6z"/><path d="M5 20h14"/><path d="M12 20v2.5M10 20l-1.5 2.5M14 20l1.5 2.5"/>',
+ flower:'<circle cx="12" cy="4.6" r="2.3"/><circle cx="15.4" cy="8" r="2.3"/><circle cx="12" cy="11.4" r="2.3"/><circle cx="8.6" cy="8" r="2.3"/><circle cx="12" cy="8" r="1.3"/><path d="M12 13.7V22M12 18.5c-2 0-3.5-1-4-3 2 0 3.5 1 4 3z"/>',
+ seed:'<path d="M12 4c3.5 3.5 3.5 12.5 0 16-3.5-3.5-3.5-12.5 0-16z"/><path d="M12 7v10"/>',
+ apple:'<path d="M12 7.5c-2.5-1.8-8-1.5-8 4.5 0 5.5 4 10 8 8.5 4 1.5 8-3 8-8.5 0-6-5.5-6.3-8-4.5z"/><path d="M12 7.5c0-2 .8-3.6 2.8-4.5"/>',
+ fish:'<path d="M2.5 12c3-5 10-6.5 14.5 0-4.5 6.5-11.5 5-14.5 0z"/><path d="m17 12 4.5-4v8z"/><circle cx="7" cy="11" r=".8"/>',
+ bird:'<path d="M3 10c3-2.5 6-2.5 9 1 3-3.5 6-3.5 9-1"/><path d="M8 17c1.5-1.2 3-1.2 4.5.5 1.5-1.7 3-1.7 4.5-.5"/>',
+ person:'<circle cx="12" cy="7.5" r="3.5"/><path d="M5 21a7 7 0 0 1 14 0"/>',
+ people:'<circle cx="8.5" cy="8" r="3"/><path d="M2.5 20a6 6 0 0 1 12 0"/><circle cx="16.5" cy="9" r="2.5"/><path d="M15 14.2A5 5 0 0 1 21.5 19"/>',
+ house:'<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5.5h4V20"/>',
+ building:'<path d="M12 3 3 8h18z"/><path d="M5 8v10M9.5 8v10M14.5 8v10M19 8v10"/><path d="M3 18h18M2 21h20"/>',
+ car:'<path d="M3 16.5V13l2-5.5h14l2 5.5v3.5z"/><path d="M3 13h18"/><circle cx="7.5" cy="17.5" r="2"/><circle cx="16.5" cy="17.5" r="2"/>',
+ boat:'<path d="M3 15h18l-3 5H6z"/><path d="M12 15V3"/><path d="M12 4.5 18 13h-6z"/>',
+ rocket:'<path d="M12 2.5c3 2.2 4.8 6 4.8 10.5L15 16H9l-1.8-3C7.2 8.5 9 4.7 12 2.5z"/><circle cx="12" cy="9.5" r="1.8"/><path d="M7.5 12.5 5 17l3.5-1M16.5 12.5 19 17l-3.5-1"/><path d="M10.5 18.5 12 21.5l1.5-3"/>',
+ planet:'<circle cx="12" cy="12" r="5.5"/><path d="M4.2 15.2C2 17.6 3.4 19 7.4 17.8c3-.9 6.7-3 9.6-5.4 3.6-3 4.6-5.5 1.6-5.3"/>',
+ moon:'<path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>',
+ star:'<path d="m12 3 2.6 5.5 6 .8-4.4 4.1 1.1 6L12 16.5 6.7 19.4l1.1-6-4.4-4.1 6-.8z"/>',
+ atom:'<ellipse cx="12" cy="12" rx="10" ry="4"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="10" ry="4" transform="rotate(120 12 12)"/><circle cx="12" cy="12" r="1.5"/>',
+ magnet:'<path d="M6 3v9a6 6 0 0 0 12 0V3h-4v9a2 2 0 0 1-4 0V3z"/><path d="M6 7h4M14 7h4"/>',
+ bulb:'<path d="M12 3a6 6 0 0 0-4 10.5c.8.8 1 1.6 1 2.5h6c0-.9.2-1.7 1-2.5A6 6 0 0 0 12 3z"/><path d="M9 18.5h6M10 21h4"/>',
+ eye:'<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+ calendar:'<rect x="3.5" y="5" width="17" height="16" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
+ coin:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="6"/>',
+ gavel:'<path d="m12 5 6.5 6.5-3 3L9 8z"/><path d="M10.5 11.5 3.5 18.5"/><path d="M12 21h9"/>',
+ crown:'<path d="M3 18h18l-1.2-10-4.8 4-3-6-3 6-4.8-4z"/><path d="M4 21h16"/>',
+ lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',
+ key:'<circle cx="7.5" cy="12" r="4"/><path d="M11.5 12H21M17.5 12v3.5M20.5 12v2.5"/>',
+ computer:'<rect x="3" y="4" width="18" height="12" rx="1.5"/><path d="M8.5 20.5h7M12 16v4.5"/>',
+ cube:'<path d="M12 2.5 3.5 7v10l8.5 4.5 8.5-4.5V7z"/><path d="M3.5 7 12 11.5 20.5 7M12 11.5v10"/>',
+ check:'<path d="m4.5 12.5 5 5 10-11"/>',
+ question:'<path d="M8.5 9a3.5 3.5 0 1 1 5.3 3c-1.2.7-1.8 1.5-1.8 2.8"/><path d="M12 19h.01"/>'
+};
+const PROP_NAMES=Object.keys(PROPS);
+
+/* Kontroll av filmdata (samma regler som sanitizeFilm på servern; ritningen sker ändå bara med DOM-anrop). */
+const fN=(v,a,b,d)=>{v=Number(v);return Number.isFinite(v)?Math.min(b,Math.max(a,v)):d};
+const fS=(v,m)=>typeof v==='string'?v.replace(/\s+/g,' ').trim().slice(0,m):(typeof v==='number'&&isFinite(v)?String(v):'');
+const F_PATH=/^[MLHVCSQTAZmlhvcsqtaz0-9eE.,\s-]{1,900}$/;
+function fEl(e){
+  if(!e||typeof e!=='object')return null;
+  const tone=FTONES.includes(e.tone)?e.tone:null,X=v=>fN(v,0,FW,FW/2),Y=v=>fN(v,0,FH,FH/2),to=Array.isArray(e.to)&&e.to.length===2?[X(e.to[0]),Y(e.to[1])]:null;
+  switch(e.k){
+    case 'prop':return {k:'prop',n:PROPS[e.n]?e.n:'dot',x:X(e.x),y:Y(e.y),s:fN(e.s,30,300,120),label:fS(e.label,32),lp:['t','b','l','r'].includes(e.lp)?e.lp:'b',tone,to};
+    case 'text':{const t=fS(e.t,90);if(!t)return null;return {k:'text',t,x:X(e.x),y:Y(e.y),size:[1,2,3].includes(+e.size)?+e.size:2,a:['s','m','e'].includes(e.a)?e.a:'m',w:fN(e.w,80,780,720),tone,to}}
+    case 'arrow':case 'line':return {k:e.k,x1:X(e.x1),y1:Y(e.y1),x2:X(e.x2),y2:Y(e.y2),bend:fN(e.bend,-1,1,0),label:fS(e.label,32),flow:!!e.flow,dash:!!e.dash,tone};
+    case 'path':{const d=typeof e.d==='string'?e.d.trim():'';if(!F_PATH.test(d))return null;return {k:'path',d,fill:!!e.fill,tone}}
+    case 'box':{const x=fN(e.x,0,FW-20,0),y=fN(e.y,0,FH-20,0);return {k:'box',x,y,w:fN(e.w,20,FW-x,120),h:fN(e.h,20,FH-y,70),label:fS(e.label,60),size:[1,2].includes(+e.size)?+e.size:1,fill:e.fill!==false,tone}}
+    case 'circle':return {k:'circle',x:X(e.x),y:Y(e.y),r:fN(e.r,8,220,50),label:fS(e.label,40),fill:e.fill!==false,tone};
+    case 'words':{const words=(Array.isArray(e.words)?e.words:[]).map(w=>fS(w,24)).filter(Boolean).slice(0,12);if(!words.length)return null;
+      const hi=[...new Set((Array.isArray(e.hi)?e.hi:[]).map(Number))].filter(i=>Number.isInteger(i)&&i>=0&&i<words.length).sort((a,b)=>a-b);
+      const tags=(Array.isArray(e.tags)?e.tags:[e.tag]).map(t=>fS(t,24));
+      return {k:'words',x:X(e.x),y:Y(e.y),words,hi,tags,hiOnly:!!e.hiOnly&&hi.length>0,size:[1,2,3].includes(+e.size)?+e.size:2,tone}}
+    case 'num':{const to2=Number(e.to);if(!Number.isFinite(to2)||Math.abs(to2)>1e9)return null;const fr=Number.isFinite(Number(e.from))?Number(e.from):0;
+      return {k:'num',x:X(e.x),y:Y(e.y),from:fr,to:to2,dec:fN(e.dec,0,3,0)|0,prefix:fS(e.prefix,8),suffix:fS(e.suffix,10),size:[1,2,3].includes(+e.size)?+e.size:3,tone}}
+    case 'mark':{const x=fN(e.x,0,FW-10,0),y=fN(e.y,0,FH-10,0);return {k:'mark',x,y,w:fN(e.w,10,FW-x,100),h:fN(e.h,10,FH-y,40),tone:tone||'warm'}}
+  }
+  return null;
+}
+// say + steps → steg med teckenposition (at) i manuset. Cue som saknas fördelas jämnt.
+function fNorm(film,fallbackSay){
+  if(!film||typeof film!=='object'||!Array.isArray(film.steps))return null;
+  const say=fS(film.say,600)||fallbackSay||'';if(!say)return null;
+  const low=say.toLowerCase();let from=0,total=0;
+  const steps=film.steps.slice(0,8).map(s=>{
+    const els=(Array.isArray(s&&s.els)?s.els:[]).map(fEl).filter(Boolean).slice(0,10);
+    let at=Number.isInteger(s&&s.at)?s.at:-1;const cue=fS(s&&s.cue,40).toLowerCase();
+    if(at<0&&cue){at=low.indexOf(cue,from);if(at<0)at=low.indexOf(cue)}
+    if(at>=0)from=at+1;return {at,els};
+  }).filter(s=>s.els.length&&(total+=s.els.length)<=30);
+  if(!steps.length)return null;
+  steps.forEach((s,i)=>{if(s.at>=0)return;const prev=i?steps[i-1].at:-1;const nx=steps.slice(i+1).find(x=>x.at>=0);const next=nx?nx.at:say.length*.85;
+    s.at=Math.round(prev<0?Math.min(next*.5,say.length*.05):prev+(next-prev)/2)});
+  steps.sort((a,b)=>a.at-b.at);      // ritas i den ordning rösten säger det
+  return {say,steps};
+}
+
+/* Äldre klipp (bara "show") blir också film: samma innehåll, ritat på rutat papper. */
+function filmFromShow(k){
+  const s=k.show||{},st=[],icon=PROPS[k.icon]?k.icon:'book';
+  const step=(cue,els)=>st.push({cue:cue||'',els});
+  if(s.type==='term'){
+    step(s.cue||s.word,[{k:'prop',n:icon,x:400,y:150,s:130,tone:'accent'},{k:'text',t:s.word||k.name,x:400,y:300,size:3}]);
+    if(s.def)st.push({at:Math.round(k.say.length*.45),els:[{k:'mark',x:110,y:340,w:580,h:60},{k:'text',t:s.def,x:400,y:382,size:1,w:560}]});
+  }else if(s.type==='list'){
+    const it=(s.items||[]).slice(0,5),n=it.length,long=it.some(x=>ftw(x.t,FSIZE[1])>380),y0=n>4?135:150,gap=n>4?72:82;
+    if(s.title)st.push({at:0,els:[{k:'text',t:s.title,x:long?400:60,y:70,size:2,a:long?'m':'s',tone:'accent'},...(long?[]:[{k:'prop',n:icon,x:640,y:290,s:190,tone:'accent'}])]});
+    it.forEach((x,i)=>step(x.cue,[{k:'prop',n:'check',x:95,y:y0+i*gap-10,s:44,tone:'accent'},{k:'text',t:x.t,x:135,y:y0+i*gap,size:1,a:'s',w:long?620:420}]));
+  }else if(s.type==='steps'){
+    const it=(s.items||[]).slice(0,5),n=it.length;
+    if(n<=3){const w=n===3?190:230,gap=n===3?262:330;
+      if(s.title)st.push({at:0,els:[{k:'text',t:s.title,x:400,y:90,size:2,tone:'accent'}]});
+      it.forEach((x,i)=>{const cx=400+(i-(n-1)/2)*gap,els=[];
+        if(i)els.push({k:'arrow',x1:cx-gap+w/2+8,y1:270,x2:cx-w/2-8,y2:270,flow:true});
+        els.push({k:'box',x:cx-w/2,y:215,w,h:110,label:x.t,tone:'accent'},{k:'circle',x:cx-w/2+8,y:215,r:22,label:String(i+1),tone:'accent'});step(x.cue,els)});
+    }else{
+      it.forEach((x,i)=>{const y=40+i*(n===5?92:110),els=[];
+        if(i)els.push({k:'arrow',x1:400,y1:y-(n===5?30:46),x2:400,y2:y-4,flow:true});
+        els.push({k:'box',x:200,y,w:400,h:62,label:x.t,tone:'accent'});step(x.cue,els)});
+    }
+  }else if(s.type==='cycle'){
+    const it=(s.items||[]).slice(0,5),n=it.length,cx=400,cy=255,rx=222,ry=150;
+    const th=i=>-Math.PI/2+i*2*Math.PI/n,at=t=>[cx+rx*Math.cos(t),cy+ry*Math.sin(t)];
+    const arc=(i,j)=>{const [x1,y1]=at(th(i)+.62),[x2,y2]=at(th(j)+(j===0?2*Math.PI:0)-.62);return {k:'arrow',x1,y1,x2,y2,bend:.25,flow:true,tone:'muted'}};
+    st.push({at:0,els:[{k:'prop',n:icon,x:cx,y:cy,s:96,tone:'muted'}]});
+    it.forEach((x,i)=>{const [px,py]=at(th(i)),els=[];if(i)els.push(arc(i-1,i));
+      els.push({k:'box',x:px-95,y:py-32,w:190,h:64,label:x.t,tone:'accent'});
+      if(i===n-1&&n>2)els.push(arc(i,0));step(x.cue,els)});
+  }else if(s.type==='compare'){
+    const L=s.left||{items:[]},Rr=s.right||{items:[]},rows=Math.max(L.items.length,Rr.items.length);
+    const side=(x,col,i,tone)=>[{k:'box',x:x-165,y:120+i*(rows>3?82:96),w:330,h:rows>3?64:76,label:col.items[i].t,tone}];
+    st.push({at:0,els:[{k:'line',x1:400,y1:40,x2:400,y2:460,dash:true,tone:'muted'},{k:'text',t:L.title,x:205,y:80,size:2,tone:'accent'},{k:'text',t:Rr.title,x:595,y:80,size:2,tone:'cool'}]});
+    for(let i=0;i<rows;i++){if(L.items[i])step(L.items[i].cue,side(205,L,i,'accent'));if(Rr.items[i])step(Rr.items[i].cue,side(595,Rr,i,'cool'))}
+  }else{
+    step(k.name,[{k:'prop',n:icon,x:400,y:200,s:150,tone:'accent'},{k:'text',t:k.name,x:400,y:370,size:2}]);
+  }
+  return {say:k.say,steps:st};
+}
+
+/* Bygger filmens SVG en gång; render(ft) sätter bara attribut. Tider i ms, filmtid 0 = rösten börjar. */
+function filmBuild(svg,F,T){
+  svg.textContent='';
+  const defs=sv('defs',{},svg);
+  const pat=sv('pattern',{id:'fpGrid',width:25,height:25,patternUnits:'userSpaceOnUse'},defs);
+  sv('path',{d:'M25 0H0V25',fill:'none',stroke:'var(--film-grid)','stroke-width':1.4},pat);
+  sv('rect',{width:FW,height:FH,fill:'var(--film-paper)'},svg);
+  sv('rect',{width:FW,height:FH,fill:'url(#fpGrid)'},svg);
+  const cam=sv('g',{},svg),under=sv('g',{},cam),main=sv('g',{},cam);
+  // Pennan: spetsen i (0,0), kroppen snett uppåt höger.
+  const pen=sv('g',{opacity:0,'pointer-events':'none'},svg),pb=sv('g',{transform:'rotate(-38)'},pen);
+  sv('path',{d:'M0 0 15 -6.5 15 6.5Z',fill:'var(--film-paper)',stroke:'var(--ink)','stroke-width':2.5,'stroke-linejoin':'round'},pb);
+  sv('path',{d:'M0 0 5.5 -2.4 5.5 2.4Z',fill:'var(--ink)'},pb);
+  sv('rect',{x:15,y:-6.5,width:52,height:13,fill:'var(--kant)',stroke:'var(--ink)','stroke-width':2.5},pb);
+  sv('rect',{x:67,y:-6.5,width:11,height:13,rx:3,fill:'var(--lingon)',stroke:'var(--ink)','stroke-width':2.5},pb);
+  let cid=0;const E=[];
+  const SW=4.5;
+  const stroke=(el,tone,w=SW)=>{el.setAttribute('fill','none');el.setAttribute('stroke',ftone(tone));el.setAttribute('stroke-width',w);el.setAttribute('stroke-linecap','round');el.setAttribute('stroke-linejoin','round');return el};
+  const len=el=>{try{const L=el.getTotalLength();return L>0?L:100}catch(e){return 100}};
+  // Text som skrivs fram från vänster (klippyta per rad). Returnerar skrivdata för pennan.
+  function write(g,str,x,y,size,anchor,tone,maxW,halo){
+    const px=FSIZE[size]||size,lines=fwrap(str,px,maxW||760),lh=px*1.18,y0=y-(lines.length-1)*lh/2*(anchor==='top'?0:1);
+    const cp=sv('clipPath',{id:'fpc'+(++cid)},defs),t=sv('text',{'clip-path':`url(#fpc${cid})`,'font-family':'Nunito, system-ui, sans-serif','font-weight':800,'font-size':px,fill:ftone(tone)},g);
+    if(halo){t.setAttribute('stroke','var(--film-paper)');t.setAttribute('stroke-width',px*.22);t.setAttribute('paint-order','stroke');t.setAttribute('stroke-linejoin','round')}
+    const L=lines.map((ln,i)=>{const w=ftw(ln,px),bx=anchor==='s'?x:anchor==='e'?x-w:x-w/2,by=y0+i*lh;
+      const ts=sv('tspan',{x:bx,y:by},t);ts.textContent=ln;const r=sv('rect',{x:bx-4,y:by-px*1.05,width:0,height:px*1.45},cp);return {w,bx,by,r}});
+    const tot=L.reduce((a,l)=>a+l.w,0)||1;let acc=0;L.forEach(l=>{l.a=acc/tot;acc+=l.w;l.b=acc/tot});
+    const bb={x:Math.min(...L.map(l=>l.bx)),y:L[0].by-px,w:Math.max(...L.map(l=>l.w)),h:lh*(L.length-1)+px*1.25};
+    return {L,px,bb,dur:Math.max(320,Math.min(1300,str.length*30))};
+  }
+  function addE(o){E.push(o);return o}
+  // Hinder för etiketter: rutor för figurer, text och lådor, punkter längs pilar och linjer.
+  const obst=[];let ei=0;
+  const qpt=(e,t)=>{const dx=e.x2-e.x1,dy=e.y2-e.y1,L=Math.hypot(dx,dy)||1,cx=(e.x1+e.x2)/2-dy/L*e.bend*L*.5,cy=(e.y1+e.y2)/2+dx/L*e.bend*L*.5,u=1-t;return [u*u*e.x1+2*u*t*cx+t*t*e.x2,u*u*e.y1+2*u*t*cy+t*t*e.y2]};
+  F.steps.forEach(st=>st.els.forEach(e=>{e._i=ei++;const o=e._i;
+    if(e.k==='prop')obst.push({o,r:{x:e.x-e.s*.42,y:e.y-e.s*.42,w:e.s*.84,h:e.s*.84}});
+    else if(e.k==='box')obst.push({o,r:{x:e.x,y:e.y,w:e.w,h:e.h}});
+    else if(e.k==='circle')obst.push({o,r:{x:e.x-e.r,y:e.y-e.r,w:2*e.r,h:2*e.r}});
+    else if(e.k==='text'){const px=FSIZE[e.size],ls=fwrap(e.t,px,e.w),w=Math.max(...ls.map(l=>ftw(l,px))),x=e.a==='s'?e.x:e.a==='e'?e.x-w:e.x-w/2;obst.push({o,r:{x,y:e.y-px*.9-(ls.length-1)*px*.59,w,h:px*1.18*ls.length}})}
+    else if(e.k==='num'){const px=FSIZE[e.size];obst.push({o,r:{x:e.x-px*1.5,y:e.y-px,w:px*3,h:px*1.2}})}
+    else if(e.k==='words'){const px=FSIZE[e.size];obst.push({o,r:{x:30,y:e.y-px,w:740,h:px*1.4}})}
+    else if(e.k==='arrow'||e.k==='line'){const pts=[];for(let i=0;i<=24;i++)pts.push(qpt(e,i/24));obst.push({o,pts})}}));
+  const hit=(r,own)=>{if(r.x<4||r.y<4||r.x+r.w>FW-4||r.y+r.h>FH-4)return true;
+    return obst.some(b=>b.o!==own&&(b.r?!(r.x+r.w<b.r.x||b.r.x+b.r.w<r.x||r.y+r.h<b.r.y||b.r.y+b.r.h<r.y):b.pts.some(([x,y])=>x>r.x-6&&x<r.x+r.w+6&&y>r.y-6&&y<r.y+r.h+6)))};
+  const labRect=(str,x,y,anchor)=>{const w=ftw(str,FSIZE[1])+6;return {x:anchor==='s'?x-3:anchor==='e'?x-w+3:x-w/2,y:y-FSIZE[1]*.85,w,h:FSIZE[1]*1.15}};
+  const place=(str,cands,own)=>{const ok=cands.find(c=>!hit(labRect(str,c[0],c[1],c[2]),own))||cands[0];obst.push({o:-1,r:labRect(str,ok[0],ok[1],ok[2])});return ok};
+  F.steps.forEach((step,si)=>step.els.forEach(e=>{
+    const g=sv('g',{class:'fe','data-step':si,opacity:0},e.k==='mark'?under:main);
+    const o={g,e,si,ds:[],fills:[],wr:[],dur:700,bb:null,heads:[],dots:[],cnt:null,mv:e.to||null};
+    const ds=(el,map,delay,dur)=>{const L=len(el);el.setAttribute('stroke-dasharray',L+' '+(L+1));el.setAttribute('stroke-dashoffset',L);o.ds.push({el,L,map,delay,dur})};
+    const fillSoft=(el,tone)=>{el.setAttribute('fill',ftone(tone));el.setAttribute('fill-opacity',0);o.fills.push(el)};
+    const lab=(str,x,y,anchor,tone,at)=>{if(!str)return;const w=write(g,str,x,y,1,anchor,tone||'ink',260,true);if(at!=null)w.at=at;o.wr.push(w);o.bbs=(o.bbs||[]).concat(w.bb)};
+    if(e.k==='prop'){
+      const sc=e.s/24,gx=e.x-e.s/2,gy=e.y-e.s/2,pg=sv('g',{transform:`translate(${gx} ${gy}) scale(${sc})`},g);
+      if(e.n==='dot'){const c=sv('circle',{cx:12,cy:12,r:9},pg);stroke(c,e.tone,SW/sc);fillSoft(c,e.tone);ds(c,(x,y)=>[gx+x*sc,gy+y*sc])}
+      else{pg.innerHTML=PROPS[e.n];[...pg.children].forEach(c=>{stroke(c,e.tone||'ink',SW/sc);const closed=/^(circle|rect|ellipse)$/.test(c.tagName)||/z\s*$/i.test(c.getAttribute('d')||'');
+        if(closed)fillSoft(c,e.tone||'ink');ds(c,(x,y)=>[gx+x*sc,gy+y*sc])})}
+      o.dur=1000;o.bb={x:gx,y:gy,w:e.s,h:e.s};
+      if(e.label){const off=e.s/2+12,side={t:[e.x,e.y-off-8,'m'],b:[e.x,e.y+off+24,'m'],l:[e.x-off,e.y+10,'e'],r:[e.x+off,e.y+10,'s']};
+        const c=place(e.label,[e.lp,...['b','t','r','l'].filter(x=>x!==e.lp)].map(k=>side[k]),e._i);lab(e.label,c[0],c[1],c[2])}
+    }else if(e.k==='arrow'||e.k==='line'){
+      const dx=e.x2-e.x1,dy=e.y2-e.y1,L=Math.hypot(dx,dy)||1,nx=-dy/L,ny=dx/L,cx=(e.x1+e.x2)/2+nx*e.bend*L*.5,cy=(e.y1+e.y2)/2+ny*e.bend*L*.5;
+      const p=sv('path',{d:`M${e.x1.toFixed(1)} ${e.y1.toFixed(1)}Q${cx.toFixed(1)} ${cy.toFixed(1)} ${e.x2.toFixed(1)} ${e.y2.toFixed(1)}`},g);stroke(p,e.tone||'ink',e.k==='line'?3.5:SW);
+      if(e.dash){p.setAttribute('stroke-dasharray','2 12');o.fade=p}else ds(p,(x,y)=>[x,y]);
+      if(e.k==='arrow'){const ang=Math.atan2(e.y2-cy,e.x2-cx)*180/Math.PI;
+        const base=`translate(${e.x2.toFixed(1)} ${e.y2.toFixed(1)}) rotate(${ang.toFixed(1)})`,h=sv('path',{d:'M0 0-18-9.5-18 9.5Z',fill:ftone(e.tone),stroke:ftone(e.tone),'stroke-width':2,'stroke-linejoin':'round',transform:base+' scale(0.01)',opacity:0},g);o.heads.push({h,base})}
+      if(e.flow&&e.k==='arrow'){o.path=p;o.plen=len(p);for(let i=0;i<3;i++)o.dots.push(sv('circle',{r:6,fill:ftone(e.tone==='muted'||!e.tone?'accent':e.tone),opacity:0},g))}
+      o.dur=Math.min(1000,350+L*1.2);
+      o.bb={x:Math.min(e.x1,e.x2,cx),y:Math.min(e.y1,e.y2,cy),w:Math.abs(e.x2-e.x1)+Math.abs(e.bend)*L*.5,h:Math.abs(e.y2-e.y1)+Math.abs(e.bend)*L*.5};
+      if(e.label){const cands=[];[.5,.35,.65].forEach(t=>{const [mx,my]=qpt(e,t);[1,-1].forEach(sd=>{const up=(ny<=0?1:-1)*sd;
+          cands.push(Math.abs(nx)>Math.abs(ny)?[mx+nx*up*18,my+10,nx*up<0?'e':'s']:[mx+nx*30*up,my+ny*30*up+10,'m'])})});
+        const c=place(e.label,cands,e._i);lab(e.label,c[0],c[1],c[2])}
+    }else if(e.k==='path'){
+      const p=sv('path',{d:e.d},g);stroke(p,e.tone);if(e.fill)fillSoft(p,e.tone);ds(p,(x,y)=>[x,y]);
+      let b={x:0,y:0,width:FW,height:FH};try{b=p.getBBox()}catch(x){}o.bb={x:b.x,y:b.y,w:b.width,h:b.height};o.dur=Math.min(1400,400+len(p)*1.1);
+    }else if(e.k==='box'){
+      const r=sv('rect',{x:e.x,y:e.y,width:e.w,height:e.h,rx:14},g);stroke(r,e.tone);if(e.fill)fillSoft(r,e.tone);ds(r,(x,y)=>[x,y]);
+      o.bb={x:e.x,y:e.y,w:e.w,h:e.h};o.dur=650;
+      if(e.label){const px=FSIZE[e.size];const w=write(g,e.label,e.x+e.w/2,e.y+e.h/2+px*.36,e.size,'m','ink',e.w-24,false);o.wr.push(w)}
+    }else if(e.k==='circle'){
+      const c=sv('circle',{cx:e.x,cy:e.y,r:e.r},g);stroke(c,e.tone);if(e.fill)fillSoft(c,e.tone);ds(c,(x,y)=>[x,y]);
+      o.bb={x:e.x-e.r,y:e.y-e.r,w:2*e.r,h:2*e.r};o.dur=650;
+      if(e.label){if(e.r>=40||ftw(e.label,FSIZE[1])<e.r*1.7)o.wr.push(write(g,e.label,e.x,e.y+FSIZE[1]*.36,1,'m','ink',e.r*1.8,false));else lab(e.label,e.x,e.y+e.r+30,'m')}
+    }else if(e.k==='text'){
+      const w=write(g,e.t,e.x,e.y,e.size,e.a,e.tone||'ink',e.w,false);o.wr.push(w);o.bb=w.bb;o.dur=0;
+    }else if(e.k==='words'){
+      let px=FSIZE[e.size];const gap=()=>px*.42;let ws=e.words.map(w=>ftw(w,px));let tot=ws.reduce((a,b)=>a+b,0)+gap()*(ws.length-1);
+      if(tot>740){px=Math.max(22,px*740/tot);ws=e.words.map(w=>ftw(w,px));tot=ws.reduce((a,b)=>a+b,0)+gap()*(ws.length-1)}
+      let x=Math.max(30,Math.min(FW-30-tot,e.x-tot/2));const pos=[];
+      const WD=280,wd=e.hiOnly?0:e.words.length*WD;
+      e.words.forEach((w,i)=>{pos.push(x);if(!e.hiOnly){const wr=write(g,w,x,e.y,px,'s','ink',FW,false);wr.dur=WD;wr.at=i*WD;o.wr.push(wr)}x+=ws[i]+gap()});
+      // Sammanhängande markerade ord får en ram och en etikett under.
+      const groups=[];e.hi.forEach(i=>{const g0=groups[groups.length-1];if(g0&&g0[1]===i-1)g0[1]=i;else groups.push([i,i])});
+      const hl=e.tone||'accent',hasTag=groups.some((_,gi)=>e.tags[gi]);
+      groups.forEach(([a,b],gi)=>{const x0=pos[a]-10,x1=pos[b]+ws[b]+10,d0=wd+150+gi*350;
+        e.words.slice(a,b+1).forEach((w,j)=>{const t=sv('text',{x:pos[a+j],y:e.y,'font-family':'Nunito, system-ui, sans-serif','font-weight':800,'font-size':px,fill:ftone(hl),opacity:0},g);t.textContent=w;o.recolor=(o.recolor||[]).concat({t,at:d0})});
+        const r=sv('rect',{x:x0,y:e.y-px*1.02,width:x1-x0,height:px*1.38,rx:12},g);stroke(r,hl,4);ds(r,(x,y)=>[x,y],d0,550);
+        if(e.tags[gi]){const ln=sv('path',{d:`M${(x0+x1)/2} ${e.y+px*.4}V${e.y+px*.4+24}`},g);stroke(ln,hl,3.5);ds(ln,(x,y)=>[x,y],d0+500,220);lab(e.tags[gi],(x0+x1)/2,e.y+px*.4+54,'m',hl,d0+650)}});
+      o.bb={x:Math.min(...pos)-12,y:e.y-px*1.1,w:tot+24,h:px*1.5+(hasTag?80:0)};o.dur=0;o.fixedTotal=wd+(groups.length?150+groups.length*350+(hasTag?700:300):0);
+    }else if(e.k==='num'){
+      const px=FSIZE[e.size],t=sv('text',{x:e.x,y:e.y,'text-anchor':'middle','font-family':'"Bricolage Grotesque", Nunito, sans-serif','font-weight':800,'font-size':px,fill:ftone(e.tone||'ink')},g);
+      o.cnt={t,last:''};o.dur=1100;const w=ftw(e.prefix+fnum(e.to,e.dec)+e.suffix,px)*1.05;o.bb={x:e.x-w/2,y:e.y-px,w,h:px*1.2};
+    }else if(e.k==='mark'){
+      const r=sv('rect',{x:e.x,y:e.y,width:0,height:e.h,rx:8,fill:ftone(e.tone),'fill-opacity':.32},g);o.mark=r;o.dur=500;o.bb={x:e.x,y:e.y,w:e.w,h:e.h};
+    }
+    if(o.bbs)o.bb=[o.bb,...o.bbs].filter(Boolean).reduce((a,b)=>({x:Math.min(a.x,b.x),y:Math.min(a.y,b.y),w:Math.max(a.x+a.w,b.x+b.w)-Math.min(a.x,b.x),h:Math.max(a.y+a.h,b.y+b.h)-Math.min(a.y,b.y)}));
+    if(o.mv&&o.bb){const dx=o.mv[0]-(e.x??0),dy=o.mv[1]-(e.y??0);o.mvd=[dx,dy];o.bb={x:Math.min(o.bb.x,o.bb.x+dx),y:Math.min(o.bb.y,o.bb.y+dy),w:o.bb.w+Math.abs(dx),h:o.bb.h+Math.abs(dy)}}
+    // Total tid: linjer först, sedan text (etiketter skrivs när formen nästan är klar).
+    o.wrDur=o.wr.reduce((a,w)=>a+(w.at!=null?0:(w.dur||0)),0);o.total=o.fixedTotal||(o.dur*(o.wr.length&&o.dur?.8:1)+o.wrDur);
+    addE(o);
+  }));
+  // Tidsplan: stegen börjar på sitt ord; delarna i ett steg ritas efter varandra (lätt överlapp) men hinner börja före nästa steg.
+  const stepT=F.steps.map(s=>T(s.at)-120);
+  F.steps.forEach((s,si)=>{const os=E.filter(o=>o.si===si);let off=0;const room=(si<F.steps.length-1?stepT[si+1]-stepT[si]:4000)-250;
+    const offs=os.map(o=>{const v=off;off+=o.total*.75;return v});const sq=offs.length>1&&offs[offs.length-1]>room?room/offs[offs.length-1]:1;
+    os.forEach((o,i)=>{o.t0=stepT[si]+Math.max(0,offs[i]*sq)})});
+  // Kamera per steg: zooma lite mot det som ritas om det är en liten del av bilden (högst 1,3×).
+  const reduce=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const cams=F.steps.map((s,si)=>{const bs=E.filter(o=>o.si<=si&&o.bb).map(o=>o.bb);if(reduce||!bs.length)return {z:1,x:FW/2,y:FH/2};
+    const x0=Math.min(...bs.map(b=>b.x)),y0=Math.min(...bs.map(b=>b.y)),x1=Math.max(...bs.map(b=>b.x+b.w)),y1=Math.max(...bs.map(b=>b.y+b.h));
+    const z=Math.min(1.25,FW/(x1-x0+140),FH/(y1-y0+120));if(z<1.06)return {z:1,x:FW/2,y:FH/2};
+    const hw=FW/2/z,hh=FH/2/z;return {z,x:Math.min(FW-hw,Math.max(hw,(x0+x1)/2)),y:Math.min(FH-hh,Math.max(hh,(y0+y1)/2))}});
+  return {svg,cam,pen,E,stepT,cams,penAt:null};
+}
+
+function filmRender(R,ft,END,amb){
+  const E=R.E;let cs=-1;R.stepT.forEach((t,i)=>{if(ft>=t)cs=i});
+  const over=ft>=END+150;           // överblick: allt i full styrka, kameran tillbaka
+  let penPt=null,penT=-1;
+  for(const o of E){
+    const lt=ft-o.t0;
+    if(lt<0){if(o.on){o.g.setAttribute('opacity',0);o.g.classList.remove('on');o.on=false}continue}
+    if(!o.on){o.on=true;o.g.classList.add('on')}
+    // Signalering: det som sägs nu är starkt, tidigare steg tonas ned något.
+    let op=1;if(!over&&o.si<cs)op=1-.45*fprog(ft,R.stepT[cs],450,FEZ.io);else if(over)op=Math.min(1,.55+.45*fprog(ft,END+150,700,FEZ.io));
+    o.g.setAttribute('opacity',op.toFixed(3));
+    const shapeDur=o.dur||1,p=cl01(lt/shapeDur);
+    const n=o.ds.length,stag=n>1?.5/n:0,span=1-stag*(n-1);
+    o.ds.forEach((d,i)=>{const q=d.dur?FEZ.io(cl01((lt-d.delay)/d.dur)):FEZ.io(cl01((p-i*stag)/span));d.el.setAttribute('stroke-dashoffset',(d.L*(1-q)).toFixed(2));
+      if(q>0&&q<1&&o.t0>penT){try{const pt=d.el.getPointAtLength(d.L*q);penPt=d.map(pt.x,pt.y);penT=o.t0}catch(x){}}});
+    if(o.fade)o.fade.setAttribute('opacity',fprog(lt,0,shapeDur).toFixed(3));
+    const fp=fprog(lt,shapeDur*.55,450);o.fills.forEach(f=>f.setAttribute('fill-opacity',(.15*fp).toFixed(3)));
+    o.heads.forEach(({h,base})=>{const q=fprog(lt,shapeDur*.85,260,FEZ.back);h.setAttribute('opacity',cl01(q*1.5).toFixed(2));h.setAttribute('transform',base+` scale(${Math.max(.01,q).toFixed(3)})`)});
+    // Text skrivs efter formen (etiketter) eller direkt (text, ord).
+    let wt=o.dur?shapeDur*.8:0;
+    o.wr.forEach(w=>{if(w.at!=null)wt=w.at;const q=cl01((lt-wt)/w.dur);
+      w.L.forEach(l=>{const lq=cl01((q-l.a)/Math.max(.001,l.b-l.a));l.r.setAttribute('width',((l.w+10)*lq).toFixed(1));
+        if(lq>0&&lq<1&&o.t0+wt>=penT){penPt=[l.bx+l.w*lq,l.by-w.px*.28];penT=o.t0+wt}});
+      wt+=w.dur});
+    if(o.cnt){const q=fprog(lt,0,o.dur,FEZ.out),v=o.e.from+(o.e.to-o.e.from)*q,s=o.e.prefix+fnum(q>=1?o.e.to:v,o.e.dec)+o.e.suffix;if(s!==o.cnt.last){o.cnt.t.textContent=s;o.cnt.last=s}
+      o.g.setAttribute('opacity',(op*fprog(lt,0,250)).toFixed(3))}
+    if(o.recolor)o.recolor.forEach(r=>r.t.setAttribute('opacity',fprog(lt,r.at,300).toFixed(2)));
+    if(o.mark)o.mark.setAttribute('width',(o.e.w*fprog(lt,0,o.dur,FEZ.io)).toFixed(1));
+    if(o.mvd){const q=fprog(lt,o.total+250,1200,FEZ.io);o.g.setAttribute('transform',`translate(${(o.mvd[0]*q).toFixed(1)} ${(o.mvd[1]*q).toFixed(1)})`);if(penPt&&penT===o.t0){penPt=[penPt[0]+o.mvd[0]*q,penPt[1]+o.mvd[1]*q]}}
+    // Flöde längs pilen: prickar som visar riktningen (bara för förlopp).
+    if(o.dots.length){const vis=lt>shapeDur?fprog(lt,shapeDur,400):0;o.dots.forEach((d,i)=>{if(!vis){d.setAttribute('opacity',0);return}
+      const ph=((amb/1700)+i/3)%1;try{const pt=o.path.getPointAtLength(o.plen*ph);d.setAttribute('cx',pt.x.toFixed(1));d.setAttribute('cy',pt.y.toFixed(1))}catch(x){}
+      d.setAttribute('opacity',(vis*Math.sin(Math.PI*ph)*.9).toFixed(2))})}
+  }
+  // Kamera: mjuk övergång till stegets utsnitt; överblick på slutet.
+  const C0={z:1,x:FW/2,y:FH/2};let cam=C0;
+  if(cs>=0){const prev=cs?R.cams[cs-1]:C0,cur=R.cams[cs],q=fprog(ft,R.stepT[cs]-250,1000,FEZ.io);cam={z:prev.z+(cur.z-prev.z)*q,x:prev.x+(cur.x-prev.x)*q,y:prev.y+(cur.y-prev.y)*q}}
+  if(over){const q=fprog(ft,END+150,1100,FEZ.io);cam={z:cam.z+(1-cam.z)*q,x:cam.x+(FW/2-cam.x)*q,y:cam.y+(FH/2-cam.y)*q}}
+  R.cam.setAttribute('transform',`translate(${FW/2} ${FH/2}) scale(${cam.z.toFixed(4)}) translate(${(-cam.x).toFixed(2)} ${(-cam.y).toFixed(2)})`);
+  // Pennan följer det som ritas just nu.
+  if(penPt){const X=(penPt[0]-cam.x)*cam.z+FW/2,Y=(penPt[1]-cam.y)*cam.z+FH/2;
+    if(!R.penAt||R.penIdle>220){R.penAt=[X,Y]}else{R.penAt=[R.penAt[0]+(X-R.penAt[0])*.55,R.penAt[1]+(Y-R.penAt[1])*.55]}R.penIdle=0}
+  else R.penIdle=(R.penIdle||0)+16;
+  const pv=penPt?1:Math.max(0,1-(R.penIdle||0)/260);
+  if(R.penAt)R.pen.setAttribute('transform',`translate(${R.penAt[0].toFixed(1)} ${R.penAt[1].toFixed(1)})`);
+  R.pen.setAttribute('opacity',pv.toFixed(2));
+}
+
+/* Spelaren: röst (talsyntes) styr filmtiden. Ordgränser från rösten drar filmtiden mot rätt ord;
+   utan röst eller ordgränser går filmen på uppskattad tid. */
 const Explainer=(()=>{
-  const MS_PER_CHAR=68;            // uppskattat taltempo (svenska, rate 0.95)
-  let K=null,cues=[],words=[],timers=[],tick=null,t0=0,usingBoundary=false,lastChar=-1,done=false,onClose=null,speaking=false;
+  let K=null,F=null,R=null,raf=0,ft=0,last=0,playing=false,ended=false,onClose=null;
+  let say='',TT=[],END=0,sents=[0],wstarts=[];
+  let useVoice=false,tok=0,pend=null,lastB=null,spoken=0,spokenDone=true,speakT0=0,noBound=false;
   const voiceOn=()=>LS.get('laxmotorn:voice',true)!==false;
+  const textPref=()=>LS.get('laxmotorn:filmtext','auto');
   function svVoice(){
     if(!window.speechSynthesis||!window.SpeechSynthesisUtterance)return null;
     try{const vs=speechSynthesis.getVoices().filter(v=>/^sv/i.test(v.lang));
       return vs.find(v=>/natural|neural|google|alva|klara|sofie/i.test(v.name))||vs[0]||null}catch(e){return null}
   }
   if('speechSynthesis' in window)try{speechSynthesis.onvoiceschanged=()=>{}}catch(e){}
-
-  // Ord med teckenpositioner, och var varje cue hamnar i manuset (i ordning).
-  function prepare(k){
-    words=[];const re=/\S+/g;let m;while((m=re.exec(k.say)))words.push({w:m[0],at:m.index});
-    const low=k.say.toLowerCase();let from=0;cues=[];
-    const items=showItems(k.show);
-    items.forEach((it,i)=>{let at=-1;if(it.cue){at=low.indexOf(it.cue.toLowerCase(),from);if(at<0)at=low.indexOf(it.cue.toLowerCase())}if(at>=0)from=at+1;cues.push({i,at})});
-    // Delar utan cue fördelas jämnt mellan grannarna.
-    const total=k.say.length;
-    cues.forEach((c,i)=>{if(c.at>=0)return;const prev=i?cues[i-1].at:Math.round(total*.08);const nx=cues.slice(i+1).find(x=>x.at>=0);const next=nx?nx.at:total;c.at=Math.round(prev+(next-prev)/2);if(c.at<prev)c.at=prev});
+  // Uppskattad tidslinje för manuset: tid per tecken plus pauser vid skiljetecken.
+  function timeline(){
+    TT=new Array(say.length+1);TT[0]=0;
+    for(let i=0;i<say.length;i++){const c=say[i],nx=say[i+1]||' ';TT[i+1]=TT[i]+F_MS+(/\s/.test(nx)?(/[.!?]/.test(c)?380:/[,;:]/.test(c)?160:0):0)}
+    END=TT[say.length];
+    sents=[0];say.replace(/[.!?]\s+/g,(m,o)=>{sents.push(o+m.length);return m});
+    wstarts=[];say.replace(/\S+/g,(m,o)=>{wstarts.push(o);return m});
   }
-  function showItems(s){
-    if(s.type==='term')return [{cue:s.cue||s.word},{cue:null,def:true}];
-    if(s.type==='compare'){const out=[];const n=Math.max(s.left.items.length,s.right.items.length);
-      for(let r=0;r<n;r++){if(s.left.items[r])out.push({...s.left.items[r],side:'l',r});if(s.right.items[r])out.push({...s.right.items[r],side:'r',r})}return out}
-    return s.items;
-  }
+  const T=c=>TT[Math.max(0,Math.min(say.length,Math.round(c)))];
+  function charAt(t){if(t<=0)return 0;let lo=0,hi=say.length;while(lo<hi){const m=(lo+hi+1)>>1;if(TT[m]<=t)lo=m;else hi=m-1}return lo}
+  const nextWord=c=>wstarts.find(w=>w>c)??say.length;
+  const sentOf=c=>{let s=0;sents.forEach(x=>{if(x<=c)s=x});return s};
 
-  // ---------- Ritning (allt i kod, inga bilder) ----------
-  function draw(k){
-    const s=k.show;let h='';
-    if(s.type==='term'){
-      h=`<div class="xp-term"><b class="xp-it" data-i="0">${esc(s.word)}</b>${s.def?`<span class="xp-it" data-i="1">${esc(s.def)}</span>`:''}</div>`;
-    }else if(s.type==='list'){
-      h=`${s.title?`<p class="xp-h">${esc(s.title)}</p>`:''}<ul class="xp-list">${s.items.map((it,i)=>`<li class="xp-it" data-i="${i}"><span class="xp-dot">${svg('check')}</span>${esc(it.t)}</li>`).join('')}</ul>`;
-    }else if(s.type==='steps'){
-      h=`${s.title?`<p class="xp-h">${esc(s.title)}</p>`:''}<ol class="xp-steps">${s.items.map((it,i)=>`<li class="xp-it" data-i="${i}">${i?'<i class="xp-arrow" aria-hidden="true">→</i>':''}<span><em>${i+1}</em>${esc(it.t)}</span></li>`).join('')}</ol>`;
-    }else if(s.type==='cycle'){
-      const n=s.items.length,R=118,cx=170,cy=150;
-      const pts=s.items.map((_,i)=>{const a=-Math.PI/2+i*2*Math.PI/n;return [cx+R*Math.cos(a),cy+R*Math.sin(a)]});
-      const arcs=pts.map((p,i)=>{const q=pts[(i+1)%n];const a1=Math.atan2(p[1]-cy,p[0]-cx)+.42,a2=Math.atan2(q[1]-cy,q[0]-cx)-.42;
-        const x1=cx+R*Math.cos(a1),y1=cy+R*Math.sin(a1),x2=cx+R*Math.cos(a2),y2=cy+R*Math.sin(a2);
-        return `<path class="xp-it xp-arc" data-i="${(i+1)%n}" d="M${x1.toFixed(1)} ${y1.toFixed(1)} A${R} ${R} 0 0 1 ${x2.toFixed(1)} ${y2.toFixed(1)}" marker-end="url(#xpHead)"/>`}).join('');
-      h=`${s.title?`<p class="xp-h">${esc(s.title)}</p>`:''}<div class="xp-cyc"><svg viewBox="0 0 340 300" aria-hidden="true"><defs><marker id="xpHead" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="5" markerHeight="5" orient="auto"><path d="M0 0L10 5L0 10z" fill="currentColor"/></marker></defs>${arcs}</svg>
-        ${s.items.map((it,i)=>`<span class="xp-it xp-node" data-i="${i}" style="left:${(pts[i][0]/340*100).toFixed(1)}%;top:${(pts[i][1]/300*100).toFixed(1)}%">${esc(it.t)}</span>`).join('')}</div>`;
-    }else if(s.type==='compare'){
-      const col=(side,x)=>`<div class="xp-col"><p class="xp-h">${esc(x.title)}</p><ul>${x.items.map(it=>{const i=showItems(s).findIndex(o=>o.side===side&&o.t===it.t);return `<li class="xp-it" data-i="${i}">${esc(it.t)}</li>`}).join('')}</ul></div>`;
-      h=`<div class="xp-cmp">${col("l",s.left)}<span class="xp-vs">vs</span>${col("r",s.right)}</div>`;
+  function caption(c){
+    const s0=sentOf(c),s1=sents.find(x=>x>c)??say.length,pos=[...wstarts].reverse().find(w=>w<=c)??0;
+    const html=[];say.slice(s0,s1).replace(/\S+/g,(m,o)=>{const at=s0+o;html.push(`<span class="${at===pos?'now':at<pos?'past':''}">${esc(m)}</span>`);return m});
+    const cap=$('#xpCap');const h=html.join(' ');if(cap.dataset.h!==h){cap.innerHTML=h;cap.dataset.h=h}
+  }
+  function stopSpeech(){tok++;try{if(window.speechSynthesis)speechSynthesis.cancel()}catch(e){}}
+  function speakFrom(c){
+    const v=svVoice();if(!v){useVoice=false;spokenDone=true;ui();return}
+    const my=++tok;try{speechSynthesis.cancel()}catch(e){}
+    const u=new SpeechSynthesisUtterance(say.slice(c));u.voice=v;u.lang=v.lang;u.rate=.95;u.pitch=1;
+    lastB=null;spoken=c;spokenDone=false;noBound=false;speakT0=performance.now();
+    u.onboundary=e=>{if(my!==tok||(e.name&&e.name!=='word'))return;lastB={c:c+e.charIndex,at:performance.now()};spoken=lastB.c};
+    u.onend=()=>{if(my!==tok)return;spokenDone=true;spoken=say.length};
+    u.onerror=()=>{if(my!==tok)return;useVoice=false;spokenDone=true;ui()};
+    try{speechSynthesis.speak(u)}catch(e){useVoice=false;spokenDone=true}
+  }
+  function tick(now){
+    raf=requestAnimationFrame(tick);
+    const dt=Math.min(100,now-(last||now));last=now;
+    if(playing){
+      if(pend&&ft>=pend.t){const c=pend.c;pend=null;if(useVoice)speakFrom(c)}
+      if(useVoice&&!pend&&!spokenDone){
+        if(lastB){const sp=Math.min(lastB.c+(now-lastB.at)/F_MS,nextWord(lastB.c)+2),target=T(sp);ft+=dt*Math.max(.3,Math.min(2.5,1+(target-ft)/350))}
+        else{if(now-speakT0>1300)noBound=true;ft+=dt}
+        if(ft>END)ft=END;                    // vänta in rösten
+      }else if(useVoice&&spokenDone&&!pend){ft+=dt*(ft<END?3:1)}
+      else ft+=dt;
+      if((!useVoice||spokenDone)&&!pend&&ft>=END+F_HOLD)finish();
     }
-    $('#xpWin').innerHTML=h;
+    filmRender(R,ft,END,now);
+    const c=useVoice&&lastB&&!spokenDone?spoken:charAt(ft);
+    if(!$('#xpCap').hidden)caption(Math.min(c,say.length-1));
+    $('#xpBar').style.width=(cl01(ft/END)*100).toFixed(1)+'%';
   }
-  function reveal(upto){
-    cues.forEach(c=>{if(c.at<=upto){const el=$('#xpWin').querySelectorAll(`.xp-it[data-i="${c.i}"]`);el.forEach(e=>{if(!e.classList.contains('on')){e.classList.add('on');if(e.classList.contains('xp-node')||e.tagName==='LI'||e.tagName==='B')e.classList.add('pop')}})}});
-    const wi=words.findIndex((w,i)=>upto>=w.at&&(i===words.length-1||upto<words[i+1].at));
-    caption(wi);
-    $('#xpBar').style.width=Math.min(100,upto/Math.max(1,K.say.length)*100)+'%';
-  }
-  // Undertext: meningen som läses, med ordet som sägs markerat.
-  function caption(wi){
-    if(wi<0){return}
-    const say=K.say,pos=words[wi].at;
-    const starts=[0];say.replace(/[.!?]\s+/g,(m,o)=>{starts.push(o+m.length);return m});
-    let s0=0;starts.forEach(s=>{if(s<=pos)s0=s});const s1=starts.find(s=>s>pos)??say.length;
-    const sw=words.filter(w=>w.at>=s0&&w.at<s1);
-    $('#xpCap').innerHTML=sw.map(w=>`<span class="${w.at===pos?'now':w.at<pos?'past':''}">${esc(w.w)}</span>`).join(' ');
-  }
-  function clear(){timers.forEach(clearTimeout);timers=[];clearInterval(tick);tick=null;if('speechSynthesis' in window&&speaking){try{speechSynthesis.cancel()}catch(e){}}speaking=false}
-  function finish(){if(done)return;done=true;clear();reveal(K.say.length);$('#xpBar').style.width='100%';$('#xpOv').classList.add('end');$('#xpGo').focus({preventScroll:true})}
-  function runTimer(fromChar){
-    usingBoundary=false;clearInterval(tick);
-    const start=Date.now()-fromChar*MS_PER_CHAR;
-    tick=setInterval(()=>{const c=Math.floor((Date.now()-start)/MS_PER_CHAR);reveal(c);if(c>=K.say.length+8)finish()},60);
-  }
-  function play(){
-    clear();done=false;lastChar=-1;$('#xpOv').classList.remove('end');
-    $('#xpWin').querySelectorAll('.xp-it').forEach(e=>e.classList.remove('on','pop'));$('#xpBar').style.width='0%';
-    const v=voiceOn()?svVoice():null;
-    $('#xpNote').textContent=voiceOn()&&!v?'Ingen svensk röst på den här enheten. Läs texten.':'';
+  function ui(){
+    const p=$('#xpPlay');p.innerHTML=svg(ended?'cycle':playing?'pause':'play');p.setAttribute('aria-label',ended?'Spela igen':playing?'Pausa':'Spela');
     $('#xpMute').innerHTML=svg(voiceOn()?'music':'x')+(voiceOn()?'Ljud på':'Ljud av');
-    t0=Date.now();
-    if(!v){timers.push(setTimeout(()=>runTimer(0),500));return}
-    const u=new SpeechSynthesisUtterance(K.say);u.voice=v;u.lang=v.lang;u.rate=.95;u.pitch=1.05;
-    u.onboundary=e=>{if(e.name&&e.name!=='word')return;if(!usingBoundary){usingBoundary=true;clearInterval(tick)}lastChar=e.charIndex;reveal(e.charIndex)};
-    u.onend=()=>{speaking=false;finish()};
-    u.onerror=()=>{speaking=false;if(!done)runTimer(Math.max(0,lastChar))};
-    speaking=true;try{speechSynthesis.cancel();speechSynthesis.speak(u)}catch(e){speaking=false;runTimer(0);return}
-    // Inga ordgränser inom 1,2 s: kör på uppskattad tid (rösten fortsätter ändå).
-    timers.push(setTimeout(()=>{if(!usingBoundary&&!done)runTimer(Math.max(0,Math.floor((Date.now()-t0-300)/MS_PER_CHAR)))},1200));
-    // Säkerhet om onend aldrig kommer.
-    timers.push(setTimeout(()=>{if(!done)finish()},K.say.length*MS_PER_CHAR*1.8+4000));
+    const tp=textPref(),showText=tp==='on'||(tp==='auto'&&!useVoice);$('#xpCap').hidden=!showText;$('#xpTxt').setAttribute('aria-pressed',String(showText));
+    $('#xpNote').textContent=voiceOn()&&!svVoice()?'Ingen svensk röst på den här enheten. Texten visas i stället.':'';
+    $('#xpOv').classList.toggle('end',ended);
   }
-  function open(k,opt={}){
-    K=k;onClose=opt.onClose||null;prepare(k);
-    $('#xpTitle').textContent=k.name;$('#xpIc').innerHTML=svg(k.icon);$('#xpCap').textContent='';
-    draw(k);$('#xpOv').hidden=false;document.body.style.overflow='hidden';
-    play();$('#xpGo').focus({preventScroll:true});
+  function play(fromChar=0){
+    stopSpeech();ended=false;playing=true;useVoice=voiceOn()&&!!svVoice();spokenDone=!useVoice;lastB=null;
+    ft=fromChar?T(fromChar)-250:-F_LEAD;pend={c:fromChar,t:fromChar?T(fromChar):0};R.penAt=null;ui();
   }
-  function close(){clear();$('#xpOv').hidden=true;document.body.style.overflow='';const f=onClose;onClose=null;K=null;if(f)f()}
-  $('#xpAgain').onclick=()=>play();
+  function pause(){if(!playing)return;playing=false;stopSpeech();spokenDone=true;pend=null;ui()}
+  function resume(){if(ended){play(0);return}const c=sentOf(charAt(ft));play(c)}
+  function back(){const c=charAt(ft),s=sentOf(c);const i=sents.indexOf(s);play(c-s<12&&i>0?sents[i-1]:s)}
+  function finish(){if(ended)return;ended=true;playing=false;ft=END+F_HOLD;ui();$('#xpGo').focus({preventScroll:true})}
+  async function open(k,opt={}){
+    K=k;onClose=opt.onClose||null;
+    F=fNorm(k.film,k.say)||fNorm(filmFromShow(k),k.say);say=F.say;timeline();
+    $('#xpTitle').textContent=k.name;$('#xpIc').innerHTML=svg(PROPS[k.icon]?k.icon:'book');$('#xpCap').textContent='';$('#xpCap').dataset.h='';
+    $('#xpOv').dataset.subj=opt.subj||((QZ&&QZ.subject)||(DRAFT&&DRAFT.subject)||'annat');
+    $('#xpStage').setAttribute('aria-label',`${k.name}. ${say}`);
+    $('#xpOv').hidden=false;document.body.style.overflow='hidden';
+    // Typsnittet måste finnas innan texten mäts.
+    try{await Promise.race([document.fonts.load('800 28px Nunito'),new Promise(r=>setTimeout(r,600))])}catch(e){}
+    if(K!==k)return;
+    R=filmBuild($('#xpStage'),F,T);
+    $('#xpTicks').innerHTML=R.stepT.map(t=>`<i style="left:${(cl01(t/END)*100).toFixed(1)}%"></i>`).join('');
+    cancelAnimationFrame(raf);last=0;raf=requestAnimationFrame(tick);
+    play(0);$('#xpGo').focus({preventScroll:true});
+  }
+  function close(){stopSpeech();cancelAnimationFrame(raf);playing=false;$('#xpOv').hidden=true;document.body.style.overflow='';const f=onClose;onClose=null;K=null;if(f)f()}
+  $('#xpPlay').onclick=()=>{if(playing)pause();else resume()};
+  $('#xpBack').onclick=back;
   $('#xpGo').onclick=close;
-  $('#xpMute').onclick=()=>{LS.set('laxmotorn:voice',!voiceOn());play()};
-  $('#xpOv').addEventListener('keydown',e=>{if(e.key==='Escape')close()});
-  return {open,close,isOpen:()=>!$('#xpOv').hidden};
+  $('#xpMute').onclick=()=>{LS.set('laxmotorn:voice',!voiceOn());if(!ended)resume();else ui()};
+  $('#xpTxt').onclick=()=>{const on=$('#xpCap').hidden;LS.set('laxmotorn:filmtext',on?'on':'off');ui()};
+  $('#xpOv').addEventListener('keydown',e=>{if(e.key==='Escape')close();else if(e.key===' '&&e.target.tagName!=='BUTTON'){e.preventDefault();$('#xpPlay').click()}else if(e.key==='ArrowLeft')back()});
+  // För granskning och test: stoppa och visa filmen vid en viss tid (ms).
+  function seek(ms){pause();ended=false;ft=ms;filmRender(R,ft,END,performance.now());$('#xpBar').style.width=(cl01(ft/END)*100)+'%';caption(Math.min(charAt(ft),say.length-1))}
+  return {open,close,seek,isOpen:()=>!$('#xpOv').hidden,info:()=>({end:END,steps:R?R.stepT:[],say})};
 })();
 // Förklaringsklipp till en läxa som saknar dem (äldre läxor).
 async function makeClips(){

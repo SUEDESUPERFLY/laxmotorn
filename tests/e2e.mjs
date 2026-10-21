@@ -4,6 +4,7 @@
 import { chromium } from 'playwright';
 import fs from 'node:fs';
 import path from 'node:path';
+import { golden } from './golden-films.mjs';
 
 const APP = process.argv[2];
 const SB = 'https://qmmannehhntwjpcharmz.supabase.co';
@@ -173,6 +174,16 @@ await page.route('**/*', async (route) => {
       if (/Lisa/.test(b.answer)) return json({ code: 'upstream' }, 502);
       return json({ result: /ljus|energi/i.test(b.answer) ? 'ja' : 'nej', feedback: 'Bra förklarat, du kopplade ljuset till energin.' });
     }
+    if (b.action === 'films') {
+      const q = db.quizzes.find((x) => x.id === b.quiz_id);
+      if (!q) return json({ code: 'not_found' }, 404);
+      calls.push(`  films quiz=${b.quiz_id}`);
+      const cs = q.content.concepts || [];
+      if (!cs.some((k) => !k.film)) return json({ ready: true });
+      const foto = golden.find((g) => g.id === 'g4').film;
+      q.content = { ...q.content, concepts: cs.map((k) => k.film ? k : { ...k, film: k.name === 'Fotosyntes' ? { v: 1, ...foto } : { v: 1, steps: [] } }) };
+      return json({ started: true, remaining: cs.length }, 202);
+    }
     if (b.action === 'concepts') {
       const map = {}; b.quiz.stations.forEach((s, si) => s.qs.forEach((q, qi) => { map[`${si}.${qi}`] = ['k1', 'k1', 'k2', 'k3'][qi] || 'k1'; }));
       return route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: JSON.stringify({ concepts, map }) });
@@ -221,7 +232,7 @@ await page.click('details.rv[data-si="k"] summary');
 await page.click('[data-play="0"]');
 await page.waitForSelector('#xpOv:not([hidden])');
 await page.waitForSelector('#xpOv.end', { timeout: 15000 });
-check(await page.locator('#xpWin .xp-it.on').count() === 3, 'klippet i granskningen visar alla tre delarna');
+check(await page.locator('#xpStage .fe').count() > 0 && await page.locator('#xpStage .fe:not(.on)').count() === 0, 'filmen i granskningen ritar alla delar');
 await shot('e2e-3-clip-review');
 await page.click('#xpGo');
 await page.click('#saveBtn');
@@ -266,7 +277,7 @@ for (let i = 0; i < 4; i++) {
     gotClip = true;
     await page.waitForSelector('#xpOv.end', { timeout: 15000 });
     check((await page.evaluate(() => window.__spoken.at(-1))).startsWith('Fotosyntes är'), 'rösten läser manuset');
-    check(await page.locator('#xpWin .xp-it.on').count() === 3, 'alla delar dyker upp på sina ord');
+    check(await page.locator('#xpStage .fe').count() > 0 && await page.locator('#xpStage .fe:not(.on)').count() === 0, 'alla delar ritas fram');
     await shot('e2e-5-clip-wrong');
     await page.click('#xpGo');
     check(/kommer (tillbaka|i slutet)/.test(await page.textContent('#feedback')), 'texten säger att frågan eller en liknande kommer tillbaka');
@@ -279,6 +290,23 @@ for (let i = 0; i < 4; i++) {
 check(gotClip, 'klippet startade vid fel svar');
 const queued = await page.textContent('#qtext');
 check(/fotosyntes|koldioxid/.test(queued), `den köade frågan gäller samma begrepp ("${queued.slice(0, 40)}")`);
+
+step('ritad förklaringsfilm från servern');
+check(calls.some((c) => /films quiz=qPend/.test(c)), 'appen beställer filmer till läxan');
+await page.waitForFunction(() => (QZ && (QZ.concepts || []).every((k) => k.film)), null, { timeout: 15000 });
+await page.evaluate(() => Explainer.open(QZ.concepts.find((k) => k.name === 'Fotosyntes')));
+await page.waitForSelector('#xpOv:not([hidden])');
+await page.waitForFunction(() => document.querySelectorAll('#xpStage .fe').length >= 10);
+check((await page.locator('#xpStage [data-step="5"]').count()) > 0, 'den ritade filmen har alla sex steg');
+await page.evaluate(() => Explainer.seek(4200));
+check(await page.locator('#xpStage .fe.on').count() >= 2 && await page.locator('#xpStage .fe:not(.on)').count() > 0, 'mitt i filmen är bara början ritad');
+await page.waitForTimeout(100);
+await page.screenshot({ path: path.join(SHOTS, 'e2e-6a-film-mid.png') });
+await page.evaluate(() => Explainer.seek(30000));
+check(await page.locator('#xpStage .fe:not(.on)').count() === 0, 'slutbilden visar allt');
+await page.click('#xpTxt');
+check(await vis('#xpCap'), 'texten kan slås på');
+await page.click('#xpGo');
 
 step('äldre läxa utan klipp → skapa klipp');
 await page.click('#quitBtn').catch(() => {});

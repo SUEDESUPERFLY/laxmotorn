@@ -9,6 +9,7 @@
 // Alla i hushållet (även barn, för läxor de får se), JSON:
 //   {action:"level", quiz_id, level}       fördjupningsnivå 2 eller 3; görs i bakgrunden (202) och sparas i content.levels
 //   {action:"grade", quiz_id, qid, answer} bedömer ett förklaringssvar: {result:"ja"|"delvis"|"nej", feedback}
+//   {action:"films", quiz_id}              ritade förklaringsfilmer till begrepp som saknar film (några åt gången, i bakgrunden)
 // Fel: JSON {code} med status ≥ 400, eller "\n\u0000ERR:<code>" sist i strömmen.
 //
 // Vuxenkonton (JSON), bara för e-post i ALLOWED_EMAILS:
@@ -29,8 +30,8 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { ClaudeError, complete, FAST_MODEL, open, pump } from "./claude.ts";
-import { conceptsPrompt, gradePrompt, LEVEL_NAMES, levelPrompt, mailPrompt, quizPrompt, SUBJECTS, transcribePrompt } from "./prompts.ts";
-import { extractJson, sanitize, sanitizeLevel } from "./quiz.ts";
+import { conceptsPrompt, FILM_PROPS, filmPrompt, gradePrompt, LEVEL_NAMES, levelPrompt, mailPrompt, quizPrompt, SUBJECTS, transcribePrompt } from "./prompts.ts";
+import { extractJson, sanitize, sanitizeFilm, sanitizeLevel } from "./quiz.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -327,12 +328,13 @@ async function prepare(hh: { id: string }, quizId: unknown) {
 
 // ---------- Fördjupningsnivåer och förklaringsfrågor ----------
 // Läxan måste vara godkänd och synlig för den inloggade: vuxna i hushållet, eller barnet läxan gäller.
-async function visibleQuiz(userId: string, quizId: unknown) {
+async function visibleQuiz(userId: string, quizId: unknown, draftsForParents = false) {
   if (typeof quizId !== "string" || !UUID.test(quizId)) return null;
   const { data: q } = await admin.from("quizzes").select("id,household_id,child_id,title,grade,status,content").eq("id", quizId).maybeSingle();
-  if (!q || q.status !== "ready") return null;
+  if (!q) return null;
   const { data: m } = await admin.from("household_members").select("role,child_id").eq("household_id", q.household_id).eq("user_id", userId).maybeSingle();
   if (!m) return null;
+  if (q.status !== "ready" && !(draftsForParents && q.status === "draft" && m.role !== "child")) return null;
   if (m.role === "child" && q.child_id && q.child_id !== m.child_id) return null;
   return q;
 }
@@ -390,6 +392,45 @@ async function makeLevel(userId: string, b: Any) {
     }
   })());
   return json({ started: true }, 202);
+}
+
+// ---------- Förklaringsfilmer ----------
+const FILM_BATCH = 4;
+async function makeFilms(q: Any) {
+  const c = q.content ?? {};
+  const todo = ((c.concepts ?? []) as Any[]).filter((k) => !k.film);
+  if (!todo.length) return json({ ready: true });
+  const gen = c.filmgen ?? {};
+  if (gen.at && Date.now() - Date.parse(gen.at) < 4 * 60_000) return json({ started: true, remaining: todo.length });
+  if (gen.failed_at && Date.now() - Date.parse(gen.failed_at) < 10 * 60_000) return json({ error: gen.error ?? "upstream" });
+  const setGen = async (g: Any, films: Record<string, Any> = {}) => {
+    const { data: cur } = await admin.from("quizzes").select("content").eq("id", q.id).single();
+    const cc = cur?.content ?? {};
+    const concepts = ((cc.concepts ?? []) as Any[]).map((k) => (films[k.id] && !k.film ? { ...k, film: films[k.id] } : k));
+    await admin.from("quizzes").update({ content: { ...cc, concepts, filmgen: g } }).eq("id", q.id);
+  };
+  await setGen({ at: new Date().toISOString() });
+  const batch = todo.slice(0, FILM_BATCH);
+  const qsOf = (id: string) => allStationsOf(c).flatMap((st: Any) => (st.qs ?? []).filter((x: Any) => x.c === id)).slice(0, 4).map((x: Any) => {
+    const wrong = x.t === "mc" ? x.opts.filter((_: string, i: number) => i !== x.a) : x.t === "multi" ? x.opts.filter((_: string, i: number) => !x.a.includes(i)) : [];
+    return `- ${x.q} → ${ansOf(x)}${wrong.length ? ` [${wrong.join("; ")}]` : ""}`;
+  });
+  const prompt = filmPrompt({ grade: String(q.grade ?? 4), title: q.title, concepts: batch.map((k) => ({ id: k.id, name: k.name, say: k.say, qs: qsOf(k.id) })) });
+  bg((async () => {
+    try {
+      const raw = extractJson(await complete([{ type: "text", text: prompt }], { effort: "low", maxTokens: 16000 }));
+      if (!raw || !Array.isArray(raw.films)) throw new ClaudeError("bad_shape");
+      const films: Record<string, Any> = {};
+      for (const f of raw.films) { const k = batch.find((b) => b.id === f?.id); const ok = k && sanitizeFilm(f, FILM_PROPS); if (k && ok) films[k.id] = ok; }
+      // Begrepp som inte fick någon film markeras, så att de inte görs om i det oändliga (appen ritar då en enklare film).
+      batch.forEach((k) => { if (!films[k.id]) films[k.id] = { v: 1, steps: [] }; });
+      await setGen({}, films);
+    } catch (e) {
+      console.error("films", q.id, e);
+      await setGen({ error: e instanceof ClaudeError ? e.code : "upstream", failed_at: new Date().toISOString() });
+    }
+  })());
+  return json({ started: true, remaining: todo.length }, 202);
 }
 
 async function gradeAnswer(userId: string, b: Any) {
@@ -451,6 +492,10 @@ Deno.serve(async (req) => {
     }
     if (action === "level") return await makeLevel(who.user.id, body);
     if (action === "grade") return await gradeAnswer(who.user.id, body);
+    if (action === "films") {
+      const q = await visibleQuiz(who.user.id, body.quiz_id, true);
+      return q ? await makeFilms(q) : fail(404, "not_found");
+    }
     // Bara föräldrar: barnkonton får aldrig skapa förhör eller konton.
     const { count } = await admin.from("household_members").select("user_id", { count: "exact", head: true })
       .eq("user_id", who.user.id).in("role", ["owner", "parent"]);

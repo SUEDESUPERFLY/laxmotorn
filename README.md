@@ -25,9 +25,30 @@ Prov och läxförhör hamnar under "Från skolan" hos rätt barn. Räcker mejlet
 - **Barn** loggar in med användarnamn och lösenord som en vuxen skapar under Byt barn → Barnens inloggning. Barnet ser bara sina egna godkända läxor. Spärrarna ligger i databasen (RLS): ett barnkonto kan inte läsa förslag, ändra läxor, se syskons framsteg eller läsa nyckeln till Apps Script.
 - Bakom ett barns användarnamn finns ett vanligt konto med förälderns e-post plus en tagg (`namn+lm-erik@…`).
 
-## Förklaringsklipp
+## Förklaringsfilmer
 
-Varje förhör har begrepp (`content.concepts`) med ett kort talat manus och en kodritad bild (lista, steg, kretslopp, jämförelse eller begrepp). Vid fel svar spelas klippet: talsyntesen läser manuset och varje del av bilden dyker upp när rösten säger sitt ord. Saknas svensk röst används uppskattad tid och texten visas. Efter klippet kommer en liknande fråga om samma begrepp i slutet av rundan.
+När ett barn svarar fel spelas en kort film (10–25 s) om begreppet: en lugn röst förklarar medan en ritning växer fram på rutat papper, del för del, exakt när rösten säger ordet. En penna ritar och skriver, som när en lärare förklarar vid tavlan. Efter filmen kommer en liknande fråga i slutet av rundan.
+
+**Så görs filmerna.** Första gången en läxa öppnas (eller ett förslag granskas) ber appen servern om filmer (`films`). Claude skriver manus och en ritplan per begrepp: steg med ett ord ur manuset (`cue`) och element på en duk 800 × 500 (figurer ur ett eget bibliotek, pilar, lådor, text, meningar med inramade ord, tal som räknas upp, markeringar, fria former). Allt ritas i kod i webbläsaren, så text och fakta blir exakta. Saknas film ännu ritas en enklare film av klippets bildtyp, så filmen spelas alltid.
+
+**Forskningsgrund.** Utformningen följer forskningen om multimedialärande:
+
+| Princip | Så används den |
+|---|---|
+| Modalitet och redundans: tal + bild är bättre än bild + mycket text ([Mayer 2021](https://doi.org/10.1017/9781316941355); [Ginns 2005](https://doi.org/10.1016/j.learninstruc.2005.07.001)) | Manuset läses upp. På skärmen står bara korta etiketter. Manustexten kan slås på (knappen Text) och visas automatiskt om enheten saknar svensk röst. |
+| Temporal och rumslig närhet | Varje del ritas när rösten säger den, och etiketten sitter vid delen. Etiketter flyttas automatiskt bort från pilar och figurer. |
+| Signalering ([Schneider m.fl. 2018](https://doi.org/10.1016/j.edurev.2017.11.001)) | Det som sägs nu är starkt, tidigare steg tonas ned. Kameran drar sig bakåt när bilden växer. Samma färg betyder samma sak. |
+| Koherens, inga lockande detaljer ([Sundararajan & Adesope 2020](https://doi.org/10.1007/s10648-020-09522-4)) | Ingen musik, inga skämtfigurer eller dekorationer. Bara figurer som föreställer innehållet. |
+| Dynamisk ritning ([Fiorella & Mayer 2016](https://doi.org/10.1037/edu0000065)) | Bilden ritas fram av en penna i stället för att visas färdig. Studien fann att det hjälper mest när handen syns; pennan är en enkel motsvarighet. |
+| Animation när innehållet förändras ([Berney & Bétrancourt 2016](https://doi.org/10.1016/j.compedu.2016.06.005)) | Rörelse (flödesprickar längs pilar) bara för förlopp och flöden. |
+| Segmentering och elevens tempo ([Rey m.fl. 2019](https://doi.org/10.1007/s10648-018-9456-4)) | Paus, förra meningen och spela igen. Korta filmer, en idé per film. |
+| Utvecklad återkoppling och missuppfattningar ([Van der Kleij m.fl. 2015](https://doi.org/10.3102/0034654314564881)) | Filmen kommer direkt efter felet och förklarar varför. Claude ser frågornas vanliga felsvar och bemöter missuppfattningen rakt ("Det är inte …, utan …"). |
+
+Studierna gäller mest äldre elever och vuxna, och effekterna är små till måttliga. Därför finns elevens kontroller kvar och filmerna är korta.
+
+**Tekniken** kommer från [fltman/infofilm](https://github.com/fltman/infofilm): allt som måste stämma ritas i kod, rörelser tidsätts efter talet med uppskattad tid som reserv, filmens tillstånd är en ren funktion av filmtiden (pausa, spola, granska), och filmerna granskas med kontaktark. Rösten är webbläsarens svenska talsyntes; ordgränser från rösten styr filmtiden.
+
+**Granska filmer:** `node tests/film-review.mjs src/index.html 8` gör kontaktark för de gyllene filmerna i `tests/golden-films.mjs` (förebilder; "Avrunda till tiotal" är exemplet i prompten). Med en JSON-fil som tredje argument granskas andra filmer, t.ex. sådana som hämtats ur databasen.
 
 ## Nivåer: svårare och djupare
 
