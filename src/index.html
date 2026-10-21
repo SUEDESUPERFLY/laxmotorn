@@ -1922,12 +1922,17 @@ $('#authForm').addEventListener('submit',async e=>{
   if(error){authMsg(/confirm/i.test(error.message)?'Bekräfta e-postadressen via länken i mejlet först.':'Fel e-post eller lösenord.',true);return}
   authMsg('');$('#authPass').value='';afterLogin();
 });
+// Vuxenkonto: bara e-postadresser som finns i ALLOWED_EMAILS. Kontot hamnar direkt i familjen.
+const SIGNUP_ERR={not_allowed:'Den här e-postadressen får inte skapa konto. Be den som har satt upp Läxmotorn att lägga till den.',exists:'Det finns redan ett konto med den adressen. Logga in i stället.',bad_password:'Lösenordet måste ha 8–72 tecken.',bad_email:'Skriv en giltig e-postadress.'};
 $('#signupBtn').onclick=async()=>{
   const c=authInput(true);if(!c)return;authBusy(true);authMsg('Skapar konto…');
-  const {data,error}=await sb.auth.signUp({...c,options:{emailRedirectTo:location.origin+location.pathname}});authBusy(false);
-  if(error){authMsg(/registered|exists/i.test(error.message)?'Det finns redan ett konto med den adressen. Logga in i stället.':'Kunde inte skapa kontot: '+error.message,true);return}
-  if(data.session){authMsg('');afterLogin();return}
-  authMsg('Klart! Öppna mejlet och klicka på länken. Logga sedan in här.');
+  let res,j={};
+  try{res=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'application/json',apikey:SB_KEY},body:JSON.stringify({action:'adult_signup',...c})});j=await res.json().catch(()=>({}))}
+  catch(e){authBusy(false);authMsg('Kunde inte nå servern.',true);return}
+  if(!res.ok){authBusy(false);authMsg(SIGNUP_ERR[j.code]||'Kunde inte skapa kontot. Försök igen.',true);return}
+  const {error}=await sb.auth.signInWithPassword(c);authBusy(false);
+  if(error){authMsg('Kontot är skapat. Logga in.',false);return}
+  authMsg('');$('#authPass').value='';afterLogin();
 };
 $('#logoutBtn').onclick=async()=>{await flush();await sb.auth.signOut();resetState();show('auth')};
 function resetState(){HH=null;KIDS=[];KID=null;ROLE=null;LOGINS={};document.body.classList.remove('kidmode');G=freshG();RAW={};Object.keys(PC).forEach(k=>delete PC[k]);dirtyP.clear();gDirty=false;
@@ -1940,7 +1945,12 @@ async function afterLogin(){
   let {data:hm,error}=await sb.from('household_members').select('household_id,role,child_id').eq('user_id',user?user.id:'').limit(1);
   if(error){$('#loadMsg').textContent='Kunde inte nå databasen. Ladda om sidan.';return}
   if(hm.length){HH=hm[0].household_id;ROLE=hm[0].role==='child'?'child':'parent'}
-  else{const r=await sb.rpc('create_household',{hh_name:'Familjen'});if(r.error){$('#loadMsg').textContent='Kunde inte skapa familjen. Ladda om sidan.';return}HH=r.data;ROLE='parent'}
+  else{
+    // Vuxen utan familj: servern lägger in kontot i familjen om e-posten finns i ALLOWED_EMAILS.
+    let j=null;try{j=await makeSample().json({action:'adult_join'},{})}catch(e){j={code:e&&e.code}}
+    if(!j||!j.household_id){$('#loadMsg').textContent=j&&j.code==='not_allowed'?'Det här kontot är inte med i någon familj. Be den som har satt upp Läxmotorn att lägga till din e-postadress.':'Kunde inte hämta familjen. Ladda om sidan.';return}
+    HH=j.household_id;ROLE='parent';
+  }
   document.body.classList.toggle('kidmode',ROLE==='child');
   sample=ROLE==='child'?null:makeSample();imgLimits={maxCount:20};canWrite=ROLE!=='child';booted=true;
   const [k]=await Promise.all([sb.from('children').select('id,name,grade,stats,class_codes,languages').order('created_at'),Store.load()]);

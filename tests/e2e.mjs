@@ -18,6 +18,9 @@ const kidUser = { id: 'u2', aud: 'authenticated', role: 'authenticated', email: 
 const kidSession = { access_token: 'kidtok', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'kr', user: kidUser };
 const user = { id: 'u1', aud: 'authenticated', role: 'authenticated', email: 'test@example.com', app_metadata: {}, user_metadata: {}, created_at: new Date().toISOString() };
 const session = { access_token: 'tok', token_type: 'bearer', expires_in: 3600, expires_at: Math.floor(Date.now() / 1000) + 3600, refresh_token: 'r', user };
+const katrin = { ...user, id: 'u3', email: 'katrin@example.com' };
+const katrinSession = { ...session, access_token: 'tok3', user: katrin };
+const ALLOWED = ['test@example.com', 'katrin@example.com'];
 const stats = () => ({ xp: 0, days: [], badges: [], fixed: 0, reviews: 0 });
 const now = new Date().toISOString();
 const inDays = (n) => new Date(Date.now() + n * 864e5).toISOString().slice(0, 10);
@@ -104,8 +107,9 @@ await page.route('**/*', async (route) => {
   const eq = (k) => (url.searchParams.get(k) || '').replace(/^eq\./, '');
   const isKid = (req.headers()['authorization'] || '').includes(KIDTOK.split('.')[1]);
   const kidMember = db.members.find((m) => m.user_id === 'u2');
-  if (p === '/auth/v1/token') return json(session);
-  if (p === '/auth/v1/user') return json(isKid ? kidUser : user);
+  const isKatrin = (req.headers()['authorization'] || '').includes('tok3');
+  if (p === '/auth/v1/token') { const b = req.postDataJSON() || {}; return json(b.email === 'katrin@example.com' ? katrinSession : session); }
+  if (p === '/auth/v1/user') return json(isKid ? kidUser : isKatrin ? katrin : user);
   if (p === '/auth/v1/logout') return route.fulfill({ status: 204 });
   if (p === '/rest/v1/household_members') return json(db.members.filter((m) => !eq('user_id') || m.user_id === eq('user_id')));
   if (p === '/rest/v1/rpc/get_ingest_token') return json(isKid ? null : db.households[0].ingest_token);
@@ -133,6 +137,17 @@ await page.route('**/*', async (route) => {
     if (b.action === 'kid_login') {
       const l = db.logins.find((x) => x.username === b.username && x.password === b.password);
       return l ? json({ access_token: KIDTOK, refresh_token: 'kr' }) : json({ code: 'bad_login' }, 401);
+    }
+    if (b.action === 'adult_signup') {
+      if (!ALLOWED.includes(b.email)) return json({ code: 'not_allowed' }, 403);
+      if (db.adults?.includes(b.email)) return json({ code: 'exists' }, 409);
+      (db.adults ||= []).push(b.email); return json({ ok: true });
+    }
+    if (b.action === 'adult_join') {
+      calls.push('  adult_join');
+      if (!isKatrin) return json({ code: 'not_allowed' }, 403);
+      if (!db.members.some((m) => m.user_id === 'u3')) db.members.push({ household_id: 'hh1', user_id: 'u3', role: 'parent', child_id: null });
+      return json({ household_id: 'hh1', role: 'parent', joined: true });
     }
     if (b.action === 'kid_account') {
       if (isKid) return json({ code: 'no_household' }, 403);
@@ -379,6 +394,22 @@ await page.click('#home2');
 await page.waitForSelector('#lvBox [data-sid="L3s1"]', { timeout: 15000 });
 check(!/Låst/.test(await page.textContent('#lvBox')), 'Expert är öppen efter silver på Fördjupning');
 await shot('e2e-12-level3');
+
+step('vuxenkonto för en tillåten e-postadress');
+await page.click('#logoutBtn');
+await page.waitForSelector('#auth:not([hidden])');
+await page.fill('#authEmail', 'okand@example.com');
+await page.fill('#authPass', 'hemligt123');
+await page.click('#signupBtn');
+await page.waitForSelector('#authMsg >> text=får inte skapa konto');
+check(true, 'okänd e-post får inte skapa konto');
+await page.fill('#authEmail', 'katrin@example.com');
+await page.click('#signupBtn');
+await page.waitForSelector('#kids:not([hidden]), #lib:not([hidden])', { timeout: 8000 });
+check(db.members.some((m) => m.user_id === 'u3' && m.role === 'parent' && m.household_id === 'hh1'), 'Katrin läggs i familjen som vuxen');
+check(await page.locator('[data-kid="k1"]').count() > 0 || await vis('#lib'), 'Katrin ser barnen');
+check(!(await page.evaluate(() => document.body.classList.contains('kidmode'))), 'Katrin är inte i barnläge');
+await shot('e2e-13-katrin');
 
 console.log('\nAnrop till servern:\n' + calls.filter((c) => /laxmotorn|action/.test(c)).join('\n'));
 console.log('\nKonsolfel:\n' + (log.filter((l) => !/ERR_FAILED|404/.test(l)).join('\n') || '(inga)'));

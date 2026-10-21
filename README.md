@@ -21,6 +21,7 @@ Prov och läxförhör hamnar under "Från skolan" hos rätt barn. Räcker mejlet
 ## Konton
 
 - **Vuxna** loggar in med e-post och lösenord och har full åtkomst: Från skolan, godkännande, alla barn och översikten.
+- **Nya vuxenkonton** (Skapa vuxenkonto) går bara att skapa för e-postadresser i `ALLOWED_EMAILS`. Kontot bekräftas direkt och läggs i samma familj som de andra tillåtna vuxna. Lägg till adressen i hemligheten först, kommaseparerad.
 - **Barn** loggar in med användarnamn och lösenord som en vuxen skapar under Byt barn → Barnens inloggning. Barnet ser bara sina egna godkända läxor. Spärrarna ligger i databasen (RLS): ett barnkonto kan inte läsa förslag, ändra läxor, se syskons framsteg eller läsa nyckeln till Apps Script.
 - Bakom ett barns användarnamn finns ett vanligt konto med förälderns e-post plus en tagg (`namn+lm-erik@…`).
 

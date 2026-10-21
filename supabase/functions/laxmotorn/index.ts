@@ -11,6 +11,10 @@
 //   {action:"grade", quiz_id, qid, answer} bedömer ett förklaringssvar: {result:"ja"|"delvis"|"nej", feedback}
 // Fel: JSON {code} med status ≥ 400, eller "\n\u0000ERR:<code>" sist i strömmen.
 //
+// Vuxenkonton (JSON), bara för e-post i ALLOWED_EMAILS:
+//   {action:"adult_signup", email, password}  skapar ett bekräftat konto och lägger det i familjen
+//   {action:"adult_join"}                     inloggad vuxen utan familj läggs i familjen (eller får en ny)
+//
 // Barnkonton (JSON):
 //   {action:"kid_account", child_id, username, password}  förälder skapar eller ändrar barnets inloggning
 //   {action:"kid_login", username, password}              barnet loggar in; svarar med session
@@ -56,9 +60,11 @@ async function userAuth(req: Request) {
   const { data } = await admin.auth.getUser(jwt);
   const email = data?.user?.email?.toLowerCase();
   if (!email) return null;
-  const allowed = (Deno.env.get("ALLOWED_EMAILS") ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
+  const allowed = allowedEmails();
   return { user: data.user!, email, allowed: allowed.includes(email) };
 }
+
+const allowedEmails = () => (Deno.env.get("ALLOWED_EMAILS") ?? "").split(",").map((s) => s.trim().toLowerCase()).filter(Boolean);
 
 async function tokenAuth(token: unknown) {
   if (typeof token !== "string" || !UUID.test(token)) return null;
@@ -152,6 +158,47 @@ async function kidAccount(parent: { user: Any; email: string }, b: Any) {
     return fail(500, "create_failed");
   }
   return json({ ok: true, username, created: true });
+}
+
+// ---------- Vuxenkonton ----------
+// Vuxna med e-post i ALLOWED_EMAILS hamnar i samma familj som de andra tillåtna vuxna.
+async function joinFamily(userId: string, email: string) {
+  const { data: mine } = await admin.from("household_members").select("household_id,role").eq("user_id", userId).limit(1);
+  if (mine?.length) return { household_id: mine[0].household_id, role: mine[0].role, joined: false };
+  const allowed = allowedEmails();
+  const { data: adults } = await admin.from("household_members").select("household_id,user_id,created_at").in("role", ["owner", "parent"]).order("created_at");
+  let hh: string | null = null;
+  for (const a of adults ?? []) {
+    const { data: u } = await admin.auth.admin.getUserById(a.user_id);
+    if (u?.user?.email && allowed.includes(u.user.email.toLowerCase())) { hh = a.household_id; break; }
+  }
+  if (hh) {
+    const { error } = await admin.from("household_members").insert({ household_id: hh, user_id: userId, role: "parent" });
+    if (error) throw error;
+    return { household_id: hh, role: "parent", joined: true };
+  }
+  const { data: h, error } = await admin.from("households").insert({ name: "Familjen" }).select("id").single();
+  if (error) throw error;
+  const m = await admin.from("household_members").insert({ household_id: h.id, user_id: userId, role: "owner" });
+  if (m.error) throw m.error;
+  console.log("ny familj för", email);
+  return { household_id: h.id, role: "owner", joined: false };
+}
+
+async function adultSignup(b: Any) {
+  const email = typeof b.email === "string" ? b.email.trim().toLowerCase() : "";
+  const password = typeof b.password === "string" ? b.password : "";
+  if (!/^\S+@\S+\.\S+$/.test(email)) return fail(400, "bad_email");
+  if (!allowedEmails().includes(email)) { await sleep(500); return fail(403, "not_allowed"); }
+  if (password.length < 8 || password.length > 72) return fail(400, "bad_password");
+  const { data: created, error } = await admin.auth.admin.createUser({ email, password, email_confirm: true, user_metadata: { role: "parent" } });
+  if (error || !created?.user) {
+    if (/already|exists|registered/i.test(error?.message ?? "")) return fail(409, "exists");
+    console.error(error); return fail(400, "create_failed");
+  }
+  try { await joinFamily(created.user.id, email); }
+  catch (e) { console.error(e); await admin.auth.admin.deleteUser(created.user.id); return fail(500, "create_failed"); }
+  return json({ ok: true });
 }
 
 async function kidLogin(b: Any) {
@@ -394,9 +441,14 @@ Deno.serve(async (req) => {
     }
 
     if (action === "kid_login") return await kidLogin(body);
+    if (action === "adult_signup") return await adultSignup(body);
 
     const who = await userAuth(req);
     if (!who) return fail(401, "session_expired");
+    if (action === "adult_join") {
+      if (!who.allowed) return fail(403, "not_allowed");
+      return json(await joinFamily(who.user.id, who.email));
+    }
     if (action === "level") return await makeLevel(who.user.id, body);
     if (action === "grade") return await gradeAnswer(who.user.id, body);
     // Bara föräldrar: barnkonton får aldrig skapa förhör eller konton.
