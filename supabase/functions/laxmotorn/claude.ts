@@ -1,6 +1,7 @@
 // Anrop till Claude (Messages API) med strömning.
 const MODEL = Deno.env.get("CLAUDE_MODEL") ?? "claude-sonnet-5-5";
 const EFFORT_ENV = Deno.env.get("CLAUDE_EFFORT") ?? "";
+export const FAST_MODEL = Deno.env.get("CLAUDE_FAST_MODEL") ?? "claude-haiku-5-5";
 export const DEFAULT_EFFORT = ["low", "medium", "high"].includes(EFFORT_ENV) ? EFFORT_ENV : "medium";
 
 export class ClaudeError extends Error {
@@ -8,14 +9,14 @@ export class ClaudeError extends Error {
 }
 
 // deno-lint-ignore no-explicit-any
-export async function open(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal } = {}) {
+export async function open(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal; model?: string } = {}) {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
   if (!key) throw new ClaudeError("not_configured", 500);
   const res = await fetch("https://api.anthropic.com/v1/messages", {
     method: "POST",
     headers: { "x-api-key": key, "anthropic-version": "2023-06-01", "content-type": "application/json" },
     body: JSON.stringify({
-      model: MODEL,
+      model: o.model ?? MODEL,
       max_tokens: o.maxTokens ?? 32000,
       stream: true,
       output_config: { effort: o.effort ?? DEFAULT_EFFORT },
@@ -63,7 +64,7 @@ export async function pump(body: ReadableStream<Uint8Array>, onText: (t: string)
 
 // Hela svaret som text (för bakgrundsjobb).
 // deno-lint-ignore no-explicit-any
-export async function complete(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal } = {}) {
+export async function complete(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal; model?: string } = {}) {
   let text = "";
   await pump(await open(content, o), (t) => { text += t; });
   return text;

@@ -28,6 +28,20 @@ Prov och läxförhör hamnar under "Från skolan" hos rätt barn. Räcker mejlet
 
 Varje förhör har begrepp (`content.concepts`) med ett kort talat manus och en kodritad bild (lista, steg, kretslopp, jämförelse eller begrepp). Vid fel svar spelas klippet: talsyntesen läser manuset och varje del av bilden dyker upp när rösten säger sitt ord. Saknas svensk röst används uppskattad tid och texten visas. Efter klippet kommer en liknande fråga om samma begrepp i slutet av rundan.
 
+## Nivåer: svårare och djupare
+
+När barnet kan läxan blir det svårare, inom samma område och årskurs:
+
+| Nivå | Öppnas med | Frågorna kräver | XP |
+|---|---|---|---|
+| 1 · Läxan | – | fakta och begrepp | 1× |
+| 2 · Fördjupning | silver på alla stationer och klarat slutprov | varför och hur, nya exempel, missuppfattningar ("Lisa säger att …") | 1,5× |
+| 3 · Expert | silver på alla stationer i Fördjupning | "vad händer om", koppla ihop, resonera i flera steg | 2× |
+
+Nästa nivå görs av Claude i bakgrunden redan när barnet har brons på nivån före, så den brukar vara klar när den öppnas. Den sparas i `content.levels` och görs bara en gång per läxa.
+
+Nivå 2 och 3 har **förklaringsfrågor**: barnet skriver en till tre meningar och Claude (snabb modell, `CLAUDE_FAST_MODEL`) bedömer svaret mot nyckelpunkter (ja / delvis / nej) och ger kort återkoppling, följt av ett modellsvar. Går rättningen inte att nå jämför barnet själv med modellsvaret. Barnkonton får anropa `level` och `grade`, men bara för läxor de själva ser.
+
 ## Publicering
 
 `src/` publiceras på GitHub Pages vid varje push till `main` (`.github/workflows/pages.yml`).
@@ -52,4 +66,5 @@ Hemligheter för edge function:
 | `ANTHROPIC_API_KEY` | Anthropic API-nyckel |
 | `ALLOWED_EMAILS` | kommaseparerade e-postadresser som får skapa förhör |
 | `CLAUDE_MODEL` | valfri, standard `claude-sonnet-5-5` |
+| `CLAUDE_FAST_MODEL` | valfri, modell för rättning av förklaringsfrågor, standard `claude-haiku-5-5` |
 | `CLAUDE_EFFORT` | valfri, `low`/`medium`/`high`, standard `medium` (gratisplanen stoppar funktioner efter 150 s) |

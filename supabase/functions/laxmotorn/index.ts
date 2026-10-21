@@ -5,6 +5,10 @@
 //                                                              basis "kursplan" = bara rubrik, bygg på Lgr22
 //   {action:"transcribe", from, to, total, images}             skriv av läxsidor
 //   {action:"concepts", grade, quiz:{title,stations,flash}}    förklaringsklipp till ett befintligt förhör
+//
+// Alla i hushållet (även barn, för läxor de får se), JSON:
+//   {action:"level", quiz_id, level}       fördjupningsnivå 2 eller 3; görs i bakgrunden (202) och sparas i content.levels
+//   {action:"grade", quiz_id, qid, answer} bedömer ett förklaringssvar: {result:"ja"|"delvis"|"nej", feedback}
 // Fel: JSON {code} med status ≥ 400, eller "\n\u0000ERR:<code>" sist i strömmen.
 //
 // Barnkonton (JSON):
@@ -20,9 +24,9 @@
 // Hemligheter: ANTHROPIC_API_KEY, ALLOWED_EMAILS, valfria CLAUDE_MODEL och CLAUDE_EFFORT.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "jsr:@supabase/supabase-js@2";
-import { ClaudeError, complete, open, pump } from "./claude.ts";
-import { conceptsPrompt, mailPrompt, quizPrompt, SUBJECTS, transcribePrompt } from "./prompts.ts";
-import { extractJson, sanitize } from "./quiz.ts";
+import { ClaudeError, complete, FAST_MODEL, open, pump } from "./claude.ts";
+import { conceptsPrompt, gradePrompt, LEVEL_NAMES, levelPrompt, mailPrompt, quizPrompt, SUBJECTS, transcribePrompt } from "./prompts.ts";
+import { extractJson, sanitize, sanitizeLevel } from "./quiz.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -274,6 +278,89 @@ async function prepare(hh: { id: string }, quizId: unknown) {
   return json({ started: true }, 202);
 }
 
+// ---------- Fördjupningsnivåer och förklaringsfrågor ----------
+// Läxan måste vara godkänd och synlig för den inloggade: vuxna i hushållet, eller barnet läxan gäller.
+async function visibleQuiz(userId: string, quizId: unknown) {
+  if (typeof quizId !== "string" || !UUID.test(quizId)) return null;
+  const { data: q } = await admin.from("quizzes").select("id,household_id,child_id,title,grade,status,content").eq("id", quizId).maybeSingle();
+  if (!q || q.status !== "ready") return null;
+  const { data: m } = await admin.from("household_members").select("role,child_id").eq("household_id", q.household_id).eq("user_id", userId).maybeSingle();
+  if (!m) return null;
+  if (m.role === "child" && q.child_id && q.child_id !== m.child_id) return null;
+  return q;
+}
+
+const ansOf = (q: Any) =>
+  q.t === "mc" ? q.opts[q.a] : q.t === "tf" ? (q.a ? "sant" : "falskt") : q.t === "multi" ? q.a.map((i: number) => q.opts[i]).join(", ")
+  : q.t === "order" ? q.items.join(" → ") : q.t === "write" ? q.acc[0] : q.t === "explain" ? q.model : "";
+
+function allStationsOf(c: Any): Any[] {
+  return [...(c?.stations ?? []), ...((c?.levels ?? []) as Any[]).flatMap((l: Any) => l.stations ?? [])];
+}
+
+async function makeLevel(userId: string, b: Any) {
+  const n = Number(b.level);
+  if (n !== 2 && n !== 3) return fail(400, "bad_request");
+  const q = await visibleQuiz(userId, b.quiz_id);
+  if (!q) return fail(404, "not_found");
+  const c = q.content ?? {};
+  const levels: Any[] = Array.isArray(c.levels) ? c.levels : [];
+  if (levels.some((l) => l.n === n)) return json({ ready: true });
+  if (n === 3 && !levels.some((l) => l.n === 2)) return fail(409, "level_locked");
+  if (!(c.stations ?? []).length) return fail(409, "level_locked");
+  const gen = c.levelgen?.[n] ?? {};
+  if (gen.at && Date.now() - Date.parse(gen.at) < 4 * 60_000) return json({ started: true }, 202);
+  if (gen.failed_at && Date.now() - Date.parse(gen.failed_at) < 10 * 60_000) return json({ error: gen.error ?? "upstream" });
+
+  const setGen = async (g: Any) => {
+    const { data: cur } = await admin.from("quizzes").select("content").eq("id", q.id).single();
+    const cc = cur?.content ?? {};
+    await admin.from("quizzes").update({ content: { ...cc, levelgen: { ...(cc.levelgen ?? {}), [n]: g } } }).eq("id", q.id);
+  };
+  await setGen({ at: new Date().toISOString() });
+
+  const known = allStationsOf(c).flatMap((st: Any) => (st.qs ?? []).map((x: Any) => `- ${x.q} → ${ansOf(x)}`)).slice(0, 120).join("\n");
+  const concepts = ((c.concepts ?? []) as Any[]).map((k) => `- ${k.id}: ${k.name}`).join("\n") || "(inga)";
+  bg((async () => {
+    try {
+      const prompt = levelPrompt({ level: n, grade: String(q.grade ?? 4), title: q.title, known, concepts });
+      const raw = extractJson(await complete([{ type: "text", text: prompt }], { maxTokens: 24000 }));
+      const ids = new Set<string>(((c.concepts ?? []) as Any[]).map((k) => k.id));
+      const d = sanitizeLevel(raw, n, ids);
+      if (!d) throw new ClaudeError("bad_shape");
+      const { data: cur } = await admin.from("quizzes").select("content").eq("id", q.id).single();
+      const cc = cur?.content ?? {};
+      const lv = (Array.isArray(cc.levels) ? cc.levels : []).filter((l: Any) => l.n !== n);
+      lv.push({ n, name: LEVEL_NAMES[n], stations: d.stations, at: new Date().toISOString() });
+      lv.sort((x: Any, y: Any) => x.n - y.n);
+      const lg = { ...(cc.levelgen ?? {}) }; delete lg[n];
+      await admin.from("quizzes").update({
+        content: { ...cc, levels: lv, levelgen: lg, concepts: [...(cc.concepts ?? []).filter((k: Any) => !d.concepts.some((x: Any) => x.id === k.id)), ...d.concepts] },
+      }).eq("id", q.id);
+    } catch (e) {
+      console.error("level", q.id, n, e);
+      await setGen({ error: e instanceof ClaudeError ? e.code : "upstream", failed_at: new Date().toISOString() });
+    }
+  })());
+  return json({ started: true }, 202);
+}
+
+async function gradeAnswer(userId: string, b: Any) {
+  const q = await visibleQuiz(userId, b.quiz_id);
+  if (!q) return fail(404, "not_found");
+  const qid = typeof b.qid === "string" ? b.qid : "";
+  const dot = qid.lastIndexOf(".");
+  const st = allStationsOf(q.content).find((s: Any) => s.id === qid.slice(0, dot));
+  const item = st?.qs?.[Number(qid.slice(dot + 1))];
+  if (!item || item.t !== "explain") return fail(404, "not_found");
+  const answer = typeof b.answer === "string" ? b.answer.trim().slice(0, 600) : "";
+  if (answer.length < 2) return json({ result: "nej", feedback: "Skriv några ord om hur du tänker." });
+  const raw = extractJson(await complete([{ type: "text", text: gradePrompt({ grade: String(q.grade ?? 4), q: item.q, points: item.points, model: item.model, answer }) }], { model: FAST_MODEL, effort: "low", maxTokens: 800 }));
+  const result = ["ja", "delvis", "nej"].includes(raw?.result) ? raw.result : null;
+  if (!result) throw new ClaudeError("invalid_json");
+  return json({ result, feedback: str(raw.feedback, 300) });
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers: CORS });
   if (req.method !== "POST") return fail(405, "method");
@@ -310,6 +397,8 @@ Deno.serve(async (req) => {
 
     const who = await userAuth(req);
     if (!who) return fail(401, "session_expired");
+    if (action === "level") return await makeLevel(who.user.id, body);
+    if (action === "grade") return await gradeAnswer(who.user.id, body);
     // Bara föräldrar: barnkonton får aldrig skapa förhör eller konton.
     const { count } = await admin.from("household_members").select("user_id", { count: "exact", head: true })
       .eq("user_id", who.user.id).in("role", ["owner", "parent"]);

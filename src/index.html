@@ -302,7 +302,13 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .slot.wrong{border-color:var(--lingon);background:var(--lingon-soft)}
 .winput{width:100%;font:700 20px "Nunito",sans-serif;padding:14px 16px;border-radius:14px;border:2px solid var(--line);background:var(--surface2);color:var(--ink)}
 .winput:focus{outline:none;border-color:var(--moss)}
-.winput.correct{border-color:var(--ok);background:var(--ok-soft)}.winput.wrong{border-color:var(--lingon);background:var(--lingon-soft)}
+.winput.correct{border-color:var(--ok);background:var(--ok-soft)}.winput.partial{border-color:var(--kant);background:var(--kant-soft)}
+.etext{min-height:120px;resize:vertical;font-size:18px;line-height:1.4}
+.lv{margin-top:22px}.lv-head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:6px}
+.lv-tag{font:800 13px "Nunito",sans-serif;padding:4px 10px;border-radius:999px;background:var(--moss);color:var(--moss-ink)}
+.lv-tag.x2{background:var(--kant);color:#161A21}
+.lv-head b{font-size:19px}.lv-lock{display:flex;gap:12px;align-items:flex-start;padding:14px;border:2px dashed var(--line);border-radius:16px;color:var(--muted)}
+.lv-lock svg{width:22px;height:22px;flex:none}.lv-lock b{color:var(--ink);display:block}.winput.wrong{border-color:var(--lingon);background:var(--lingon-soft)}
 .timer{height:6px;border-radius:99px;background:var(--line);overflow:hidden}.timer>i{display:block;height:100%;background:var(--kant);width:100%}
 .timer.low>i{background:var(--lingon)}
 .fb{border-radius:18px;padding:16px 18px;display:flex;flex-direction:column;gap:8px;border:2px solid}
@@ -575,7 +581,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
     <div id="modeBox"></div>
     <div id="matBox"></div>
     <div class="sect"><h2>Stationer</h2><p class="hint" style="margin:0 0 10px">Brons: alla frågor rätt minst en gång. Silver: en runda helt utan fel. Guld: allt sitter kvar en annan dag.</p>
-      <div class="trail" id="trail"></div></div>
+      <div class="trail" id="trail"></div><div id="lvBox"></div></div>
     <div class="sect"><h2>Delmål</h2><div id="goalBox"></div></div>
     <div id="adultBox"></div>
     <div id="resetBox"></div>
@@ -703,7 +709,7 @@ const dayKey=(t=Date.now())=>{const d=new Date(t);return `${d.getFullYear()}-${S
 const dayStart=(t=Date.now())=>{const d=new Date(t);d.setHours(0,0,0,0);return d.getTime()};
 const INTERVAL=[0,1,2,4,7,14];          // dagar till nästa repetition per låda
 const READY=[0,.5,.8,1,1,1];            // hur mycket en fråga i varje låda bidrar till "provberedd"
-const BASE={tf:6,mc:10,multi:14,order:14,write:18};
+const BASE={tf:6,mc:10,multi:14,order:14,write:18,explain:20};
 const MEDAL=['','Brons','Silver','Guld'],MEDAL_XP=[0,30,60,120];
 
 /* ---------- Supabase ---------- */
@@ -786,6 +792,8 @@ const BADGES=[
  {id:'gold',n:'Första guldet',d:'Guld på en station',ic:'G'},
  {id:'boss',n:'Provklar',d:'Klara ett slutprov',ic:'P'},
  {id:'allgold',n:'Guldläxa',d:'Guld på alla stationer i en läxa',ic:'★'},
+ {id:'deep',n:'Fördjupare',d:'Brons på hela Fördjupning i en läxa',ic:'F'},
+ {id:'expert',n:'Expert',d:'Brons på hela Expert-nivån i en läxa',ic:'E'},
  {id:'pro',n:'Professor',d:'Nå rangen Professor',ic:'Pr'}
 ];
 let newBadges=[];
@@ -794,8 +802,22 @@ function award(id){if(!G.badges.includes(id)){G.badges.push(id);newBadges.push(i
 /* ---------- Frågor, lådor och medaljer ---------- */
 const qidOf=(st,i)=>st.id+'.'+i;
 const qState=(p,qid)=>p.q[qid]||{box:0,r:0,w:0,last:0,due:0,day:'',dn:0};
-function allQ(qz){const out=[];(qz.stations||[]).forEach(st=>st.qs.forEach((q,i)=>out.push({q,qid:qidOf(st,i),st})));return out}
-function readiness(qz,p){const a=allQ(qz);return a.length?a.reduce((s,x)=>s+READY[Math.min(qState(p,x.qid).box,3)],0)/a.length:0}
+/* Nivåer: 1 = läxan, 2 = Fördjupning (förstå, tillämpa), 3 = Expert (resonera). Nivå 2 och 3 görs av Claude när barnet närmar sig. */
+const LV_NAME={1:'Grund',2:'Fördjupning',3:'Expert'},LV_MULT={1:1,2:1.5,3:2};
+const LV_DESC={2:'Varför och hur? Använd det du kan i nya exempel och förklara med egna ord.',3:'Vad händer om? Koppla ihop, hitta felen och resonera i flera steg.'};
+const lvOf=qid=>{const m=/^L(\d)s/.exec(qid);return m?+m[1]:1};
+const levelSt=(qz,n)=>n<=1?(qz.stations||[]):((Array.isArray(qz.levels)?qz.levels:[]).find(l=>l.n===n)||{}).stations||[];
+const allMed=(sts,p,m)=>sts.length>0&&sts.every(s=>(p.medals[s.id]||0)>=m);
+// Nivå 2 öppnar med silver på alla stationer och klarat slutprov; nivå 3 med silver på hela nivå 2.
+function lvOpen(qz,p,n){if(n<=1)return true;if(n===2)return allMed(qz.stations||[],p,2)&&p.bossBest>0;return lvOpen(qz,p,n-1)&&allMed(levelSt(qz,n-1),p,2)}
+// Nästa nivå förbereds i förväg, när barnet har brons på nivån före.
+const lvSoon=(qz,p,n)=>allMed(levelSt(qz,n-1),p,1);
+const allSt=qz=>[...levelSt(qz,1),...levelSt(qz,2),...levelSt(qz,3)];
+const stById=(qz,id)=>allSt(qz).find(s=>s.id===id);
+const stQ=sts=>{const out=[];sts.forEach(st=>st.qs.forEach((q,i)=>out.push({q,qid:qidOf(st,i),st})));return out};
+const baseQ=qz=>stQ(qz.stations||[]);
+const allQ=qz=>stQ(allSt(qz));
+function readiness(qz,p){const a=baseQ(qz);return a.length?a.reduce((s,x)=>s+READY[Math.min(qState(p,x.qid).box,3)],0)/a.length:0}
 const misses=(qz,p)=>allQ(qz).filter(x=>{const s=qState(p,x.qid);return s.box===0&&s.w>0});
 const dues=(qz,p,now=Date.now())=>allQ(qz).filter(x=>{const s=qState(p,x.qid);return s.box>=1&&s.due<=now});
 function nextDue(qz,p){let m=Infinity;allQ(qz).forEach(x=>{const s=qState(p,x.qid);if(s.box>=1&&s.due<m)m=s.due});return m===Infinity?null:m}
@@ -814,7 +836,7 @@ function grade(ref,q,ok,o){
     s.dn++;
   }
   saveP(ref.qz);saveG();
-  let xp=BASE[q.t]*mult*(o.joker?.5:1);if(ok&&mult>0&&xp<1)xp=1;
+  let xp=BASE[q.t]*mult*(o.joker?.5:1)*(LV_MULT[lvOf(ref.qid)]||1);if(ok&&mult>0&&xp<1)xp=1;
   return {kind,xp:Math.round(xp)};
 }
 function updateMedal(qz,st,flawless){
@@ -824,7 +846,8 @@ function updateMedal(qz,st,flawless){
     else if(m===1&&flawless&&bx.every(b=>b>=1)){m=2;go=true}
     else if(m===2&&bx.every(b=>b>=2)){m=3;go=true}}
   if(m>cur){p.medals[st.id]=m;saveP(qz.id);let b=0;for(let k=cur+1;k<=m;k++)b+=MEDAL_XP[k];addXP(b);
-    if(m===3)award('gold');if(qz.stations.every(s=>(p.medals[s.id]||0)>=3))award('allgold')}
+    if(m===3)award('gold');if(!st.lv&&qz.stations.every(s=>(p.medals[s.id]||0)>=3))award('allgold');
+    if(st.lv&&allMed(levelSt(qz,st.lv),p,1))award(st.lv===2?'deep':'expert')}
   return {from:cur,to:m};
 }
 function goalsFor(qz,p){
@@ -838,7 +861,10 @@ function goalsFor(qz,p){
     {id:'boss',t:'Klara slutprovet',cur:p.bossBest>0?1:0,max:1,xp:150},
     {id:'silver',t:'Silver på alla stationer',cur:st.filter(s=>med(s)>=2).length,max:st.length,xp:150},
     {id:'ready',t:'Bli provberedd till 90 %',cur:Math.round(readiness(qz,p)*100),max:90,xp:200,pct:true},
-    {id:'guld',t:'Guld på alla stationer',cur:st.filter(s=>med(s)>=3).length,max:st.length,xp:250}
+    {id:'guld',t:'Guld på alla stationer',cur:st.filter(s=>med(s)>=3).length,max:st.length,xp:250},
+    ...[2,3].flatMap(n=>{const ls=levelSt(qz,n);if(!ls.length||!lvOpen(qz,p,n))return [];return [
+      {id:'lv'+n+'b',t:`${LV_NAME[n]}: brons på alla`,cur:ls.filter(s=>med(s)>=1).length,max:ls.length,xp:n===2?200:300},
+      {id:'lv'+n+'s',t:`${LV_NAME[n]}: silver på alla`,cur:ls.filter(s=>med(s)>=2).length,max:ls.length,xp:n===2?250:400}]})
   ].filter(Boolean);
 }
 function checkGoals(qz){const p=getP(qz.id);goalsFor(qz,p).forEach(g=>{if(g.cur>=g.max&&!p.goals.includes(g.id)){p.goals.push(g.id);saveP(qz.id);addXP(g.xp);toast(`Delmål klart: ${g.t} +${g.xp} XP`)}})}
@@ -847,10 +873,19 @@ function nextStep(qz,p){
   if(m)return {t:`Fixa ${m===1?'din miss':`dina ${m} missar`}`,why:'Det du svarade fel på fastnar bäst när du övar på det igen.',act:'miss'};
   if(d)return {t:`Repetera ${d} ${d===1?'fråga':'frågor'}`,why:'Att plocka fram svaret efter en paus gör att det sitter längre.',act:'rep'};
   const b=st.findIndex(s=>!(p.medals[s.id]>=1));
-  if(b>=0)return {t:`Spela ${st[b].name}`,why:'Ta en station i taget. Brons får du när alla frågor har gått rätt.',act:'st',i:b};
+  if(b>=0)return {t:`Spela ${st[b].name}`,why:'Ta en station i taget. Brons får du när alla frågor har gått rätt.',act:'st',sid:st[b].id};
   if(!p.bossBest)return {t:'Gör slutprovet',why:'Blandade frågor tränar dig att välja rätt kunskap, precis som på provet.',act:'boss'};
   const s=st.findIndex(x=>(p.medals[x.id]||0)<2);
-  if(s>=0)return {t:`Ta silver på ${st[s].name}`,why:'Silver kräver en runda helt utan fel.',act:'st',i:s};
+  if(s>=0)return {t:`Ta silver på ${st[s].name}`,why:'Silver kräver en runda helt utan fel.',act:'st',sid:st[s].id};
+  for(const n of [2,3]){
+    if(!lvOpen(qz,p,n))break;
+    const ls=levelSt(qz,n);
+    if(!ls.length)return {t:`${LV_NAME[n]} förbereds`,why:'Du kan allt på nivån före. Nu gör Claude svårare frågor som kräver att du förstår och kan förklara. Det tar någon minut.',act:null};
+    const x=ls.find(v=>!(p.medals[v.id]>=1));
+    if(x)return {t:`${LV_NAME[n]}: ${x.name}`,why:n===2?'Nu handlar det om varför och hur. Förklara med egna ord.':'Expertfrågor: tänk i flera steg och koppla ihop det du kan.',act:'st',sid:x.id};
+    const y=ls.find(v=>(p.medals[v.id]||0)<2);
+    if(y)return {t:`Ta silver på ${y.name}`,why:'Silver kräver en runda helt utan fel.',act:'st',sid:y.id};
+  }
   const nd=nextDue(qz,p);
   return {t:'Bra jobbat, nu får hjärnan vila',why:nd?`Nästa repetition blir klar ${dueLabel(nd)}. Pausen hjälper minnet.`:'Kom tillbaka en annan dag och repetera.',act:null};
 }
@@ -923,6 +958,40 @@ function makeSample(){
   };
   call.json=async(payload,opt)=>{const {text}=await call(payload,opt);const j=extractJson(text);if(!j)throw {code:'invalid_json'};return j};
   return call;
+}
+// Nivåer och rättning av förklaringar får alla i familjen använda, även barnkonton.
+const API=(()=>{let c=null;return {json:(p,o)=>(c=c||makeSample()).json(p,o)}})();
+const LVREQ={};
+async function refreshQuiz(id){
+  const {data,error}=await sb.from('quizzes').select(QZ_COLS).eq('id',id).maybeSingle();
+  if(error||!data)return null;
+  const q=rowToQuiz(data);Store.remote=Store.remote.map(x=>x.id===id?q:x);
+  if(QZ&&QZ.id===id){QZ=q;STATIONS=q.stations||[];FLASH=q.flash||[];if(!$('#home').hidden)renderHome()}
+  return q;
+}
+// Beställer nästa nivå när den närmar sig och hämtar den när den är klar.
+function ensureLevels(qz,p){
+  for(const n of [2,3]){
+    if(levelSt(qz,n).length)continue;
+    if(!lvSoon(qz,p,n))break;
+    const key=qz.id+':'+n;if(LVREQ[key])break;
+    LVREQ[key]={at:Date.now()};
+    (async()=>{
+      try{
+        let r=await API.json({action:'level',quiz_id:qz.id,level:n},{});
+        if(r.error){LVREQ[key].error=r.error;return}
+        for(let k=0;k<20&&!r.ready;k++){
+          await new Promise(res=>setTimeout(res,k?12000:6000));
+          const q=await refreshQuiz(qz.id);if(q&&levelSt(q,n).length)return;
+          if(k%3===2)r=await API.json({action:'level',quiz_id:qz.id,level:n},{});
+          if(r.error){LVREQ[key].error=r.error;return}
+        }
+        if(r.ready)await refreshQuiz(qz.id);
+      }catch(e){LVREQ[key].error=(e&&e.code)||'upstream';setTimeout(()=>{delete LVREQ[key]},5*60000)}
+      finally{LVREQ[key].done=true;if(QZ&&QZ.id===qz.id&&!$('#home').hidden)renderHome()}
+    })();
+    break;
+  }
 }
 
 function sortQuizzes(list){
@@ -1171,6 +1240,7 @@ function cleanQ(q,ids=new Set()){
   if(t==='multi'){const opts=list(q.opts,160);if(opts.length<3||opts.length>8||new Set(opts).size!==opts.length)return null;const a=[...new Set((Array.isArray(q.a)?q.a:[]).map(Number))].filter(i=>Number.isInteger(i)&&i>=0&&i<opts.length).sort((x,y)=>x-y);if(!a.length||a.length===opts.length)return null;return {t,q:text,opts,a,why,...c}}
   if(t==='order'){const items=list(q.items,140);if(items.length<2||items.length>7||new Set(items).size!==items.length)return null;return {t,q:text,items,why,...c}}
   if(t==='write'){const acc=list(q.acc,60);if(!acc.length)return null;return {t,q:text,acc,why,...c}}
+  if(t==='explain'){const points=list(q.points,160).slice(0,4),model=clean(q.model,500);if(!points.length||!model)return null;return {t,q:text,points,model,why,...c}}
   return null;
 }
 const SHOW_TYPES=['term','list','steps','cycle','compare'];
@@ -1282,7 +1352,7 @@ $('#createBack').onclick=()=>{if(GEN)GEN.ctl.abort();FROM=null;renderLib();show(
 const revOpen=new Set();
 function ansText(q){
   if(q.t==='mc')return q.opts[q.a];if(q.t==='tf')return q.a?'Sant':'Falskt';
-  if(q.t==='multi')return q.a.map(i=>q.opts[i]).join(', ');if(q.t==='order')return q.items.join(' → ');return q.acc.join(' / ');
+  if(q.t==='multi')return q.a.map(i=>q.opts[i]).join(', ');if(q.t==='order')return q.items.join(' → ');if(q.t==='explain')return q.model;return q.acc.join(' / ');
 }
 function renderReview(){
   const d=DRAFT,nq=d.stations.reduce((a,s)=>a+s.qs.length,0);
@@ -1363,8 +1433,24 @@ function renderHome(){
     <button class="mode boss" data-mode="boss" ${allB?'':'disabled'}>${svg(allB?'boss':'lock')}<b>Slutprovet</b><small>${allB?`${Math.min(15,nq)} blandade · 3 liv · 30 sek`:'Låses upp med brons på alla stationer'}</small></button>
   </div></div>
   ${(QZ.concepts||[]).length?`<div class="sect"><h2>Förklaringar</h2><p class="hint" style="margin:0 0 10px">Korta klipp om det viktigaste. De spelas också när du svarar fel.</p><div class="clips">${QZ.concepts.map((k,i)=>`<button class="clip" data-clip="${i}">${svg('play')}${esc(k.name)}</button>`).join('')}</div></div>`:''}`;
-  $('#trail').innerHTML=STATIONS.map((s,i)=>{const md=P.medals[s.id]||0,ms=s.qs.filter((_,k)=>{const x=qState(P,qidOf(s,k));return x.box===0&&x.w>0}).length;
-    return `<button class="node ${md?'done':''}" data-st="${i}"><span class="dot">${svg(s.icon)}</span><span class="card-n"><span><h3>${esc(s.name)}</h3><small>${s.sub?esc(s.sub)+' · ':''}${s.qs.length} frågor${ms?` · <span class="miss-tag">${ms} ${ms===1?'miss':'missar'}</span>`:''}</small></span><span class="medal m${md}" aria-label="${md?MEDAL[md]:'Ingen medalj än'}">${md?MEDAL[md]:'–'}</span></span></button>`}).join('');
+  const node=s=>{const md=P.medals[s.id]||0,ms=s.qs.filter((_,k)=>{const x=qState(P,qidOf(s,k));return x.box===0&&x.w>0}).length,ex=s.qs.filter(q=>q.t==='explain').length;
+    return `<button class="node ${md?'done':''}" data-sid="${esc(s.id)}"><span class="dot">${svg(s.icon)}</span><span class="card-n"><span><h3>${esc(s.name)}</h3><small>${s.sub?esc(s.sub)+' · ':''}${s.qs.length} frågor${ex?` · ${ex} att förklara`:''}${ms?` · <span class="miss-tag">${ms} ${ms===1?'miss':'missar'}</span>`:''}</small></span><span class="medal m${md}" aria-label="${md?MEDAL[md]:'Ingen medalj än'}">${md?MEDAL[md]:'–'}</span></span></button>`};
+  $('#trail').innerHTML=STATIONS.map(node).join('');
+  ensureLevels(QZ,P);
+  $('#lvBox').innerHTML=[2,3].map(n=>{
+    const ls=levelSt(QZ,n),open=lvOpen(QZ,P,n),req=LVREQ[QZ.id+':'+n];
+    if(n===3&&!levelSt(QZ,2).length)return '';
+    const head=`<div class="lv-head"><span class="lv-tag ${n===3?'x2':''}">Nivå ${n}</span><b>${LV_NAME[n]}</b><span class="hint">${n===2?'1,5×':'2×'} XP</span></div><p class="hint" style="margin:0 0 10px">${LV_DESC[n]}</p>`;
+    if(!open){
+      const need=n===2?`Silver på alla stationer (${(QZ.stations||[]).filter(s=>(P.medals[s.id]||0)>=2).length}/${(QZ.stations||[]).length}) och klarat slutprovet${P.bossBest>0?' ✓':''}.`:`Silver på alla stationer i Fördjupning (${levelSt(QZ,2).filter(s=>(P.medals[s.id]||0)>=2).length}/${levelSt(QZ,2).length}).`;
+      return `<div class="lv">${head}<div class="lv-lock">${svg('lock')}<span><b>Låst</b>${need}</span></div></div>`;
+    }
+    if(!ls.length){
+      const err=req&&req.error;
+      return `<div class="lv">${head}<div class="lv-lock">${svg(err?'lock':'cycle')}<span><b>${err?'Kunde inte göras just nu':'Förbereds…'}</b>${err?'Försök igen om en stund.':'Claude gör svårare frågor. Det tar någon minut.'}</span>${err?'<button class="btn small" data-lvretry="'+n+'">Försök igen</button>':''}</div></div>`;
+    }
+    return `<div class="lv">${head}<div class="trail">${ls.map(node).join('')}</div></div>`;
+  }).join('');
   renderMaterial();
   const gl=goalsFor(QZ,P),gd=gl.filter(g=>P.goals.includes(g.id)).length;
   $('#goalBox').innerHTML=`<p class="hint" style="margin:0 0 10px">${gd} av ${gl.length} klara</p><ul class="goals">${gl.map(g=>{const done=P.goals.includes(g.id),pc=Math.min(100,Math.round(g.cur/g.max*100));
@@ -1375,7 +1461,8 @@ function renderHome(){
     <li>Fixa en fråga du haft fel på: 1,5 gånger så mycket.</li>
     <li>Repetera i rätt tid, efter en paus: dubbelt så mycket.</li>
     <li>Fråga du redan kan samma dag: nästan inget. Spela hellre missar eller repetera i morgon.</li>
-    <li>Rätt i rad: upp till +50 %. Medaljer: brons 30, silver 60, guld 120. Delmål ger extra.</li></ul></details>
+    <li>Rätt i rad: upp till +50 %. Medaljer: brons 30, silver 60, guld 120. Delmål ger extra.</li>
+    <li>Fördjupning ger 1,5 gånger så mycket XP och Expert dubbelt.</li></ul></details>
    <details class="adult adult-only"><summary>För vuxna</summary>
     <p class="hint" style="margin-top:8px">Provberedd bygger på hur många gånger varje fråga har gått rätt, och med vilka pauser emellan. En fråga räknas helt när den har gått rätt tre olika dagar.</p>
     ${hard.length?`<p style="margin:10px 0 4px;font-weight:800;font-size:14px">Svåraste frågorna</p><ul>${hard.map(x=>`<li>${esc(x.q.q)} <span class="hint">(fel ${x.s.w} ${x.s.w===1?'gång':'gånger'}) Rätt svar: ${esc(ansText(x.q))}</span></li>`).join('')}</ul>`:''}
@@ -1386,7 +1473,7 @@ function renderHome(){
   $('#resetBox').innerHTML=ROLE==='child'?'':'<button class="reset" id="resetBtn">Nollställ medaljer, missar och delmål för den här läxan</button>';
   updateHUD();
 }
-function runStep(){if(!NS)return;if(NS.act==='miss')startRound('miss');else if(NS.act==='rep')startRound('rep');else if(NS.act==='st')startRound('station',{si:NS.i});else if(NS.act==='boss')startRound('boss')}
+function runStep(){if(!NS)return;if(NS.act==='miss')startRound('miss');else if(NS.act==='rep')startRound('rep');else if(NS.act==='st')startRound('station',{sid:NS.sid});else if(NS.act==='boss')startRound('boss')}
 $('#readyBox').addEventListener('click',e=>{if(e.target.closest('#nextStepBtn'))runStep()});
 $('#modeBox').addEventListener('click',e=>{const c=e.target.closest('[data-clip]');if(c){const k=(QZ.concepts||[])[+c.dataset.clip];if(k)Explainer.open(k);return}
   const b=e.target.closest('[data-mode]');if(!b||b.disabled)return;const m=b.dataset.mode;if(m==='cards')startCards();else startRound(m)});
@@ -1405,7 +1492,8 @@ $('#matBox').addEventListener('click',e=>{
   const L=(QZ.links||[]).filter(l=>normUrl(l.url)),l=L[+b.dataset.seen];if(!l||P.seen.includes(l.url))return;
   P.seen.push(l.url);saveP(QZ.id);addXP(15);markDay();checkGoals(QZ);renderHome();
 });
-$('#trail').addEventListener('click',e=>{const n=e.target.closest('.node');if(n)startRound('station',{si:+n.dataset.st})});
+['#trail','#lvBox'].forEach(id=>$(id).addEventListener('click',e=>{const r=e.target.closest('[data-lvretry]');if(r){delete LVREQ[QZ.id+':'+r.dataset.lvretry];renderHome();return}
+  const n=e.target.closest('.node');if(n)startRound('station',{sid:n.dataset.sid})}));
 $('#resetBox').addEventListener('click',e=>{
   if(e.target.id==='resetBtn'){$('#resetBox').innerHTML='<div class="confirm"><span>Radera medaljer, missar, repetitioner och delmål för den här läxan? XP och märken finns kvar.</span><button class="btn danger small" id="yesReset">Nollställ</button><button class="btn ghost small" id="noReset">Avbryt</button></div>'}
   if(e.target.id==='yesReset'){delete RAW[QZ.id];delete PC[QZ.id];P=getP(QZ.id);saveP(QZ.id);renderHome();toast('Läxan är nollställd')}
@@ -1530,7 +1618,8 @@ async function makeClips(){
     const concepts=cleanConcepts(data.concepts),ids=new Set(concepts.map(k=>k.id)),map=data.map||{};
     if(!concepts.length)throw {code:'bad_shape'};
     const stations=qz.stations.map((s,si)=>({...s,qs:s.qs.map((q,qi)=>{const c=map[`${si}.${qi}`];return ids.has(c)?{...q,c}:q})}));
-    const q=await Store.patch(qz.id,{content:{stations,flash:qz.flash||[],notes:qz.notes||[],links:qz.links||[],concepts}});
+    const keep=(qz.concepts||[]).filter(k=>/^L\d/.test(k.id));
+    const q=await Store.patch(qz.id,{content:{stations,flash:qz.flash||[],notes:qz.notes||[],links:qz.links||[],concepts:[...concepts,...keep],...(qz.levels?{levels:qz.levels}:{})}});
     if(!q)throw {code:'save'};
     if(QZ&&QZ.id===q.id){QZ=q;STATIONS=q.stations;FLASH=q.flash||[];renderHome()}
     toast(`${concepts.length} förklaringsklipp klara`);
@@ -1546,14 +1635,15 @@ function startRound(mode,opt={}){
   newBadges=[];
   const mk=(qz,x)=>({q:x.q,ref:{qz:qz.id,qid:x.qid},qzObj:qz});
   let items=[];
-  if(mode==='station'){const st=STATIONS[opt.si];items=shuffle(st.qs.map((q,i)=>({q,qid:qidOf(st,i)}))).map(x=>mk(QZ,x))}
+  if(mode==='station'){const st=stById(QZ,opt.sid);if(!st)return;items=shuffle(st.qs.map((q,i)=>({q,qid:qidOf(st,i)}))).map(x=>mk(QZ,x))}
   else if(mode==='miss')items=shuffle(misses(QZ,P)).slice(0,12).map(x=>mk(QZ,x));
   else if(mode==='rep')items=shuffle(dues(QZ,P)).slice(0,15).map(x=>mk(QZ,x));
-  else if(mode==='boss')items=interleave(allQ(QZ)).slice(0,15).map(x=>mk(QZ,x));
+  else if(mode==='boss')items=interleave(baseQ(QZ).filter(x=>x.q.t!=='explain')).slice(0,15).map(x=>mk(QZ,x));
   else if(mode==='daily'){const pool=[];Store.all().forEach(qz=>dues(qz,getP(qz.id)).forEach(x=>pool.push(mk(qz,x))));items=shuffle(pool).slice(0,15)}
   if(!items.length){toast('Inga frågor att köra här just nu');return}
-  R={mode,si:opt.si,boss:mode==='boss',items,i:0,firstN:items.length,correct:0,streak:0,lives:3,joker:false,jokerNow:false,xp:0,res:[],
-     kinds:{},missed:[],flawless:true,readyBefore:QZ&&mode!=='daily'?readiness(QZ,P):null,xpStart:G.xp};
+  R={mode,sid:opt.sid,boss:mode==='boss',items,i:0,firstN:items.length,correct:0,streak:0,lives:3,joker:false,jokerNow:false,xp:0,res:[],
+     kinds:{},missed:[],flawless:true,readyBefore:QZ&&mode!=='daily'?readiness(QZ,P):null,xpStart:G.xp,
+     lvBefore:QZ&&mode!=='daily'?{2:lvOpen(QZ,P,2),3:lvOpen(QZ,P,3)}:null};
   $('#quitBtn').textContent=mode==='daily'?'← Läxorna':'← Läxan';
   show('quiz');renderQ();
 }
@@ -1562,7 +1652,7 @@ function renderQ(){
   $('#pips').innerHTML=R.items.map((x,k)=>`<i class="${k<R.i?(R.res[k]?'ok':'no'):k===R.i?'now':''}${x.second?' sec':''}"></i>`).join('');
   $('#lives').hidden=!R.boss;$('#lives').textContent='♥'.repeat(R.lives)+'♡'.repeat(3-R.lives);
   renderStreak();
-  const lab={mc:'Välj ett svar',tf:'Sant eller falskt?',multi:'Välj alla som stämmer',order:'Tryck i rätt ordning',write:'Skriv svaret'}[q.t];
+  const lab={mc:'Välj ett svar',tf:'Sant eller falskt?',multi:'Välj alla som stämmer',order:'Tryck i rätt ordning',write:'Skriv svaret',explain:'Förklara med egna ord'}[q.t];
   $('#qtype').textContent=`${it.second?'Andra chansen · ':''}${lab} · ${R.mode==='daily'?it.qzObj.title:MODE_NAME[R.mode]} · ${R.i+1}/${R.items.length}`;
   $('#qtext').textContent=q.q;
   $('#feedback').innerHTML='';
@@ -1639,6 +1729,30 @@ function renderQ(){
       answer(ok,ok?(close?`<p>Nästan rätt stavat. Det skrivs <b>${esc(q.acc[0])}</b>.</p>`:''):`<p>Rätt svar: <b>${esc(q.acc[0])}</b></p>`);
     };
   }
+  if(q.t==='explain'){
+    body.innerHTML='<textarea class="winput etext" id="einput" rows="4" maxlength="600" placeholder="Förklara med egna ord…" aria-label="Ditt svar"></textarea><p class="hint" style="margin-top:8px">Skriv en till tre meningar. Det viktiga är att du visar hur du tänker, inte stavningen.</p>';
+    act.innerHTML='<button class="btn" id="check" disabled>Kolla svaret</button>';
+    const inp=$('#einput');inp.focus({preventScroll:true});
+    inp.oninput=()=>{$('#check').disabled=inp.value.trim().length<3};
+    const model=`<p>Ett bra svar: <b>${esc(q.model)}</b></p>`;
+    $('#check').onclick=async()=>{
+      const run=R;if(run.answered||run.grading)return;run.grading=true;inp.disabled=true;
+      act.innerHTML='<p class="hint">Claude läser ditt svar…</p>';
+      try{
+        const r=await API.json({action:'grade',quiz_id:it.ref.qz,qid:it.ref.qid,answer:inp.value.trim()},{});
+        if(R!==run||run.answered)return;
+        const res=['ja','delvis','nej'].includes(r.result)?r.result:'nej',ok=res==='ja';
+        inp.classList.add(ok?'correct':res==='delvis'?'partial':'wrong');act.innerHTML='';
+        answer(ok,`${r.feedback?`<p>${esc(r.feedback)}</p>`:''}${model}`,{head:res==='delvis'?'Nästan!':null});
+      }catch(e){
+        if(R!==run||run.answered)return;
+        // Ingen rättning just nu: barnet jämför själv med ett bra svar.
+        act.innerHTML=`<div class="fb pop"><p>Kunde inte rätta automatiskt. Jämför med ett bra svar:</p>${model}<p>Fick du med det viktigaste?</p><div class="row"><button class="btn" id="selfYes">Ja</button><button class="btn ghost" id="selfNo">Inte riktigt</button></div></div>`;
+        $('#selfYes').onclick=()=>{act.innerHTML='';answer(true,'')};
+        $('#selfNo').onclick=()=>{act.innerHTML='';answer(false,model)};
+      }finally{run.grading=false}
+    };
+  }
   startTimer();
 }
 const norm=s=>String(s).toLowerCase().trim().replace(/[.,!?"'–\-:;()]/g,'').replace(/\s+/g,' ');
@@ -1661,7 +1775,7 @@ function renderStreak(){const c=$('#streak');const m=Math.min(R.streak,5)*10;c.t
 const CHEERS=['Rätt!','Snyggt!','Klockrent!','Precis!'];
 const KIND_HEAD={fix:'Fixat!',review:'Den satt kvar!',early:'Rätt!',second:'Bra, nu sitter den bättre'};
 const KIND_SUB={fix:'Du hade fel på den här förut. 1,5× XP.',review:'Repetition efter en paus ger dubbla XP.',early:'Den här kan du redan idag. Mest XP ger nya frågor, missar och repetitioner.'};
-function answer(ok,extra=''){
+function answer(ok,extra='',o={}){
   const it=R.items[R.i],q=it.q;R.answered=true;clearInterval(R.tick);R.res[R.i]=ok;
   const g=grade(it.ref,q,ok,{second:!!it.second,joker:R.jokerNow});R.jokerNow=false;
   let pts=g.xp;
@@ -1682,12 +1796,12 @@ function answer(ok,extra=''){
   const requeue=!ok&&!it.second&&!R.boss;let sib=null;
   if(requeue){
     // Syskonfrågor som redan väntar längre fram i rundan räknas inte; då kommer samma fråga igen.
-    if(q.c){const used=new Set([it.ref.qid,...R.items.slice(R.i+1).map(x=>x.ref.qid)]);const pool=allQ(qzo).filter(x=>x.q.c===q.c&&!used.has(x.qid));if(pool.length)sib=pool[Math.floor(Math.random()*pool.length)]}
+    if(q.c){const used=new Set([it.ref.qid,...R.items.slice(R.i+1).map(x=>x.ref.qid)]),lv=lvOf(it.ref.qid);const pool=allQ(qzo).filter(x=>x.q.c===q.c&&!used.has(x.qid)&&lvOf(x.qid)===lv);if(pool.length)sib=pool[Math.floor(Math.random()*pool.length)]}
     R.items.push(sib?{q:sib.q,ref:{qz:qzo.id,qid:sib.qid},qzObj:qzo,second:true,sib:true}:{...it,second:true});
   }
   renderStreak();$('#lives').textContent='♥'.repeat(Math.max(R.lives,0))+'♡'.repeat(3-Math.max(R.lives,0));
   const last=R.i===R.items.length-1||(R.boss&&R.lives<=0);
-  const head=ok?(KIND_HEAD[g.kind]||CHEERS[Math.floor(Math.random()*CHEERS.length)]):'Inte riktigt';
+  const head=ok?(KIND_HEAD[g.kind]||CHEERS[Math.floor(Math.random()*CHEERS.length)]):(o.head||'Inte riktigt');
   const sub=ok?(KIND_SUB[g.kind]||''):(requeue?(sib?'En liknande fråga kommer i slutet av rundan.':'Frågan kommer tillbaka i slutet av rundan.'):'');
   const nextLast=R.i===R.items.length-1||(R.boss&&R.lives<=0);
   $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span>${pts>0?`<span class="pts">+${pts} XP</span>`:''}</h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${nextLast?'Se resultat':'Nästa fråga →'}</button>${kc?`<button class="btn ghost" id="xpBtn">${svg('play')}Förklaring: ${esc(kc.name)}</button>`:''}</div></div>`;
@@ -1705,13 +1819,14 @@ function finish(){
   clearInterval(R.tick);
   const n=R.firstN,c=R.correct,pct=c/n,touched=[...new Set(R.items.map(x=>x.qzObj))];
   let medal=null,bossWin=false;
-  if(R.mode==='station'){const st=STATIONS[R.si];P.played[st.id]=1;saveP(QZ.id);medal=updateMedal(QZ,st,R.flawless)}
+  const rst=R.mode==='station'?stById(QZ,R.sid):null;
+  if(rst){P.played[rst.id]=1;saveP(QZ.id);medal=updateMedal(QZ,rst,R.flawless)}
   if(R.boss){bossWin=R.lives>0;if(bossWin){P.bossBest=Math.max(P.bossBest||0,R.lives);saveP(QZ.id);award('boss')}}
-  touched.forEach(qz=>{const p=getP(qz.id);if((R.mode==='rep'||R.mode==='daily')&&pct>=.8&&!p.repDone){p.repDone=true;saveP(qz.id)}(qz.stations||[]).forEach(st=>updateMedal(qz,st,false));checkGoals(qz)});
+  touched.forEach(qz=>{const p=getP(qz.id);if((R.mode==='rep'||R.mode==='daily')&&pct>=.8&&!p.repDone){p.repDone=true;saveP(qz.id)}allSt(qz).forEach(st=>updateMedal(qz,st,false));checkGoals(qz)});
   const bonus=G.xp-R.xpStart-R.xp;
   let title,msg;
   if(R.mode==='station'){
-    const md=P.medals[STATIONS[R.si].id]||0;
+    const md=P.medals[rst.id]||0;
     title=medal.to>medal.from?`${MEDAL[medal.to]}!`:['Bra försök','Godkänt!','Riktigt bra!','Alla rätt!'][pct>=.99?3:pct>=.8?2:pct>=.6?1:0];
     msg=md===0?'Brons får du när alla frågor har gått rätt minst en gång. Missarna hittar du under Mina missar.':md===1?'Silver får du för en runda helt utan fel.':md===2?'Guld får du när allt sitter kvar en annan dag. Repetera i morgon.':'Guld! Allt sitter kvar.';
   }else if(R.mode==='miss'){title=`${c} av ${n} fixade`;msg=c===n?'Alla missar fixade!':'Det som inte satt finns kvar under Mina missar.'}
@@ -1720,7 +1835,7 @@ function finish(){
   const ra=R.readyBefore!==null?readiness(QZ,getP(QZ.id)):null;
   const kinds=[['new','Nya'],['fix','Fixade'],['review','Repeterade'],['early','Redan kunde'],['second','Andra chansen']].filter(([k])=>R.kinds[k]).map(([k,l])=>`<span>${l} ${R.kinds[k]}</span>`).join('');
   const nb=newBadges.map(id=>BADGES.find(b=>b.id===id).n);
-  const mdNow=R.mode==='station'?(P.medals[STATIONS[R.si].id]||0):0;
+  const mdNow=rst?(P.medals[rst.id]||0):0;
   $('#resBox').innerHTML=`<h2>${esc(title)}</h2>
    ${R.mode==='station'?`<span class="medal big m${mdNow}">${MEDAL[mdNow]||'Ingen medalj än'}</span>`:''}
    ${R.boss?`<div class="bigstars">${[0,1,2].map(i=>`<svg viewBox="0 0 24 24" class="${i<(bossWin?R.lives:0)?'star-on':'star-off'}" aria-hidden="true"><path d="${STAR}"/></svg>`).join('')}</div>`:''}
@@ -1730,8 +1845,10 @@ function finish(){
    ${nb.length?`<div class="newb">Nya märken: ${nb.map(esc).join(', ')}</div>`:''}
    ${R.missed.length?`<div class="review-list"><span class="lbl">Öva mer på</span>${R.missed.slice(0,6).map(it=>`<div><b>${esc(it.q.q)}</b><span>${esc(ansText(it.q))}</span></div>`).join('')}</div>`:''}
    <div class="row" style="justify-content:center"><button class="btn" id="again">Kör igen</button><button class="btn ghost" id="home2">${R.mode==='daily'?'Till läxorna':'Till läxan'}</button></div>`;
-  const mode=R.mode,si=R.si;
-  $('#again').onclick=()=>startRound(mode,{si});
+  const mode=R.mode,sid=R.sid;
+  $('#again').onclick=()=>startRound(mode,{sid});
+  // Ny nivå öppnad i den här rundan?
+  if(QZ&&mode!=='daily'){const p=getP(QZ.id);[2,3].forEach(n=>{if(R.lvBefore&&!R.lvBefore[n]&&lvOpen(QZ,p,n)){toast(`Ny nivå: ${LV_NAME[n]}!`);confetti(120)}});ensureLevels(QZ,p)}
   $('#home2').onclick=()=>{if(mode==='daily'){renderLib();show('lib')}else{renderHome();show('home')}};
   show('result');if((medal&&medal.to>medal.from)||bossWin)confetti(medal&&medal.to===3?140:90);
 }
@@ -1916,7 +2033,8 @@ async function renderOverview(){
       const r=rows[q.id],p=normP(r&&r.state),rd=Math.round(readiness(q,p)*100),m=misses(q,p).length,d=dues(q,p).length;
       const lastQ=Math.max(0,...Object.values(p.q).map(s=>s.last||0));
       const med=(q.stations||[]).map(s=>p.medals[s.id]||0),n=daysTo(q.testDate);
-      return {q,rd,m,d,lastQ,med,n,started:!!lastQ};
+      const lv=lvOpen(q,p,3)&&levelSt(q,3).length?3:lvOpen(q,p,2)&&levelSt(q,2).length?2:1,lm=levelSt(q,lv).map(s=>p.medals[s.id]||0);
+      return {q,rd,m,d,lastQ,med,n,lv,lm,started:!!lastQ};
     }).sort((a,b)=>((a.n!==null&&a.n>=0)?a.n:999)-((b.n!==null&&b.n>=0)?b.n:999)||a.rd-b.rd);
     const warn=x=>x.n!==null&&x.n>=0&&x.n<=3&&x.rd<70;
     return `<div class="panel ov">
@@ -1924,7 +2042,7 @@ async function renderOverview(){
       ${qs.length?`<ul class="ov-list">${qs.map(x=>`<li class="${warn(x)?'warn':''}">
         <div class="ov-t"><span class="subj" data-subj="${esc(x.q.subject)}">${SUBJ[x.q.subject]||'Övrigt'}</span><b>${esc(x.q.title)}</b>${x.q.testDate?`<small>${esc(dateLabel(x.q.testDate))}</small>`:''}</div>
         <div class="ov-r"><span class="mini"><i style="width:${x.rd}%"></i></span><b>${x.rd} %</b></div>
-        <small class="ov-s">${x.started?`${x.med.filter(v=>v>=1).length}/${x.med.length} stationer klara · ${x.m?`<span class="miss-tag">${x.m} ${x.m===1?'miss':'missar'}</span>`:'inga missar'}${x.d?` · ${x.d} att repetera`:''} · senast ${agoLabel(x.lastQ)}`:'Inte påbörjad'}${warn(x)?' · <b class="miss-tag">Behöver öva inför provet</b>':''}</small>
+        <small class="ov-s">${x.started?`${x.lv>1?`<b>Nivå ${x.lv} ${LV_NAME[x.lv]}</b> ${x.lm.filter(v=>v>=1).length}/${x.lm.length} · `:''}${x.med.filter(v=>v>=1).length}/${x.med.length} stationer klara · ${x.m?`<span class="miss-tag">${x.m} ${x.m===1?'miss':'missar'}</span>`:'inga missar'}${x.d?` · ${x.d} att repetera`:''} · senast ${agoLabel(x.lastQ)}`:'Inte påbörjad'}${warn(x)?' · <b class="miss-tag">Behöver öva inför provet</b>':''}</small>
       </li>`).join('')}</ul>`:'<p class="hint">Inga godkända läxor än.</p>'}
     </div>`}).join('')||'<div class="empty">Inga barn än.</div>';
 }

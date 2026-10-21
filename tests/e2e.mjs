@@ -36,6 +36,12 @@ const quizJson = (title) => ({
     { t: 'write', c: 'k3', q: 'Vad kallas det när vatten blir ånga?', acc: ['avdunstning'], why: 'Avdunstning.' } ] }],
   flash: [{ q: 'Förklara fotosyntes', a: 'Växter gör socker av ljus.' }], links: [], notes: [],
 });
+// Fördjupningsnivå som servern skulle ha gjort (redan tvättad, med prefixade id:n).
+const levelStations = (n) => [{ id: `L${n}s1`, lv: n, name: n === 2 ? 'Varför ljus?' : 'Tänk som en forskare', sub: 'Förstå fotosyntesen', icon: 'sun', qs: [
+  { t: 'explain', c: 'k1', q: 'Förklara varför växten behöver ljus.', points: ['ljuset ger energi', 'för att göra socker'], model: 'Ljuset ger energi så att växten kan göra socker.', why: 'Ljus är energin.' },
+  { t: 'explain', c: 'k1', q: 'Lisa säger att växter äter jord. Har hon rätt?', points: ['nej', 'växten gör sin mat själv'], model: 'Nej, växten gör sin mat själv med fotosyntes.', why: '' },
+  { t: 'mc', c: 'k1', q: 'Vad händer om en växt står i mörker länge?', opts: ['Den kan inte göra socker', 'Den växer snabbare', 'Inget alls'], a: 0, why: '' },
+  { t: 'tf', c: 'k2', q: 'Ett lövträd sparar vatten genom att fälla löven.', a: true, why: '' }] }];
 const oldQuiz = { stations: quizJson('x').stations.map((s) => ({ ...s, id: 's1', qs: s.qs.map(({ c, ...q }) => q) })), flash: [], notes: [], links: [] };
 
 const db = {
@@ -110,7 +116,10 @@ await page.route('**/*', async (route) => {
     if (method === 'PATCH') { const k = db.children.find((c) => c.id === eq('id')); Object.assign(k, req.postDataJSON()); return route.fulfill({ status: 204 }); }
   }
   if (p === '/rest/v1/quizzes') {
-    if (method === 'GET') return json(db.quizzes.filter((q) => !isKid || (q.status === 'ready' && (!q.child_id || q.child_id === kidMember?.child_id))).map((q) => ({ ...q, content: JSON.parse(JSON.stringify(q.content)) })));
+    if (method === 'GET') {
+      const rows = db.quizzes.filter((q) => (!eq('id') || q.id === eq('id')) && (!isKid || (q.status === 'ready' && (!q.child_id || q.child_id === kidMember?.child_id)))).map((q) => ({ ...q, content: JSON.parse(JSON.stringify(q.content)) }));
+      return json(single ? rows[0] ?? null : rows);
+    }
     if (method === 'POST') { const r = { id: 'q' + (db.quizzes.length + 1), created_at: now, ...req.postDataJSON() }; db.quizzes.unshift(r); return json(single ? r : [r], 201); }
     if (method === 'PATCH') { const q = db.quizzes.find((x) => x.id === eq('id')); Object.assign(q, req.postDataJSON()); return json(single ? q : [q]); }
     if (method === 'DELETE') { db.quizzes = db.quizzes.filter((q) => q.id !== eq('id')); return route.fulfill({ status: 204 }); }
@@ -136,6 +145,19 @@ await page.route('**/*', async (route) => {
     if (!req.headers()['authorization']?.startsWith('Bearer ')) return json({ code: 'session_expired' }, 401);
     if ('prompt' in b) return json({ code: 'unknown_action' }, 400);
     if (b.action === 'quiz') return route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: '```json\n' + JSON.stringify(quizJson('Skogen')) + '\n```' });
+    if (b.action === 'level') {
+      const q = db.quizzes.find((x) => x.id === b.quiz_id);
+      if (!q || q.status !== 'ready') return json({ code: 'not_found' }, 404);
+      calls.push(`  level=${b.level} quiz=${b.quiz_id}`);
+      const lv = (q.content.levels || []).filter((l) => l.n !== b.level);
+      q.content = { ...q.content, levels: [...lv, { n: b.level, name: b.level === 2 ? 'Fördjupning' : 'Expert', stations: levelStations(b.level) }] };
+      return json({ started: true }, 202);
+    }
+    if (b.action === 'grade') {
+      calls.push(`  grade qid=${b.qid} svar="${b.answer}"`);
+      if (/Lisa/.test(b.answer)) return json({ code: 'upstream' }, 502);
+      return json({ result: /ljus|energi/i.test(b.answer) ? 'ja' : 'nej', feedback: 'Bra förklarat, du kopplade ljuset till energin.' });
+    }
     if (b.action === 'concepts') {
       const map = {}; b.quiz.stations.forEach((s, si) => s.qs.forEach((q, qi) => { map[`${si}.${qi}`] = ['k1', 'k1', 'k2', 'k3'][qi] || 'k1'; }));
       return route.fulfill({ status: 200, contentType: 'text/plain; charset=utf-8', body: JSON.stringify({ concepts, map }) });
@@ -211,7 +233,7 @@ check(fromMail.status === 'ready' && fromMail.content.concepts?.length === 3, 'r
 check(await page.locator('.clip').count() === 3, 'hemskärmen visar förklaringsklippen');
 
 step('fel svar → klipp startar → liknande fråga köas');
-await page.click('[data-st="0"]');
+await page.click('[data-sid="s1"]');
 await page.waitForSelector('#quiz:not([hidden])');
 let gotClip = false;
 for (let i = 0; i < 4; i++) {
@@ -297,6 +319,9 @@ await page.fill('#authPass', 'fel');
 await page.click('#loginBtn');
 await page.waitForSelector('#authMsg >> text=Fel användarnamn');
 check(true, 'fel lösenord ger felmeddelande');
+// Erik har redan silver på allt och har klarat slutprovet: Fördjupning ska öppnas.
+const ep = db.progress['k2/qPend'];
+db.progress['k2/qPend'] = { child_id: 'k2', quiz_id: 'qPend', state: { ...(ep?.state || {}), medals: { s1: 2 }, bossBest: 2, played: { s1: 1 } } };
 await page.fill('#authPass', 'drake77');
 await page.click('#loginBtn');
 await page.waitForSelector('#lib:not([hidden])');
@@ -310,6 +335,50 @@ await page.click('[data-open="qPend"]');
 await page.waitForSelector('#home:not([hidden])');
 check(!(await vis('#adultBox details.adult-only')) && !(await vis('#resetBtn')), 'vuxendelar på läxsidan är dolda');
 await shot('e2e-9-kid');
+
+step('Fördjupning: förbereds, öppnas och spelas med förklaringsfrågor');
+check(/Förbereds|Varför ljus/.test(await page.textContent('#lvBox')), 'nivå 2 visas som öppen');
+await page.waitForSelector('#lvBox [data-sid="L2s1"]', { timeout: 15000 });
+check(calls.some((c) => /level=2 quiz=qPend/.test(c)), 'barnkontot beställer nivå 2');
+check(/Låst/.test(await page.textContent('#lvBox')) && /Expert/.test(await page.textContent('#lvBox')), 'Expert är låst');
+await shot('e2e-10-level2');
+const xpBefore = db.children[1].stats.xp;
+await page.click('#lvBox [data-sid="L2s1"]');
+await page.waitForSelector('#quiz:not([hidden])');
+let selfAssessed = false, graded = false;
+for (let i = 0; i < 4; i++) {
+  const type = await page.textContent('#qtype'), qtext = await page.textContent('#qtext');
+  if (/Förklara/.test(type)) {
+    await page.fill('#einput', /Lisa/.test(qtext) ? 'Lisa har fel, växten gör sin mat själv' : 'Ljuset ger energi så att växten kan göra socker');
+    await page.click('#qactions #check');
+    if (/Lisa/.test(qtext)) {
+      await page.waitForSelector('#selfYes');
+      check(/Ett bra svar/.test(await page.textContent('#qactions')), 'utan rättning visas ett bra svar att jämföra med');
+      await page.click('#selfYes'); selfAssessed = true;
+    } else {
+      await page.waitForSelector('#feedback .fb');
+      const fb = await page.textContent('#feedback');
+      check(/Bra förklarat/.test(fb) && /Ett bra svar/.test(fb), 'förklaringen rättas med återkoppling och modellsvar');
+      await shot('e2e-11-explain'); graded = true;
+    }
+  } else if (/Sant/.test(type)) await page.click('#qbody .opt >> text=Sant');
+  else await page.click('#qbody .opt >> text=Den kan inte göra socker');
+  await page.waitForSelector('#feedback .fb');
+  await page.click('#nextBtn');
+}
+check(graded && selfAssessed, 'båda förklaringsfrågorna kördes');
+await page.waitForSelector('#result:not([hidden])');
+check(/Silver|Brons/.test(await page.textContent('#resBox')), 'medalj på fördjupningsstationen');
+await page.waitForTimeout(1500);
+const st2 = db.progress['k2/qPend'].state, kidStats = db.children[1].stats;
+check(st2.medals.L2s1 >= 2, `medaljen sparas (${st2.medals.L2s1})`);
+check(kidStats.badges.includes('deep'), 'märket Fördjupare delas ut');
+check(kidStats.xp - xpBefore >= 4 * 9, `fördjupning ger extra XP (+${kidStats.xp - xpBefore})`);
+check(calls.some((c) => /level=3 quiz=qPend/.test(c)), 'nivå 3 beställs när nivå 2 är klar');
+await page.click('#home2');
+await page.waitForSelector('#lvBox [data-sid="L3s1"]', { timeout: 15000 });
+check(!/Låst/.test(await page.textContent('#lvBox')), 'Expert är öppen efter silver på Fördjupning');
+await shot('e2e-12-level3');
 
 console.log('\nAnrop till servern:\n' + calls.filter((c) => /laxmotorn|action/.test(c)).join('\n'));
 console.log('\nKonsolfel:\n' + (log.filter((l) => !/ERR_FAILED|404/.test(l)).join('\n') || '(inga)'));

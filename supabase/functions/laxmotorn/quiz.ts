@@ -20,6 +20,7 @@ export function cleanQ(q: Any, ids: Set<string>) {
   if (t === "multi") { const opts = list(q.opts, 160); if (opts.length < 3 || opts.length > 8 || new Set(opts).size !== opts.length) return null; const a = [...new Set<number>((Array.isArray(q.a) ? q.a : []).map(Number))].filter((i) => Number.isInteger(i) && i >= 0 && i < opts.length).sort((x, y) => x - y); if (!a.length || a.length === opts.length) return null; return { t, q: text, opts, a, why, ...c }; }
   if (t === "order") { const items = list(q.items, 140); if (items.length < 2 || items.length > 7 || new Set(items).size !== items.length) return null; return { t, q: text, items, why, ...c }; }
   if (t === "write") { const acc = list(q.acc, 60); if (!acc.length) return null; return { t, q: text, acc, why, ...c }; }
+  if (t === "explain") { const points = list(q.points, 160).slice(0, 4), model = clean(q.model, 500); if (!points.length || !model) return null; return { t, q: text, points, model, why, ...c }; }
   return null;
 }
 
@@ -82,4 +83,20 @@ export function extractJson(t: string) {
   const a = t.indexOf("{"), b = t.lastIndexOf("}");
   if (a < 0 || b <= a) return null;
   try { return JSON.parse(t.slice(a, b + 1)); } catch { return null; }
+}
+
+// En fördjupningsnivå: id:n får prefix (L2s1, L2k1) så att de inte krockar med nivå 1.
+export function sanitizeLevel(d: Any, n: number, existing: Set<string>) {
+  if (!d || typeof d !== "object" || !Array.isArray(d.stations)) return null;
+  const raw = cleanConcepts(d.concepts), map = new Map<string, string>();
+  const concepts = raw.map((k) => { const id = `L${n}${k.id}`.slice(0, 12); map.set(k.id, id); return { ...k, id }; });
+  const ids = new Set([...existing, ...map.values()]);
+  const remap = (q: Any) => (q && typeof q === "object" ? { ...q, c: map.get(q.c) ?? q.c } : q);
+  const stations = d.stations.slice(0, 5).map((s: Any, i: number) => ({
+    id: `L${n}s${i + 1}`, lv: n, name: clean(s?.name, 60) || `Del ${i + 1}`, sub: clean(s?.sub, 90),
+    icon: ICON_KEYS.includes(s?.icon) ? s.icon : "book",
+    qs: (Array.isArray(s?.qs) ? s.qs : []).map((q: Any) => cleanQ(remap(q), ids)).filter(Boolean).slice(0, 10),
+  })).filter((s: Any) => s.qs.length >= 3);
+  if (!stations.length) return null;
+  return { stations, concepts };
 }
