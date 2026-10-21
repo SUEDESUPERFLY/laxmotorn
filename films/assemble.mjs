@@ -10,7 +10,8 @@ export function parseFilm(text) {
   const sec = (name, next) => { const a = t.indexOf(`<<<${name}>>>`); const b = t.indexOf(`<<<${next}>>>`, a + 1); return a < 0 || b < 0 ? null : t.slice(a + name.length + 6, b).trim(); };
   const style = sec('STYLE', 'BODY'), body = sec('BODY', 'SCRIPT'), script = sec('SCRIPT', 'END');
   if (body === null || script === null) return null;
-  return { style: style ?? '', body, script };
+  // Skelettet har redan <style> och <script>; egna taggar runt delarna skulle bryta sidan.
+  return { style: (style ?? '').replace(/<\/?style[^>]*>/gi, ''), body, script: script.replace(/<\/?script[^>]*>/gi, '') };
 }
 
 export function assemble(dir, film, { voice, voiceDur, duration }) {

@@ -77,6 +77,17 @@ async function setVideo(admin: Any, quizId: string, conceptId: string, fn: (v: A
   await admin.from("quizzes").update({ content: { ...c, concepts } }).eq("id", quizId);
 }
 
+// Rå PCM (16 bit, little endian) → WAV.
+export function pcmToWav(pcm: Uint8Array, rate: number, channels = 1) {
+  const out = new Uint8Array(44 + pcm.length), v = new DataView(out.buffer);
+  const tag = (o: number, t: string) => { for (let i = 0; i < 4; i++) out[o + i] = t.charCodeAt(i); };
+  tag(0, "RIFF"); v.setUint32(4, 36 + pcm.length, true); tag(8, "WAVE"); tag(12, "fmt ");
+  v.setUint32(16, 16, true); v.setUint16(20, 1, true); v.setUint16(22, channels, true); v.setUint32(24, rate, true);
+  v.setUint32(28, rate * channels * 2, true); v.setUint16(32, channels * 2, true); v.setUint16(34, 16, true);
+  tag(36, "data"); v.setUint32(40, pcm.length, true); out.set(pcm, 44);
+  return out;
+}
+
 const publicUrl = (path: string) => `${Deno.env.get("SUPABASE_URL")}/storage/v1/object/public/films/${path}`;
 const rand = () => crypto.randomUUID().slice(0, 8);
 
@@ -132,17 +143,19 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
     const r = await fetch("https://api.speko.dev/v1/synthesize", {
       method: "POST",
       headers: { Authorization: `Bearer ${key}`, "Content-Type": "application/json" },
-      body: JSON.stringify({ text: narration, intent: { language: "sv", optimizeFor: "accuracy" }, constraints: { allowedProviders: { tts: ["elevenlabs"] } }, speed: 0.95 }),
+      body: JSON.stringify({ text: narration, intent: { language: "sv", optimizeFor: "accuracy" }, constraints: { allowedProviders: { tts: ["elevenlabs"] } }, speed: 1 }),
     });
     if (!r.ok) { console.error("speko", r.status, (await r.text()).slice(0, 400)); throw new ClaudeError("speko_failed", 502); }
+    // Speko skickar leverantörens eget format: MP3, WAV eller rå PCM ("audio/pcm;rate=24000", 16 bit mono), som blir WAV här.
     const ct = r.headers.get("content-type") ?? "audio/mpeg";
-    const audio = new Uint8Array(await r.arrayBuffer());
-    const ext = /wav/i.test(ct) ? "wav" : /mpeg|mp3/i.test(ct) ? "mp3" : /pcm/i.test(ct) ? "pcm" : "mp3";
+    let audio = new Uint8Array(await r.arrayBuffer()), ext = "mp3", type = "audio/mpeg";
+    if (/wav/i.test(ct)) { ext = "wav"; type = "audio/wav"; }
+    else if (/pcm|l16|raw/i.test(ct)) { audio = pcmToWav(audio, Number(ct.match(/rate=(\d+)/i)?.[1]) || 24000); ext = "wav"; type = "audio/wav"; }
     const path = `${q.id}/${k.id}-${rand()}.${ext}`;
-    const up = await admin.storage.from("films").upload(path, audio, { contentType: ext === "wav" ? "audio/wav" : "audio/mpeg", upsert: true });
+    const up = await admin.storage.from("films").upload(path, audio, { contentType: type, upsert: true });
     if (up.error) { console.error(up.error); throw new ClaudeError("upload_failed", 500); }
     return json({
-      title: str(raw?.title, 60) || k.name, narration, plan, audio_url: publicUrl(path), audio_type: ct,
+      title: str(raw?.title, 60) || k.name, narration, plan, audio_url: publicUrl(path), audio_type: type, source_type: ct, bytes: audio.length,
       provider: r.headers.get("x-speko-provider"), model: r.headers.get("x-speko-model"),
       concept: { name: k.name, grade, title: q.title, subject: q.subject },
     });

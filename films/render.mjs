@@ -183,31 +183,42 @@ async function one(quizId, conceptId) {
   try {
     // 1) Manus, plan och röst.
     const v = await call('video_voice', ids);
-    await log(`manus "${v.title}" (${v.narration.split(/\s+/).length} ord), röst ${v.provider ?? '?'}/${v.model ?? '?'}`);
+    await log(`manus "${v.title}" (${v.narration.split(/\s+/).length} ord), röst ${v.provider ?? '?'}/${v.model ?? '?'} (${v.source_type ?? v.audio_type}, ${v.bytes ?? '?'} byte)`);
     const ext = /wav/i.test(v.audio_type || '') ? '.wav' : '.mp3';
-    const voice = path.join(tmp, 'voice' + ext);
+    const rawVoice = path.join(tmp, 'voice-in' + ext), voice = path.join(tmp, 'voice.wav');
     const ar = await fetch(v.audio_url);
     if (!ar.ok) throw new Error(`rösten: ${ar.status}`);
-    fs.writeFileSync(voice, Buffer.from(await ar.arrayBuffer()));
+    fs.writeFileSync(rawVoice, Buffer.from(await ar.arrayBuffer()));
+    // Jämn ljudnivå mellan filmerna och en exakt längd (WAV).
+    const nr = run('ffmpeg', ['-v', 'error', '-y', '-i', rawVoice, '-af', 'loudnorm=I=-18:TP=-1.5:LRA=11', '-ar', '44100', '-ac', '1', voice], tmp);
+    if (nr.code !== 0 || !fs.existsSync(voice)) throw new Error(`rösten gick inte att läsa: ${nr.err.slice(-300)}`);
     // 2) Ordtider ur pauserna i ljudet.
     const vdur = duration(voice);
-    const words = alignWords(v.narration, speechIntervals(voice));
-    if (!words.length || !(vdur > 5)) throw new Error('rösten saknar tal');
+    let speech = speechIntervals(voice);
+    if (!speech.length) speech = [[0, vdur]];
+    const words = alignWords(v.narration, speech);
+    const talk = speech.reduce((a, [x, y]) => a + (y - x), 0), rate = words.length / Math.max(0.1, talk);
+    if (!words.length || !(vdur > 5)) throw new Error(`rösten saknar tal (${vdur.toFixed(1)} s)`);
+    if (rate < 1.2 || rate > 4.5) throw new Error(`rösten har orimligt tempo: ${rate.toFixed(2)} ord/s på ${vdur.toFixed(1)} s (${v.source_type ?? v.audio_type})`);
     const voiceEnd = LEAD + Math.min(vdur, words.at(-1).end);
     const D = Math.ceil(LEAD + vdur + 2.8);
-    await log(`röst ${vdur.toFixed(1)} s, film ${D} s, ${words.length} ord`);
+    await log(`röst ${vdur.toFixed(1)} s (${speech.length} talavsnitt, ${rate.toFixed(1)} ord/s), film ${D} s`);
 
     // 3) Komposition → kontroll → rendering → granskning. Högst två försök.
     let feedback = '', done = null;
-    for (let attempt = 1; attempt <= 2 && !done; attempt++) {
+    const ATTEMPTS = 3;
+    for (let attempt = 1; attempt <= ATTEMPTS && !done; attempt++) {
       const text = await compose(v, words, voiceEnd, D, feedback);
       const film = parseFilm(text);
       if (!film) { feedback = 'Svaret följde inte formatet: <<<STYLE>>>, <<<BODY>>>, <<<SCRIPT>>> och sist <<<END>>>.'; await log('fel format', 'warn'); continue; }
-      const ext = extendClips(film.body, D);
-      if (ext.changed) { film.body = ext.body; await log(`${ext.changed} lager förlängda från ${ext.from.toFixed(1)} s till ${D} s`); }
+      const grow = extendClips(film.body, D);
+      if (grow.changed) { film.body = grow.body; await log(`${grow.changed} lager förlängda från ${grow.from.toFixed(1)} s till ${D} s`); }
       assemble(dir, film, { voice, voiceDur: vdur, duration: D });
       const chk = check(dir);
-      if (chk.errors.length) {
+      // Layoutfel (dold eller överlappande text) kan vara korta övergångar; från andra försöket får granskningen av bilderna avgöra.
+      const fatal = chk.errors.filter((e) => !e.startsWith('layout/'));
+      if (chk.errors.length && !fatal.length && attempt >= 2) await log(`kontroll: ${chk.errors.length} layoutfel kvar, granskningen avgör – ${chk.errors[0].slice(0, 200)}`, 'warn');
+      else if (chk.errors.length) {
         feedback = 'HyperFrames-kontrollen hittade fel:\n' + chk.errors.join('\n') + (chk.hints.length ? '\nOckså:\n' + chk.hints.join('\n') : '');
         await log(`kontroll: ${chk.errors.length} fel – ${chk.errors[0].slice(0, 300)}`, 'warn');
         continue;
@@ -235,7 +246,7 @@ async function one(quizId, conceptId) {
       feedback = 'Granskningen av stillbilder ur den renderade filmen hittade fel som måste bort:\n' + rev.blocking.map((b) => '- ' + b).join('\n');
       await log(`granskning, blockerande: ${rev.blocking.join(' | ').slice(0, 800)}`, 'warn');
     }
-    if (!done) throw new Error(`ingen godkänd film efter två försök${feedback ? ': ' + feedback.split('\n').slice(1, 3).join(' ').slice(0, 200) : ''}`);
+    if (!done) throw new Error(`ingen godkänd film efter ${ATTEMPTS} försök${feedback ? ': ' + feedback.split('\n').slice(1, 3).join(' ').slice(0, 200) : ''}`);
 
     // 4) Textning och omslagsbild, uppladdning.
     const vttFile = path.join(tmp, 'film.vtt'), poster = path.join(tmp, 'poster.jpg');
