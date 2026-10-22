@@ -10,6 +10,7 @@ type Any = any;
 const REPO = "suedesuperfly/laxmotorn";
 const WORKFLOW = "suedesuperfly/laxmotorn/.github/workflows/films.yml@refs/heads/main";
 const MAX_TRIES = 2;
+const DAILY_MAX = 3; // högst så många nya videor per dygn (kostnad)
 
 // ---------- GitHub OIDC ----------
 let jwks: { at: number; keys: Any[] } | null = null;
@@ -92,6 +93,14 @@ const publicUrl = (path: string) => `${Deno.env.get("SUPABASE_URL")}/storage/v1/
 const rand = () => crypto.randomUUID().slice(0, 8);
 
 // ---------- Åtgärderna ----------
+// Ett barn svarade fel: markera begreppet för video (anropas från appen, efter vanlig inloggning).
+export async function wantVideo(admin: Any, q: Any, conceptId: unknown, json: (x: unknown, s?: number) => Response) {
+  const k = (q.content?.concepts ?? []).find((x: Any) => x.id === conceptId);
+  if (!k || k.video?.url || k.video?.wanted_at || /^L\d/.test(k.id)) return json({ ok: true });
+  await setVideo(admin, q.id, k.id, (v) => ({ ...v, wanted_at: new Date().toISOString() }));
+  return json({ ok: true, wanted: true });
+}
+
 export async function videoAction(admin: Any, action: string, b: Any, req: Request, json: (x: unknown, s?: number) => Response, fail: (s: number, c: string) => Response, streamOut: Any) {
   if (action === "video_log") {
     await admin.from("film_log").insert({
@@ -106,6 +115,12 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
     const { count: noCredit } = await admin.from("film_log").select("id", { count: "exact", head: true })
       .eq("level", "error").like("msg", "%no_credit%").gte("at", new Date(Date.now() - 3 * 3600_000).toISOString());
     if (noCredit) return json({ items: [], paused: "no_credit" });
+    // Tak per dygn: räkna färdiga filmer de senaste 24 timmarna.
+    const { count: made } = await admin.from("film_log").select("id", { count: "exact", head: true })
+      .like("msg", "klar:%").gte("at", new Date(Date.now() - 24 * 3600_000).toISOString());
+    const room = Math.max(0, DAILY_MAX - (made ?? 0));
+    if (!room) return json({ items: [], paused: "daily_max" });
+    // Bara begrepp som ett barn har svarat fel på (wanted_at), aldrig fördjupningsnivåernas begrepp.
     // Godkända läxor, närmast prov först. Begrepp utan video, eller med fel som får försökas igen.
     const { data: rows } = await admin.from("quizzes").select("id,title,subject,grade,test_date,created_at,content").eq("status", "ready");
     const today = new Date().toISOString().slice(0, 10), now = Date.now();
@@ -117,7 +132,7 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
     for (const q of sorted) {
       for (const k of q.content?.concepts ?? []) {
         const v = k.video ?? {};
-        if (v.url) continue;
+        if (v.url || !v.wanted_at || /^L\d/.test(k.id)) continue;
         if ((v.tries ?? 0) >= MAX_TRIES) continue;
         if (v.error && v.at && now - Date.parse(v.at) < 2 * 3600_000) continue;
         if (v.claimed_at && now - Date.parse(v.claimed_at) < 45 * 60_000) continue;
@@ -125,7 +140,7 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
         items.push({ quiz_id: q.id, concept_id: k.id, name: k.name, title: q.title });
       }
     }
-    return json({ items: items.slice(0, Math.min(20, Number(b.limit) || 4)) });
+    return json({ items: items.slice(0, Math.min(room, Number(b.limit) || 3)) });
   }
 
   const hit = await loadConcept(admin, b.quiz_id, b.concept_id);
@@ -209,7 +224,7 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
     if (b.error) {
       // Slut på krediter räknas inte som ett försök: begreppet görs när kedjan startar igen.
       const credit = /no_credit/.test(String(b.error));
-      await setVideo(admin, q.id, k.id, (v) => (credit ? { starts: Math.max(0, (v.starts ?? 1) - 1), tries: v.tries ?? 0 } : { error: str(b.error, 300), at, tries: (v.tries ?? 0) + 1, starts: v.starts ?? 0 }));
+      await setVideo(admin, q.id, k.id, (v) => (credit ? { wanted_at: v.wanted_at, starts: Math.max(0, (v.starts ?? 1) - 1), tries: v.tries ?? 0 } : { wanted_at: v.wanted_at, error: str(b.error, 300), at, tries: (v.tries ?? 0) + 1, starts: v.starts ?? 0 }));
       return json({ ok: true });
     }
     const url = typeof b.url === "string" && b.url.startsWith(publicUrl(q.id + "/")) ? b.url : null;

@@ -948,6 +948,13 @@ function makeSample(){
 }
 // Nivåer och rättning av förklaringar får alla i familjen använda, även barnkonton.
 const API=(()=>{let c=null;return {json:(p,o)=>(c=c||makeSample()).json(p,o)}})();
+// Fel svar: be servern göra en riktig video till begreppet (görs bara för begrepp som barnen faktiskt missar).
+const WANTED=new Set();
+function wantVideo(qz,k){
+  if(!qz||!qz.id||!k||!k.id||(k.video&&k.video.url)||/^L\d/.test(k.id))return;
+  const key=qz.id+':'+k.id;if(WANTED.has(key))return;WANTED.add(key);
+  API.json({action:'video_want',quiz_id:qz.id,concept_id:k.id},{}).catch(()=>{});
+}
 const LVREQ={};
 async function refreshQuiz(id){
   const {data,error}=await sb.from('quizzes').select(QZ_COLS).eq('id',id).maybeSingle();
@@ -2184,6 +2191,7 @@ function answer(ok,extra='',o={}){
   if(G.fixed>=10)award('fix10');if(G.reviews>=25)award('rev25');
   // Fel svar: kommer tillbaka i slutet, helst som en annan fråga om samma begrepp.
   const qzo=it.qzObj||QZ,kc=!ok?conceptOf(qzo,q):null;
+  if(kc)wantVideo(qzo,kc);
   const requeue=!ok&&!it.second&&!R.boss;let sib=null;
   if(requeue){
     // Syskonfrågor som redan väntar längre fram i rundan räknas inte; då kommer samma fråga igen.

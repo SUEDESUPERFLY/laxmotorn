@@ -32,7 +32,7 @@ import { createClient } from "jsr:@supabase/supabase-js@2";
 import { ClaudeError, complete, FAST_MODEL, open, pump } from "./claude.ts";
 import { conceptsPrompt, FILM_PROPS, filmPrompt, gradePrompt, LEVEL_NAMES, levelPrompt, mailPrompt, quizPrompt, SUBJECTS, transcribePrompt } from "./prompts.ts";
 import { extractJson, sanitize, sanitizeFilm, sanitizeLevel } from "./quiz.ts";
-import { verifyGithub, videoAction } from "./video.ts";
+import { verifyGithub, videoAction, wantVideo } from "./video.ts";
 
 // deno-lint-ignore no-explicit-any
 type Any = any;
@@ -483,7 +483,7 @@ Deno.serve(async (req) => {
     }
 
     // Förklaringsvideor: bara GitHub Actions (films.yml på main) via OIDC.
-    if (typeof action === "string" && action.startsWith("video_")) {
+    if (typeof action === "string" && action.startsWith("video_") && action !== "video_want") {
       if (!(await verifyGithub(req))) return fail(401, "bad_token");
       return await videoAction(admin, action, body, req, json, fail, streamOut);
     }
@@ -499,6 +499,10 @@ Deno.serve(async (req) => {
     }
     if (action === "level") return await makeLevel(who.user.id, body);
     if (action === "grade") return await gradeAnswer(who.user.id, body);
+    if (action === "video_want") {
+      const q = await visibleQuiz(who.user.id, body.quiz_id);
+      return q ? await wantVideo(admin, q, body.concept_id, json) : fail(404, "not_found");
+    }
     if (action === "films") {
       const q = await visibleQuiz(who.user.id, body.quiz_id, true);
       return q ? await makeFilms(q) : fail(404, "not_found");

@@ -52,7 +52,7 @@ Studierna gäller mest äldre elever och vuxna, och effekterna är små till må
 
 ### Videofilmer (HyperFrames)
 
-Godkända läxor får också riktiga videofilmer (1920 × 1080, 25–40 s) med inspelad röst. Finns en video spelas den; annars, eller om den inte går att ladda inom tio sekunder, spelas den ritade filmen ovan.
+Begrepp som ett barn har svarat fel på får också en riktig videofilm (1920 × 1080, 25–40 s) med inspelad röst, högst 3 nya per dygn och aldrig för fördjupningsnivåerna, så att kostnaden följer behovet. Finns en video spelas den; annars, eller om den inte går att ladda inom tio sekunder, spelas den ritade filmen ovan.
 
 **Så görs de.** Arbetsflödet `.github/workflows/films.yml` körs varje halvtimme (och vid ändringar i `films/`). Det frågar servern vilka begrepp som saknar video (närmast prov först) och gör varje film i ett eget jobb med `films/render.mjs`:
 
@@ -69,7 +69,7 @@ Inga hemligheter ligger på GitHub: jobbet loggar in hos servern med GitHubs OID
 
 Kostnad ungefär 0,1–0,3 USD per film (Claude, beroende på antal försök) plus 0,04 USD (röst). Den fasta delen av kompositionsprompten (regler, kit, förebild) cachas hos Anthropic, så att den kostar en tiondel när flera filmer görs i samma körning. Tar Claude-krediterna slut (`no_credit`) pausar kedjan sig själv i tre timmar och begreppet räknas inte som ett misslyckat försök; appen visar då ett tydligt meddelande.
 
-**Schemat** (varje halvtimme) slås på och av i `.github/workflows/films.yml`. Det är just nu avstängt; en körning kan också startas för hand (workflow_dispatch) eller genom en ändring i `films/`. Kontaktark och kompositioner från varje körning sparas på grenen `film-sheets`.
+**Schemat** (varje halvtimme) slås på och av i `.github/workflows/films.yml`. Det går varje timme; en körning kan också startas för hand (workflow_dispatch) eller genom en ändring i `films/`. Kontaktark och kompositioner från varje körning sparas på grenen `film-sheets`.
 
 ## Nivåer: svårare och djupare
 
