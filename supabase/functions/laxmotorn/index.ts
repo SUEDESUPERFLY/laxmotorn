@@ -90,7 +90,7 @@ function imageBlocks(imgs: unknown) {
 }
 
 // Strömmar Claudes text till klienten. waitUntil håller arbetaren vid liv tills strömmen är klar.
-async function streamOut(content: Any[], signal: AbortSignal, o: { effort?: string; maxTokens?: number; prefill?: string } = {}) {
+async function streamOut(content: Any[], signal: AbortSignal, o: { effort?: string; maxTokens?: number } = {}) {
   const body = await open(content, { ...o, signal });
   const enc = new TextEncoder();
   const { readable, writable } = new TransformStream<Uint8Array, Uint8Array>();

@@ -67,7 +67,9 @@ Inga hemligheter ligger på GitHub: jobbet loggar in hos servern med GitHubs OID
 
 **Prova lokalt:** `cd films && npm ci && node try-golden.mjs <röstfil>` bygger förebilden i `films/work/golden`; `npx hyperframes render` renderar den. `prototyp/fotosyntes/` är den första provfilmen.
 
-Kostnad ungefär 0,2 USD per film (Claude) plus 0,04 USD (röst).
+Kostnad ungefär 0,1–0,3 USD per film (Claude, beroende på antal försök) plus 0,04 USD (röst). Den fasta delen av kompositionsprompten (regler, kit, förebild) cachas hos Anthropic, så att den kostar en tiondel när flera filmer görs i samma körning. Tar Claude-krediterna slut (`no_credit`) pausar kedjan sig själv i tre timmar och begreppet räknas inte som ett misslyckat försök; appen visar då ett tydligt meddelande.
+
+**Schemat** (varje halvtimme) slås på och av i `.github/workflows/films.yml`. Det är just nu avstängt; en körning kan också startas för hand (workflow_dispatch) eller genom en ändring i `films/`. Kontaktark och kompositioner från varje körning sparas på grenen `film-sheets`.
 
 ## Nivåer: svårare och djupare
 

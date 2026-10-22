@@ -4,7 +4,7 @@
 // deno-lint-ignore-file no-explicit-any
 import { ClaudeError, complete } from "./claude.ts";
 import { extractJson } from "./quiz.ts";
-import { filmComposePrompt, filmReviewPrompt, filmScriptPrompt } from "./video_prompts.ts";
+import { FILM_COMPOSE_STATIC, filmComposeTask, filmReviewPrompt, filmScriptPrompt } from "./video_prompts.ts";
 
 type Any = any;
 const REPO = "suedesuperfly/laxmotorn";
@@ -102,6 +102,10 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
   }
 
   if (action === "video_todo") {
+    // Har Claude-krediterna tagit slut nyligen pausar kedjan i tre timmar i stället för att försöka igen och igen.
+    const { count: noCredit } = await admin.from("film_log").select("id", { count: "exact", head: true })
+      .eq("level", "error").like("msg", "%no_credit%").gte("at", new Date(Date.now() - 3 * 3600_000).toISOString());
+    if (noCredit) return json({ items: [], paused: "no_credit" });
     // Godkända läxor, närmast prov först. Begrepp utan video, eller med fel som får försökas igen.
     const { data: rows } = await admin.from("quizzes").select("id,title,subject,grade,test_date,created_at,content").eq("status", "ready");
     const today = new Date().toISOString().slice(0, 10), now = Date.now();
@@ -164,13 +168,15 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
   if (action === "video_compose") {
     const words = (Array.isArray(b.words) ? b.words : []).slice(0, 300).map((w: Any) => `${Number(w.start).toFixed(2)} ${str(w.w, 40)}`).join(" · ");
     const plan = (Array.isArray(b.plan) ? b.plan : []).slice(0, 8).map((p: Any) => `- "${str(p?.cue, 40)}": ${str(p?.show, 300)}`).join("\n");
-    const prompt = filmComposePrompt({
+    const task = filmComposeTask({
       grade, title: q.title, name: k.name, subject: SUBJ[q.subject] ?? "övrigt", narration: str(b.narration, 900), words, plan,
       voiceEnd: Number(b.voice_end) || 30, duration: Number(b.duration) || 34, feedback: str(b.feedback, 3000) || undefined,
     });
-    // partial: om förra strömmen klipptes (tidsgräns) fortsätter Claude därifrån.
-    const partial = typeof b.partial === "string" && b.partial.length > 200 ? b.partial.slice(0, 60000).replace(/\s+$/, "") : undefined;
-    return await streamOut([{ type: "text", text: prompt }], req.signal, { maxTokens: 20000, effort: "low", prefill: partial });
+    // Den fasta delen cachas (kostar en tiondel när den återanvänds inom fem minuter).
+    return await streamOut([
+      { type: "text", text: FILM_COMPOSE_STATIC, cache_control: { type: "ephemeral" } },
+      { type: "text", text: task },
+    ], req.signal, { maxTokens: 16000, effort: "low" });
   }
 
   if (action === "video_review") {
@@ -201,7 +207,9 @@ export async function videoAction(admin: Any, action: string, b: Any, req: Reque
   if (action === "video_done") {
     const at = new Date().toISOString();
     if (b.error) {
-      await setVideo(admin, q.id, k.id, (v) => ({ error: str(b.error, 300), at, tries: (v.tries ?? 0) + 1, starts: v.starts ?? 0 }));
+      // Slut på krediter räknas inte som ett försök: begreppet görs när kedjan startar igen.
+      const credit = /no_credit/.test(String(b.error));
+      await setVideo(admin, q.id, k.id, (v) => (credit ? { starts: Math.max(0, (v.starts ?? 1) - 1), tries: v.tries ?? 0 } : { error: str(b.error, 300), at, tries: (v.tries ?? 0) + 1, starts: v.starts ?? 0 }));
       return json({ ok: true });
     }
     const url = typeof b.url === "string" && b.url.startsWith(publicUrl(q.id + "/")) ? b.url : null;

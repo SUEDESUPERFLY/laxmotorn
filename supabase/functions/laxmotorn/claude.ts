@@ -9,7 +9,7 @@ export class ClaudeError extends Error {
 }
 
 // deno-lint-ignore no-explicit-any
-export async function open(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal; model?: string; prefill?: string } = {}) {
+export async function open(content: any[], o: { effort?: string; maxTokens?: number; signal?: AbortSignal; model?: string } = {}) {
   const key = Deno.env.get("ANTHROPIC_API_KEY");
   if (!key) throw new ClaudeError("not_configured", 500);
   const res = await fetch("https://api.anthropic.com/v1/messages", {
@@ -20,13 +20,14 @@ export async function open(content: any[], o: { effort?: string; maxTokens?: num
       max_tokens: o.maxTokens ?? 32000,
       stream: true,
       output_config: { effort: o.effort ?? DEFAULT_EFFORT },
-      messages: [{ role: "user", content }, ...(o.prefill ? [{ role: "assistant", content: o.prefill }] : [])],
+      messages: [{ role: "user", content }],
     }),
     signal: o.signal,
   });
   if (!res.ok || !res.body) {
     const txt = await res.text().catch(() => "");
     console.error("anthropic", res.status, txt.slice(0, 500));
+    if (/credit balance is too low/i.test(txt)) throw new ClaudeError("no_credit", 402);
     if (res.status === 429 || res.status === 529) throw new ClaudeError("rate_limited", 429);
     if (res.status === 413 || /prompt is too long/i.test(txt)) throw new ClaudeError("prompt_too_large", 413);
     if (res.status === 400 && /image/i.test(txt)) throw new ClaudeError("image_rejected", 400);

@@ -209,6 +209,7 @@ async function one(quizId, conceptId) {
     for (let attempt = 1; attempt <= ATTEMPTS && !done; attempt++) {
       let text;
       try { text = await compose(v, words, voiceEnd, D, feedback); } catch (e) {
+        if (/no_credit/.test(String(e.message))) throw e; // slut på krediter: inga fler försök
         await log(String(e.message || e).slice(0, 300), 'warn');
         feedback = (feedback ? feedback + '\n' : '') + 'Förra svaret hann inte bli klart. Svara direkt utan lång planering och skriv kortare: högst 12 000 tecken.';
         continue;
