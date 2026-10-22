@@ -4,8 +4,9 @@
 name: Förklaringsfilmer
 
 on:
-  schedule:
-    - cron: "7,37 * * * *"
+  # Schemat är pausat tills Anthropic-krediterna är påfyllda. Avkommentera för att starta igen.
+  # schedule:
+  #   - cron: "7,37 * * * *"
   workflow_dispatch:
   push:
     branches: [main]
