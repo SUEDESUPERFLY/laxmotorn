@@ -14,11 +14,18 @@ window.K = (() => {
   });
   // Rita fram en linje (path, line, circle …). Osynlig tills den börjar ritas, så runda ändar inte syns som prickar.
   function drawIn(tl, el, t, dur = 0.8, ease = "power2.out") {
-    const els = typeof el === "string" ? qa(el) : [].concat(el);
+    // Grupper ritas via sina linjer; det som inte har en längd (text, bilder) tonas in i stället.
+    const els = (typeof el === "string" ? qa(el) : [].concat(el)).filter(Boolean)
+      .flatMap((e) => (typeof e.getTotalLength === "function" ? [e] : [...e.querySelectorAll("path,line,polyline,polygon,circle,ellipse,rect")].length ? [...e.querySelectorAll("path,line,polyline,polygon,circle,ellipse,rect")] : [e]));
+    const step = Math.min(0.1, 1.5 / Math.max(1, els.length));
     els.forEach((e, i) => {
-      const n = e.getTotalLength(); e.style.strokeDasharray = n + " " + n; e.style.strokeDashoffset = n; e.style.opacity = 0;
-      tl.set(e, { opacity: 1 }, t + i * 0.1);
-      tl.fromTo(e, { strokeDashoffset: n }, { strokeDashoffset: 0, duration: dur, ease, immediateRender: false }, t + i * 0.1);
+      const at = t + i * step;
+      if (typeof e.getTotalLength !== "function") { tl.fromTo(e, { opacity: 0 }, { opacity: 1, duration: dur * 0.6, ease: "power2.out" }, at); return; }
+      let n = 0; try { n = e.getTotalLength(); } catch (err) { n = 0; }
+      if (!(n > 0)) { tl.fromTo(e, { opacity: 0 }, { opacity: 1, duration: dur * 0.6 }, at); return; }
+      e.style.strokeDasharray = n + " " + n; e.style.strokeDashoffset = n; e.style.opacity = 0;
+      tl.set(e, { opacity: 1 }, at);
+      tl.fromTo(e, { strokeDashoffset: n }, { strokeDashoffset: 0, duration: dur, ease, immediateRender: false }, at);
     });
   }
   // Etikett eller symbol som landar (lätt fjädring) och som försvinner.

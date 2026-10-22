@@ -6,7 +6,8 @@ import { fileURLToPath } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 
 export function parseFilm(text) {
-  const t = String(text).replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '');
+  // Avslutande markörer som <<</STYLE>>> tas bort; bara öppnande markörer delar svaret.
+  const t = String(text).replace(/^```[a-z]*\s*/i, '').replace(/```\s*$/, '').replace(/<<<\/[A-Z]+>>>/g, '');
   const sec = (name, next) => { const a = t.indexOf(`<<<${name}>>>`); const b = t.indexOf(`<<<${next}>>>`, a + 1); return a < 0 || b < 0 ? null : t.slice(a + name.length + 6, b).trim(); };
   const style = sec('STYLE', 'BODY'), body = sec('BODY', 'SCRIPT'), script = sec('SCRIPT', 'END');
   if (body === null || script === null) return null;

@@ -70,6 +70,35 @@ jobs:
           name: film-${{ strategy.job-index }}-${{ github.run_attempt }}
           path: |
             films/work/*-tmp/sheet.jpg
+            films/work/*-tmp/poster.jpg
+            films/work/*-tmp/info.json
             films/work/*/index.html
           retention-days: 7
           if-no-files-found: ignore
+
+  # Kontaktark, omslagsbilder och kompositioner sparas på grenen film-sheets, så att filmerna kan granskas i efterhand.
+  sheets:
+    needs: render
+    if: always() && needs.render.result != 'skipped'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          path: sheets
+      - name: Spara på grenen film-sheets
+        env:
+          TOKEN: ${{ github.token }}
+          REPO: ${{ github.repository }}
+          RUN: ${{ github.run_id }}
+        run: |
+          [ -d sheets ] && [ -n "$(ls -A sheets)" ] || { echo "inga kontaktark"; exit 0; }
+          git init -q pub && cd pub
+          git remote add origin "https://x-access-token:${TOKEN}@github.com/${REPO}.git"
+          if git fetch -q --depth 1 origin film-sheets; then git checkout -q -B film-sheets FETCH_HEAD; else git checkout -q --orphan film-sheets; fi
+          d="runs/$(date -u +%Y-%m-%d)/${RUN}"; mkdir -p "$d"; cp -r ../sheets/. "$d"/
+          git add -A
+          git -c user.name="films-bot" -c user.email="41898282+github-actions[bot]@users.noreply.github.com" commit -qm "Kontaktark ${RUN}"
+          git push -q origin film-sheets

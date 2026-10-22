@@ -148,24 +148,23 @@ function extendClips(body, D) {
   return { body: out, changed, from: max };
 }
 
-// Komposition från Claude (strömmad text). Klipps strömmen av (tidsgräns) fortsätter vi från där den slutade.
+// Komposition från Claude (strömmad text). Funktionen på servern har 150 s; blir svaret inte klart räknas det som ett misslyckat försök.
 async function compose(v, words, voiceEnd, D, feedback) {
-  let text = '';
-  for (let part = 1; part <= 3; part++) {
-    const s = Date.now();
-    const r = await post('video_compose', {
-      ...ids, narration: v.narration, plan: v.plan, words: words.map(({ w, start }) => ({ w, start })), voice_end: voiceEnd, duration: D,
-      feedback: feedback || undefined, partial: text || undefined,
-    });
-    if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`video_compose: ${r.status} ${j.code ?? ''}`); }
-    const chunk = await r.text();
-    const e = chunk.indexOf('\u0000ERR:');
-    if (e >= 0) throw new Error(`video_compose: ${chunk.slice(e + 5).trim()}`);
-    text += chunk;
-    await log(`komposition del ${part}: ${chunk.length} tecken på ${((Date.now() - s) / 1000).toFixed(0)} s`);
-    if (text.includes('<<<END>>>')) return text;
-  }
-  throw new Error('kompositionen blev inte klar');
+  const s = Date.now();
+  const r = await post('video_compose', {
+    ...ids, narration: v.narration, plan: v.plan, words: words.map(({ w, start }) => ({ w, start })), voice_end: voiceEnd, duration: D,
+    feedback: feedback || undefined,
+  });
+  if (!r.ok) { const j = await r.json().catch(() => ({})); throw new Error(`video_compose: ${r.status} ${j.code ?? ''} efter ${((Date.now() - s) / 1000).toFixed(0)} s`); }
+  // Läs strömmen bit för bit för att se när första texten kommer (lång tid = Claude tänker eller köar).
+  let text = '', first = 0;
+  const dec = new TextDecoder();
+  for await (const chunk of r.body) { if (!first) first = Date.now(); text += dec.decode(chunk, { stream: true }); }
+  const e = text.indexOf('\u0000ERR:');
+  if (e >= 0) throw new Error(`video_compose: ${text.slice(e + 5).trim()}`);
+  await log(`komposition: ${text.length} tecken på ${((Date.now() - s) / 1000).toFixed(0)} s (första text efter ${first ? ((first - s) / 1000).toFixed(0) : '–'} s)`);
+  if (!text.includes('<<<END>>>')) throw new Error(`kompositionen blev inte klar (${text.length} tecken)`);
+  return text;
 }
 
 async function upload(target, file, type) {
@@ -208,7 +207,12 @@ async function one(quizId, conceptId) {
     let feedback = '', done = null;
     const ATTEMPTS = 3;
     for (let attempt = 1; attempt <= ATTEMPTS && !done; attempt++) {
-      const text = await compose(v, words, voiceEnd, D, feedback);
+      let text;
+      try { text = await compose(v, words, voiceEnd, D, feedback); } catch (e) {
+        await log(String(e.message || e).slice(0, 300), 'warn');
+        feedback = (feedback ? feedback + '\n' : '') + 'Förra svaret hann inte bli klart. Svara direkt utan lång planering och skriv kortare: högst 12 000 tecken.';
+        continue;
+      }
       const film = parseFilm(text);
       if (!film) { feedback = 'Svaret följde inte formatet: <<<STYLE>>>, <<<BODY>>>, <<<SCRIPT>>> och sist <<<END>>>.'; await log('fel format', 'warn'); continue; }
       const grow = extendClips(film.body, D);
@@ -259,8 +263,10 @@ async function one(quizId, conceptId) {
     const posterUrl = fs.existsSync(poster) ? await upload(up.poster, poster, 'image/jpeg') : null;
     await call('video_done', { ...ids, url, vtt: vttUrl, poster: posterUrl, duration: +done.mdur.toFixed(2), narration: v.narration, cues });
     await log(`klar: ${url}`);
+    fs.writeFileSync(path.join(tmp, 'info.json'), JSON.stringify({ ...ids, title: v.title, narration: v.narration, url, ok: true }, null, 1));
   } catch (e) {
     await log(String(e?.message || e).slice(0, 1500), 'error');
+    try { fs.writeFileSync(path.join(tmp, 'info.json'), JSON.stringify({ ...ids, ok: false, error: String(e?.message || e) }, null, 1)); } catch { /* */ }
     try { await call('video_done', { ...ids, error: String(e?.message || e).slice(0, 300) }); } catch { /* */ }
     process.exitCode = 1;
   }
