@@ -52,6 +52,7 @@ const admin = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE
 // deno-lint-ignore no-explicit-any
 const bg = (p: Promise<unknown>) => (globalThis as any).EdgeRuntime?.waitUntil(p);
 
+const VIDEO_ENABLED = Deno.env.get("VIDEO_ENABLED") === "1";
 const MAX_IMAGES = 20, MAX_IMAGE_B64 = 10 * 1024 * 1024, MAX_TOTAL_B64 = 28 * 1024 * 1024, MAX_TEXT = 150_000;
 const MEDIA = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -483,7 +484,9 @@ Deno.serve(async (req) => {
     }
 
     // Förklaringsvideor: bara GitHub Actions (films.yml på main) via OIDC.
+    // Avstängda som standard (kostnad). Slås på med hemligheten VIDEO_ENABLED=1.
     if (typeof action === "string" && action.startsWith("video_") && action !== "video_want") {
+      if (!VIDEO_ENABLED) return action === "video_todo" ? json({ items: [], paused: "disabled" }) : fail(410, "video_disabled");
       if (!(await verifyGithub(req))) return fail(401, "bad_token");
       return await videoAction(admin, action, body, req, json, fail, streamOut);
     }
@@ -500,6 +503,7 @@ Deno.serve(async (req) => {
     if (action === "level") return await makeLevel(who.user.id, body);
     if (action === "grade") return await gradeAnswer(who.user.id, body);
     if (action === "video_want") {
+      if (!VIDEO_ENABLED) return json({ ok: true, disabled: true });
       const q = await visibleQuiz(who.user.id, body.quiz_id);
       return q ? await wantVideo(admin, q, body.concept_id, json) : fail(404, "not_found");
     }

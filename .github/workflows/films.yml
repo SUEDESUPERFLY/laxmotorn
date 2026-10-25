@@ -4,13 +4,9 @@
 name: Förklaringsfilmer
 
 on:
-  # Varje timme: video bara för begrepp som barnen har svarat fel på, högst 3 nya per dygn (se video.ts).
-  schedule:
-    - cron: "17 * * * *"
+  # AVSTÄNGD (2026-10-25): för dyrt i API-krediter. Ingen schemaläggning; servern svarar dessutom
+  # "video_disabled" tills hemligheten VIDEO_ENABLED=1 sätts i Supabase. De enkla ritade filmerna påverkas inte.
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: ["films/**", ".github/workflows/films.yml"]
 
 permissions:
   id-token: write
