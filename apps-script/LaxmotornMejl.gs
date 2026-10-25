@@ -12,7 +12,8 @@
  *     Läxmotorn (Byt barn → Koppla skolmejlen).
  *  3. Kör laxmotornPing() och kontrollera i loggen att barnen och klasskoderna syns.
  *  4. Kör laxmotornSetup(). Den läser mejl från de senaste 30 dagarna och skapar en utlösare
- *     som kör laxmotornSync() varje timme.
+ *     som kör laxmotornSync() en gång per dygn (cirka kl. 06). Bara byta intervall: kör
+ *     laxmotornSchedule().
  */
 
 const LAXMOTORN_API = 'https://qmmannehhntwjpcharmz.supabase.co/functions/v1/laxmotorn';
@@ -42,16 +43,25 @@ function laxmotornPing() {
   Logger.log(JSON.stringify(laxmotornCall_({ action: 'ping' }), null, 2));
 }
 
-/** Engångsinstallation: läs senaste 30 dagarna och starta timvis körning. */
+/** Engångsinstallation: läs senaste 30 dagarna och starta körning en gång per dygn. */
 function laxmotornSetup() {
-  ScriptApp.getProjectTriggers()
-    .filter(function (t) { return t.getHandlerFunction() === 'laxmotornSync'; })
-    .forEach(function (t) { ScriptApp.deleteTrigger(t); });
-  ScriptApp.newTrigger('laxmotornSync').timeBased().everyHours(1).create();
+  laxmotornSchedule();
   laxmotornSync_('newer_than:30d');
 }
 
-/** Körs varje timme. Servern hoppar över mejl som redan är lästa, så det är ofarligt att läsa om. */
+/**
+ * Byter utlösaren till en gång per dygn (cirka kl. 06) utan att läsa om gamla mejl.
+ * Tar bort alla tidigare utlösare för laxmotornSync, oavsett intervall.
+ */
+function laxmotornSchedule() {
+  ScriptApp.getProjectTriggers()
+    .filter(function (t) { return t.getHandlerFunction() === 'laxmotornSync'; })
+    .forEach(function (t) { ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('laxmotornSync').timeBased().everyDays(1).atHour(6).inTimezone('Europe/Stockholm').create();
+  Logger.log('laxmotornSync körs nu en gång per dygn, cirka kl. 06.');
+}
+
+/** Körs en gång per dygn. Servern hoppar över mejl som redan är lästa, så det är ofarligt att läsa om. */
 function laxmotornSync() {
   laxmotornSync_('newer_than:3d');
 }
@@ -87,7 +97,7 @@ function laxmotornSync_(window) {
 
 /**
  * Gör förhörsförslag av alla väntande prov som har underlag (mejlet eller rubrik + årskurs).
- * Körs i slutet av varje synk; misslyckade försöker igen efter en timme.
+ * Körs i slutet av varje synk; misslyckade försöker igen vid nästa synk.
  */
 function laxmotornPrepare() {
   const todo = laxmotornCall_({ action: 'todo' });
