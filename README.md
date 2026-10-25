@@ -8,7 +8,7 @@ Gamifierat läxförhör: fota läxan, Claude gör ett förhör med stationer, me
 - `supabase/migrations/` – databasschema med RLS (hushåll, barn, förhör, framsteg).
 - `supabase/functions/laxmotorn/` – edge function: förhör, avskrift av bilder, förklaringsklipp och import av skolmejl. Promptarna ligger här.
 - `supabase/functions/generate/` – gammal funktion, numera en stängd stub (410).
-- `apps-script/LaxmotornMejl.gs` – Apps Script som skickar Unikum-mejl till Läxmotorn varje timme.
+- `apps-script/LaxmotornMejl.gs` – Apps Script som skickar Unikum-mejl till Läxmotorn en gång per dygn (cirka kl. 06).
 
 ## Skolmejl (Unikum)
 
@@ -69,7 +69,7 @@ Inga hemligheter ligger på GitHub: jobbet loggar in hos servern med GitHubs OID
 
 Kostnad ungefär 0,1–0,3 USD per film (Claude, beroende på antal försök) plus 0,04 USD (röst). Den fasta delen av kompositionsprompten (regler, kit, förebild) cachas hos Anthropic, så att den kostar en tiondel när flera filmer görs i samma körning. Tar Claude-krediterna slut (`no_credit`) pausar kedjan sig själv i tre timmar och begreppet räknas inte som ett misslyckat försök; appen visar då ett tydligt meddelande.
 
-**Schemat** (varje halvtimme) slås på och av i `.github/workflows/films.yml`. Det går varje timme; en körning kan också startas för hand (workflow_dispatch) eller genom en ändring i `films/`. Kontaktark och kompositioner från varje körning sparas på grenen `film-sheets`.
+**Videokedjan är avstängd** (2026-10-25, kostnad): `.github/workflows/films.yml` har inget schema och servern svarar `video_disabled` tills hemligheten `VIDEO_ENABLED=1` sätts. En körning kan fortfarande startas för hand (workflow_dispatch). Kontaktark och kompositioner från varje körning sparas på grenen `film-sheets`.
 
 ## Nivåer: svårare och djupare
 
