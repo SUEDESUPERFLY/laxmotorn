@@ -11,14 +11,19 @@
  *  2. Projektinställningar → Skriptegenskaper → lägg till LAXMOTORN_TOKEN med nyckeln från
  *     Läxmotorn (Byt barn → Koppla skolmejlen).
  *  3. Kör laxmotornPing() och kontrollera i loggen att barnen och klasskoderna syns.
- *  4. Kör laxmotornSetup(). Den läser mejl från de senaste 30 dagarna och skapar en utlösare
- *     som kör laxmotornSync() en gång per dygn (cirka kl. 06). Bara byta intervall: kör
- *     laxmotornSchedule().
+ *  4. Kör laxmotornSetup(). Den läser mejl från de senaste 30 dagarna och skapar två utlösare:
+ *     laxmotornSync() en gång per dygn (cirka kl. 06) och laxmotornNotify() cirka kl. 07.
+ *     Bara byta utlösare: kör laxmotornSchedule().
+ *
+ * Påminnelse: laxmotornNotify() mejlar dig (kontot som äger skriptet) när det finns något nytt
+ * som väntar på en vuxen: förslag att godkänna, prov som behöver underlag eller förslag som
+ * misslyckades. Samma läge påminns bara en gång. Första körningen ber om lov att skicka mejl.
  */
 
 const LAXMOTORN_API = 'https://qmmannehhntwjpcharmz.supabase.co/functions/v1/laxmotorn';
 const LAXMOTORN_FROM = 'from:unikum@unikum.net';
 const LAXMOTORN_LABEL = 'Läxmotorn';
+const LAXMOTORN_APP = 'https://suedesuperfly.github.io/laxmotorn/';
 
 function laxmotornToken_() {
   const t = PropertiesService.getScriptProperties().getProperty('LAXMOTORN_TOKEN');
@@ -43,22 +48,24 @@ function laxmotornPing() {
   Logger.log(JSON.stringify(laxmotornCall_({ action: 'ping' }), null, 2));
 }
 
-/** Engångsinstallation: läs senaste 30 dagarna och starta körning en gång per dygn. */
+/** Engångsinstallation: läs senaste 30 dagarna och starta synk och påminnelse en gång per dygn. */
 function laxmotornSetup() {
   laxmotornSchedule();
   laxmotornSync_('newer_than:30d');
 }
 
 /**
- * Byter utlösaren till en gång per dygn (cirka kl. 06) utan att läsa om gamla mejl.
- * Tar bort alla tidigare utlösare för laxmotornSync, oavsett intervall.
+ * Sätter utlösarna utan att läsa om gamla mejl: laxmotornSync cirka kl. 06 och laxmotornNotify
+ * cirka kl. 07, en gång per dygn. Tar bort tidigare utlösare för båda, oavsett intervall.
  */
 function laxmotornSchedule() {
   ScriptApp.getProjectTriggers()
-    .filter(function (t) { return t.getHandlerFunction() === 'laxmotornSync'; })
+    .filter(function (t) { return ['laxmotornSync', 'laxmotornNotify'].indexOf(t.getHandlerFunction()) >= 0; })
     .forEach(function (t) { ScriptApp.deleteTrigger(t); });
   ScriptApp.newTrigger('laxmotornSync').timeBased().everyDays(1).atHour(6).inTimezone('Europe/Stockholm').create();
-  Logger.log('laxmotornSync körs nu en gång per dygn, cirka kl. 06.');
+  // En timme senare, så att förslagen från morgonens synk hunnit bli klara.
+  ScriptApp.newTrigger('laxmotornNotify').timeBased().everyDays(1).atHour(7).inTimezone('Europe/Stockholm').create();
+  Logger.log('laxmotornSync körs en gång per dygn cirka kl. 06, laxmotornNotify cirka kl. 07.');
 }
 
 /** Körs en gång per dygn. Servern hoppar över mejl som redan är lästa, så det är ofarligt att läsa om. */
@@ -108,4 +115,46 @@ function laxmotornPrepare() {
     Logger.log((r.status < 300 ? 'Förslag startat: ' : 'Kunde inte starta: ') + it.title + (r.status < 300 ? '' : ' ' + JSON.stringify(r.body)));
   });
   Logger.log(items.length + ' förslag görs nu i bakgrunden (1–2 minuter styck).');
+}
+
+/**
+ * Mejlar en påminnelse när något nytt väntar på en vuxen. Skickar inget om läget är oförändrat
+ * sedan förra påminnelsen, så du får inte samma mejl varje dag.
+ */
+function laxmotornNotify() {
+  const r = laxmotornCall_({ action: 'waiting' });
+  if (r.status !== 200) { Logger.log('Kunde inte hämta väntande prov: ' + JSON.stringify(r.body)); return; }
+  const items = r.body.items || [];
+  const props = PropertiesService.getScriptProperties();
+  let before = {};
+  try { before = JSON.parse(props.getProperty('LAXMOTORN_NOTIFIED') || '{}'); } catch (e) { before = {}; }
+  const now = {};
+  items.forEach(function (it) { now[it.id] = it.state; });
+  props.setProperty('LAXMOTORN_NOTIFIED', JSON.stringify(now));
+  const fresh = items.filter(function (it) { return before[it.id] !== it.state; });
+  if (!fresh.length) { Logger.log('Inget nytt att påminna om (' + items.length + ' väntar sedan tidigare).'); return; }
+
+  const line = function (it) {
+    const who = it.child ? it.child + ': ' : '';
+    const when = it.test_date ? ' (prov ' + Number(it.test_date.slice(8, 10)) + '/' + Number(it.test_date.slice(5, 7)) + ')' : '';
+    const isNew = before[it.id] !== it.state ? '  [ny]' : '';
+    return '- ' + who + it.title + when + (it.missing ? ' – saknas: ' + it.missing : '') + isNew;
+  };
+  const groups = [
+    ['draft', 'Förslag att granska och godkänna'],
+    ['need', 'Behöver underlag (fota eller ladda upp materialet)'],
+    ['failed', 'Förslaget misslyckades, skapa förhöret själv'],
+  ];
+  const parts = [];
+  groups.forEach(function (g) {
+    const list = items.filter(function (it) { return it.state === g[0]; });
+    if (list.length) parts.push(g[1] + ':\n' + list.map(line).join('\n'));
+  });
+  const drafts = items.filter(function (it) { return it.state === 'draft'; }).length;
+  const subject = drafts
+    ? 'Läxmotorn: ' + drafts + ' förslag väntar på godkännande'
+    : 'Läxmotorn: ' + items.length + ' prov behöver din hjälp';
+  const body = parts.join('\n\n') + '\n\nÖppna Läxmotorn: ' + LAXMOTORN_APP + '\n\nInget syns för barnen förrän du har godkänt det.';
+  MailApp.sendEmail(Session.getEffectiveUser().getEmail(), subject, body);
+  Logger.log('Påminnelse skickad: ' + subject);
 }

@@ -8,7 +8,7 @@ Gamifierat läxförhör: fota läxan, Claude gör ett förhör med stationer, me
 - `supabase/migrations/` – databasschema med RLS (hushåll, barn, förhör, framsteg).
 - `supabase/functions/laxmotorn/` – edge function: förhör, avskrift av bilder, förklaringsklipp och import av skolmejl. Promptarna ligger här.
 - `supabase/functions/generate/` – gammal funktion, numera en stängd stub (410).
-- `apps-script/LaxmotornMejl.gs` – Apps Script som skickar Unikum-mejl till Läxmotorn en gång per dygn (cirka kl. 06).
+- `apps-script/LaxmotornMejl.gs` – Apps Script som skickar Unikum-mejl till Läxmotorn en gång per dygn (cirka kl. 06) och mejlar en påminnelse när något väntar på en vuxen (cirka kl. 07).
 
 ## Uppläsning
 
@@ -20,9 +20,13 @@ Rösten är webbläsarens inbyggda talsyntes: gratis, ingen server och inga API-
 
 1. Barnen får klasskoder i appen (Byt barn → Koppla skolmejlen), t.ex. `RG16C`. Koden matchas mot ämnesraden.
 2. Apps Script-filen läggs i ett Apps Script-projekt med skriptegenskapen `LAXMOTORN_TOKEN` (nyckeln visas i samma vy).
-3. `laxmotornPing()` testar kopplingen, `laxmotornSetup()` läser senaste 30 dagarna och startar timvis körning.
+3. `laxmotornPing()` testar kopplingen, `laxmotornSetup()` läser senaste 30 dagarna och startar två körningar per dygn: synken cirka kl. 06 och påminnelsen cirka kl. 07. Har du redan installerat skriptet: klistra in den nya filen och kör `laxmotornSchedule()` en gång. Första gången ber Google om lov att skicka mejl.
 
 Prov och läxförhör hamnar under "Från skolan" hos rätt barn. Räcker mejlet till ett förhör görs ett förslag i bakgrunden; annars visas vad som saknas. Inget syns för barnen förrän en vuxen godkänt det.
+
+Mejlen tolkas av den snabba modellen (`CLAUDE_FAST_MODEL`), eftersom uppgiften bara är att hitta prov, datum och ämne.
+
+**Påminnelse.** `laxmotornNotify()` mejlar kontot som äger skriptet när något nytt väntar: förslag att godkänna, prov som behöver underlag eller förslag som misslyckades. Samma läge påminns bara en gång. Länken i mejlet är `LAXMOTORN_APP` överst i skriptet; ändra den om appen ligger på en annan adress.
 
 ## Konton
 
@@ -35,7 +39,7 @@ Prov och läxförhör hamnar under "Från skolan" hos rätt barn. Räcker mejlet
 
 När ett barn svarar fel spelas en kort film (10–25 s) om begreppet: en lugn röst förklarar medan en ritning växer fram på rutat papper, del för del, exakt när rösten säger ordet. En penna ritar och skriver, som när en lärare förklarar vid tavlan. Efter filmen kommer en liknande fråga i slutet av rundan.
 
-**Så görs filmerna.** Första gången en läxa öppnas (eller ett förslag granskas) ber appen servern om filmer (`films`). Claude skriver manus och en ritplan per begrepp: steg med ett ord ur manuset (`cue`) och element på en duk 800 × 500 (figurer ur ett eget bibliotek, pilar, lådor, text, meningar med inramade ord, tal som räknas upp, markeringar, fria former). Allt ritas i kod i webbläsaren, så text och fakta blir exakta. Saknas film ännu ritas en enklare film av klippets bildtyp, så filmen spelas alltid.
+**Så görs filmerna.** Filmer görs bara för begrepp som ett barn har svarat fel på: när rundan är slut beställer appen filmer till de missade begreppen som saknar film (`films` med `concept_ids`, högst fyra åt gången). Begrepp som aldrig missas kostar alltså inget. Claude skriver manus och en ritplan per begrepp: steg med ett ord ur manuset (`cue`) och element på en duk 800 × 500 (figurer ur ett eget bibliotek, pilar, lådor, text, meningar med inramade ord, tal som räknas upp, markeringar, fria former). Allt ritas i kod i webbläsaren, så text och fakta blir exakta. Saknas film ännu ritas en enklare film av klippets bildtyp, så filmen spelas alltid.
 
 **Forskningsgrund.** Utformningen följer forskningen om multimedialärande:
 
@@ -87,7 +91,7 @@ När barnet kan läxan blir det svårare, inom samma område och årskurs:
 | 2 · Fördjupning | silver på alla stationer och klarat slutprov | varför och hur, nya exempel, missuppfattningar ("Lisa säger att …") | 1,5× |
 | 3 · Expert | silver på alla stationer i Fördjupning | "vad händer om", koppla ihop, resonera i flera steg | 2× |
 
-Nästa nivå görs av Claude i bakgrunden redan när barnet har brons på nivån före, så den brukar vara klar när den öppnas. Den sparas i `content.levels` och görs bara en gång per läxa.
+Nästa nivå görs av Claude i bakgrunden när barnet har silver på nivån före. Läxor där barnet stannar på en nivå kostar då inget extra; när nivån öppnas kan det ta någon minut innan den är klar. Den sparas i `content.levels` och görs bara en gång per läxa.
 
 Nivå 2 och 3 har **förklaringsfrågor**: barnet skriver en till tre meningar och Claude (snabb modell, `CLAUDE_FAST_MODEL`) bedömer svaret mot nyckelpunkter (ja / delvis / nej) och ger kort återkoppling, följt av ett modellsvar. Går rättningen inte att nå jämför barnet själv med modellsvaret. Barnkonton får anropa `level` och `grade`, men bara för läxor de själva ser.
 
@@ -99,6 +103,18 @@ Läxmotorn går att installera på hemskärmen och öppnas då i helskärm utan 
 - **Android:** öppna adressen i Chrome → menyn (⋮) → Installera app (eller Lägg till på startskärmen).
 
 Filerna: `src/manifest.json`, `src/sw.js` och ikonerna i `src/icons/` (`icon.svg` är originalet; PNG-filerna är gjorda av den). Service workern rör bara appens egna filer: sidan hämtas alltid från nätet först, och anrop till Supabase och CDN:er går aldrig via cachen. Ändras ikonerna eller manifestet: byt `VERSION` i `sw.js`.
+
+## Repetition och provdatum
+
+Varje fråga ligger i en låda (Leitner). Rätt svar flyttar den till nästa låda, och nästa repetition kommer efter 1, 2, 4, 7 och 14 dagar. Provberedd räknar en fråga som helt klar när den har gått rätt tre olika dagar.
+
+Provdatumet styr pauserna, eftersom den bästa pausen beror på hur långt det är till provet ([Cepeda m.fl. 2008](https://eric.ed.gov/?id=ED505660)):
+
+- Ingen repetition schemaläggs efter dagen före provet (men aldrig tidigare än dagen efter).
+- Kvällen före och på provdagen är allt som inte sitter helt (låda 1–2) redo att repeteras, högst två gånger per fråga och dag. Den extra övningen ger halva XP och flyttar inte frågan till nästa låda, så Provberedd ändras inte av den.
+
+Läxor vars provdatum har passerat ligger under **Tidigare prov** i biblioteket. Dagens repetition tar i första hand frågor från kommande läxor; tidigare prov får högst tre platser per runda, så att de kommer tillbaka glest.
+
 
 ## Publicering
 
@@ -124,5 +140,5 @@ Hemligheter för edge function:
 | `ANTHROPIC_API_KEY` | Anthropic API-nyckel |
 | `ALLOWED_EMAILS` | kommaseparerade e-postadresser som får skapa förhör |
 | `CLAUDE_MODEL` | valfri, standard `claude-sonnet-5-5` |
-| `CLAUDE_FAST_MODEL` | valfri, modell för rättning av förklaringsfrågor, standard `claude-haiku-5-5` |
+| `CLAUDE_FAST_MODEL` | valfri, modell för rättning av förklaringsfrågor och tolkning av skolmejl, standard `claude-haiku-5-5` |
 | `CLAUDE_EFFORT` | valfri, `low`/`medium`/`high`, standard `medium` (gratisplanen stoppar funktioner efter 150 s) |

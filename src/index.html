@@ -807,7 +807,7 @@ async function flush(){
     if(!failShown){failShown=true;toast('Kunde inte spara just nu. Försöker igen.');clearTimeout(failT);failT=setTimeout(()=>{failShown=false},60000)}}
   else{const k=KIDS.find(x=>x.id===kid);if(k&&g)k.stats=JSON.parse(JSON.stringify(G))}
 }
-addEventListener('pagehide',()=>{flush()});
+addEventListener('pagehide',()=>{flush();if(typeof flushFilms==='function')flushFilms()});
 document.addEventListener('visibilitychange',()=>{if(document.hidden)flush()});
 function normP(raw){
   const p=Object.assign({q:{},medals:{},played:{},known:{},goals:[],seen:[],bossBest:0,repDone:false},raw&&typeof raw==='object'?JSON.parse(JSON.stringify(raw)):{});
@@ -879,8 +879,9 @@ const levelSt=(qz,n)=>n<=1?(qz.stations||[]):((Array.isArray(qz.levels)?qz.level
 const allMed=(sts,p,m)=>sts.length>0&&sts.every(s=>(p.medals[s.id]||0)>=m);
 // Nivå 2 öppnar med silver på alla stationer och klarat slutprov; nivå 3 med silver på hela nivå 2.
 function lvOpen(qz,p,n){if(n<=1)return true;if(n===2)return allMed(qz.stations||[],p,2)&&p.bossBest>0;return lvOpen(qz,p,n-1)&&allMed(levelSt(qz,n-1),p,2)}
-// Nästa nivå förbereds i förväg, när barnet har brons på nivån före.
-const lvSoon=(qz,p,n)=>allMed(levelSt(qz,n-1),p,1);
+// Nästa nivå förbereds när barnet har silver på nivån före (inte redan vid brons), så att läxor
+// där barnet stannar på en nivå inte kostar något. Det kan ta någon minut när nivån öppnas.
+const lvSoon=(qz,p,n)=>allMed(levelSt(qz,n-1),p,2);
 const allSt=qz=>[...levelSt(qz,1),...levelSt(qz,2),...levelSt(qz,3)];
 const stById=(qz,id)=>allSt(qz).find(s=>s.id===id);
 const stQ=sts=>{const out=[];sts.forEach(st=>st.qs.forEach((q,i)=>out.push({q,qid:qidOf(st,i),st})));return out};
@@ -888,19 +889,34 @@ const baseQ=qz=>stQ(qz.stations||[]);
 const allQ=qz=>stQ(allSt(qz));
 function readiness(qz,p){const a=baseQ(qz);return a.length?a.reduce((s,x)=>s+READY[Math.min(qState(p,x.qid).box,3)],0)/a.length:0}
 const misses=(qz,p)=>allQ(qz).filter(x=>{const s=qState(p,x.qid);return s.box===0&&s.w>0});
-const dues=(qz,p,now=Date.now())=>allQ(qz).filter(x=>{const s=qState(p,x.qid);return s.box>=1&&s.due<=now});
+/* Provdatum styr repetitionen. Den bästa pausen beror på hur långt det är till provet (Cepeda m.fl. 2008):
+   - ingen repetition schemaläggs efter dagen före provet (men aldrig tidigare än i morgon),
+   - kvällen före och på provdagen blir allt som inte sitter helt (låda 1–2) redo, högst två gånger per fråga och dag.
+   Den extra övningen inför provet flyttar inte frågan till nästa låda, så Provberedd visar fortfarande vad som sitter över flera dagar. */
+const quizById=id=>Store.remote.find(x=>x.id===id)||(QZ&&QZ.id===id?QZ:null);
+function testStart(qz){const d=qz&&parseDate(qz.testDate);return d?d.getTime():null}
+function testIn(qz,now=Date.now()){const t=testStart(qz);if(t===null)return null;const n=Math.round((t-dayStart(now))/DAY);return n>=0?n:null}
+const nearTest=(qz,now=Date.now())=>{const n=testIn(qz,now);return n===0||n===1};
+function nextDueAt(qz,box,now){
+  let due=dayStart(now)+INTERVAL[box]*DAY;const t=testStart(qz);
+  if(t!==null&&t>dayStart(now))due=Math.min(due,Math.max(t-DAY,dayStart(now)+DAY));
+  return due;
+}
+const cramDue=(qz,s,now)=>nearTest(qz,now)&&s.box>=1&&s.box<3&&!(s.day===dayKey(now)&&s.dn>=2);
+const dues=(qz,p,now=Date.now())=>allQ(qz).filter(x=>{const s=qState(p,x.qid);return s.box>=1&&(s.due<=now||cramDue(qz,s,now))});
 function nextDue(qz,p){let m=Infinity;allQ(qz).forEach(x=>{const s=qState(p,x.qid);if(s.box>=1&&s.due<m)m=s.due});return m===Infinity?null:m}
 function dueLabel(t){const n=Math.round((dayStart(t)-dayStart())/DAY);return n<=0?'nu':n===1?'i morgon':`om ${n} dagar`}
 function grade(ref,q,ok,o){
-  const p=getP(ref.qz),s=p.q[ref.qid]||(p.q[ref.qid]={box:0,r:0,w:0,last:0,due:0,day:'',dn:0});
+  const p=getP(ref.qz),s=p.q[ref.qid]||(p.q[ref.qid]={box:0,r:0,w:0,last:0,due:0,day:'',dn:0}),qz=quizById(ref.qz);
   const now=Date.now(),td=dayKey(now);if(s.day!==td){s.day=td;s.dn=0}
   s.last=now;let kind='wrong',mult=0;
   if(!ok){s.w++;if(!o.second){s.box=0;s.due=0}}
   else if(o.second){kind='second';mult=.3}
   else{
     s.r++;
-    if(s.box===0){kind=s.w>0?'fix':'new';mult=kind==='fix'?1.5:1;s.box=1;s.due=dayStart(now)+INTERVAL[1]*DAY;if(kind==='fix')G.fixed++}
-    else if(now>=s.due){kind='review';mult=2;s.box=Math.min(5,s.box+1);s.due=dayStart(now)+INTERVAL[s.box]*DAY;G.reviews++}
+    if(s.box===0){kind=s.w>0?'fix':'new';mult=kind==='fix'?1.5:1;s.box=1;s.due=nextDueAt(qz,1,now);if(kind==='fix')G.fixed++}
+    else if(now>=s.due){kind='review';mult=2;s.box=Math.min(5,s.box+1);s.due=nextDueAt(qz,s.box,now);G.reviews++}
+    else if(cramDue(qz,s,now)){kind='cram';mult=.5}   // inför provet: övning, lådan står kvar
     else{kind='early';mult=s.dn<2?.2:0}
     s.dn++;
   }
@@ -940,6 +956,7 @@ function checkGoals(qz){const p=getP(qz.id);goalsFor(qz,p).forEach(g=>{if(g.cur>
 function nextStep(qz,p){
   const m=misses(qz,p).length,d=dues(qz,p).length,st=qz.stations||[];
   if(m)return {t:`Fixa ${m===1?'din miss':`dina ${m} missar`}`,why:'Det du svarade fel på fastnar bäst när du övar på det igen.',act:'miss'};
+  if(d&&nearTest(qz))return {t:`Inför provet: repetera ${d} ${d===1?'fråga':'frågor'}`,why:`Provet är ${testIn(qz)===0?'idag':'i morgon'}. Plocka fram det som inte sitter helt en gång till.`,act:'rep'};
   if(d)return {t:`Repetera ${d} ${d===1?'fråga':'frågor'}`,why:'Att plocka fram svaret efter en paus gör att det sitter längre.',act:'rep'};
   const b=st.findIndex(s=>!(p.medals[s.id]>=1));
   if(b>=0)return {t:`Spela ${st[b].name}`,why:'Ta en station i taget. Brons får du när alla frågor har gått rätt.',act:'st',sid:st[b].id};
@@ -1046,25 +1063,16 @@ async function refreshQuiz(id){
   if(DRAFT&&DRAFT.fromId===id&&q.status==='draft'){DRAFT.concepts=q.concepts||DRAFT.concepts}
   return q;
 }
-// Ritade förklaringsfilmer görs i bakgrunden, några begrepp åt gången, första gången läxan öppnas.
-const FILMREQ={};
-function ensureFilms(qz){
-  if(!qz||!qz.id||!(qz.concepts||[]).some(k=>!k.film)||FILMREQ[qz.id])return;
-  const id=qz.id;FILMREQ[id]=true;
-  (async()=>{
-    let cool=0;
-    try{
-      for(let round=0;round<5;round++){
-        const r=await API.json({action:'films',quiz_id:id},{});
-        if(r.error)cool=10*60000;
-        if(r.ready||r.error)break;
-        let q=null;
-        for(let k=0;k<24;k++){await new Promise(res=>setTimeout(res,k?8000:5000));q=await refreshQuiz(id);if(!q||!(q.filmgen&&q.filmgen.at))break}
-        if(!q||!(q.concepts||[]).some(k=>!k.film))break;
-      }
-    }catch(e){cool=2*60000}
-    finally{if(cool)setTimeout(()=>{delete FILMREQ[id]},cool);else delete FILMREQ[id]}
-  })();
+// Ritade förklaringsfilmer görs bara för begrepp som barnet har svarat fel på (sparar API-anrop).
+// Beställningen skickas när rundan är slut. Tills filmen finns spelas den enklare filmen av klippets bildtyp.
+const FILMWANT=new Map();
+function wantFilm(qz,k){if(!qz||!qz.id||!k||!k.id||k.film)return;if(!FILMWANT.has(qz.id))FILMWANT.set(qz.id,new Set());FILMWANT.get(qz.id).add(k.id)}
+function flushFilms(){
+  for(const [id,set] of [...FILMWANT]){
+    FILMWANT.delete(id);const ids=[...set];if(!ids.length)continue;
+    // busy: servern gör redan filmer till läxan; begreppen beställs igen nästa gång.
+    API.json({action:'films',quiz_id:id,concept_ids:ids},{}).then(r=>{if(r&&r.busy){const s=FILMWANT.get(id)||new Set();ids.forEach(x=>s.add(x));FILMWANT.set(id,s)}}).catch(()=>{});
+  }
 }
 // Beställer nästa nivå när den närmar sig och hämtar den när den är klar.
 function ensureLevels(qz,p){
@@ -1091,6 +1099,15 @@ function ensureLevels(qz,p){
   }
 }
 
+const isPast=q=>{const n=daysTo(q.testDate);return n!==null&&n<0};
+// Dagens repetition: kommande läxor först. Tidigare prov får högst 3 platser, så att de kommer tillbaka glest.
+function dailyPool(){
+  const mk=(qz,x)=>({q:x.q,ref:{qz:qz.id,qid:x.qid},qzObj:qz}),cur=[],old=[];
+  Store.all().forEach(qz=>dues(qz,getP(qz.id)).forEach(x=>(isPast(qz)?old:cur).push(mk(qz,x))));
+  const o=shuffle(old).slice(0,3);
+  return shuffle([...shuffle(cur).slice(0,15-o.length),...o]);
+}
+let pastOpen=LS.get('laxmotorn:pastOpen',false);
 function sortQuizzes(list){
   const up=list.filter(q=>{const n=daysTo(q.testDate);return n!==null&&n>=0}).sort((a,b)=>parseDate(a.testDate)-parseDate(b.testDate));
   const rest=list.filter(q=>!up.includes(q)).sort((a,b)=>(b.createdAt||0)-(a.createdAt||0));
@@ -1104,16 +1121,13 @@ function renderLib(){
   const nb=$('#newBtn');nb.innerHTML=svg('plus')+'Ny läxa';
   nb.hidden=!booted||!sample||ROLE==='child';
   $('#libNote').textContent='';
-  const list=sortQuizzes(Store.all());
-  let dn=0,dq=0;list.forEach(qz=>{const c=dues(qz,getP(qz.id)).length;if(c){dn+=c;dq++}});
-  $('#dailyBox').innerHTML=dn?`<div class="daily">${svg('cycle')}<div><b>Dagens repetition</b><small>${Math.min(dn,15)} ${Math.min(dn,15)===1?'fråga':'frågor'} från ${dq} ${dq===1?'läxa':'läxor'} är redo att repeteras · 2× XP</small></div><button class="btn" id="dailyBtn">Kör</button></div>`:'';
+  const list=sortQuizzes(Store.all()),cur=list.filter(q=>!isPast(q)),past=list.filter(isPast);
+  const pool=dailyPool(),dn=pool.length,dq=new Set(pool.map(x=>x.ref.qz)).size,near=cur.some(q=>nearTest(q)&&dues(q,getP(q.id)).length);
+  $('#dailyBox').innerHTML=dn?`<div class="daily">${svg('cycle')}<div><b>Dagens repetition</b><small>${dn} ${dn===1?'fråga':'frågor'} från ${dq} ${dq===1?'läxa':'läxor'} är redo att repeteras${near?' · med extra övning inför provet':' · 2× XP'}</small></div><button class="btn" id="dailyBtn">Kör</button></div>`:'';
   const box=$('#libList');
-  if(!list.length){
-    box.innerHTML=Store.ready?`<div class="empty">Inga läxor än.${sample?' Tryck på Ny läxa och lägg till bilder eller ett dokument.':''}</div>`:'<div class="empty">Hämtar läxor…</div>';
-  }else{
-    box.innerHTML=list.map(q=>{
+  const card=q=>{
       const subj=SUBJ[q.subject]?q.subject:'annat',nq=(q.stations||[]).reduce((a,s)=>a+s.qs.length,0);
-      const pp=getP(q.id),rd=Math.round(readiness(q,pp)*100),n=daysTo(q.testDate),past=n!==null&&n<0;
+      const pp=getP(q.id),rd=Math.round(readiness(q,pp)*100),past=isPast(q);
       const canDel=ROLE!=='child';
       const conf=pendingDel===q.id?`<div class="qz-confirm"><span>Ta bort <b>${esc(q.title)}</b> för hela familjen?</span><button class="btn danger small" data-yes="${esc(q.id)}">Ta bort</button><button class="btn ghost small" data-no="1">Avbryt</button></div>`:'';
       return `<div class="qz-wrap"><div class="qz ${past?'past':''}" data-subj="${subj}">
@@ -1128,7 +1142,13 @@ function renderLib(){
         </button>
         ${canDel?`<span class="qz-side"><button class="icon-btn" data-del="${esc(q.id)}" aria-label="Ta bort ${esc(q.title)}">${svg('trash')}</button></span>`:''}
       </div>${conf}</div>`;
-    }).join('');
+  };
+  if(!list.length){
+    box.innerHTML=Store.ready?`<div class="empty">Inga läxor än.${sample?' Tryck på Ny läxa och lägg till bilder eller ett dokument.':''}</div>`:'<div class="empty">Hämtar läxor…</div>';
+  }else{
+    box.innerHTML=(cur.length?cur.map(card).join(''):'<div class="empty">Inga kommande läxor just nu.</div>')
+      +(past.length?`<details class="adult past-tests" id="pastBox" ${pastOpen?'open':''}><summary>Tidigare prov (${past.length})</summary><p class="hint" style="margin:8px 0 10px">Några frågor härifrån kommer tillbaka i Dagens repetition då och då, så att det sitter kvar till terminens slut.</p><div class="lib-list">${past.map(card).join('')}</div></details>`:'');
+    const pb=$('#pastBox');if(pb)pb.addEventListener('toggle',()=>{pastOpen=pb.open;LS.set('laxmotorn:pastOpen',pastOpen)});
   }
   $('#badges').innerHTML=BADGES.map(b=>`<div class="badge ${G.badges.includes(b.id)?'':'locked'}"><span class="b-ic">${b.ic}</span><div><b>${b.n}</b><span>${b.d}</span></div></div>`).join('');
   $('#libWhere').textContent=booted?'Läxorna delas av hela familjen. XP, medaljer och märken sparas per barn.':'';
@@ -1454,7 +1474,6 @@ function ansText(q){
 }
 function renderReview(){
   const d=DRAFT,nq=d.stations.reduce((a,s)=>a+s.qs.length,0);
-  if(d.fromId&&ROLE!=='child')ensureFilms({id:d.fromId,concepts:d.concepts});
   $('#review').dataset.subj=d.subject;
   $('#revBox').innerHTML=`<h2>Kolla förhöret</h2>
    <label class="field" for="revTitle"><span>Namn</span><input class="inp" id="revTitle" maxlength="60" value="${esc(d.title)}"></label>
@@ -1535,7 +1554,7 @@ function renderHome(){
   const node=s=>{const md=P.medals[s.id]||0,ms=s.qs.filter((_,k)=>{const x=qState(P,qidOf(s,k));return x.box===0&&x.w>0}).length,ex=s.qs.filter(q=>q.t==='explain').length;
     return `<button class="node ${md?'done':''}" data-sid="${esc(s.id)}"><span class="dot">${svg(s.icon)}</span><span class="card-n"><span><h3>${esc(s.name)}</h3><small>${s.sub?esc(s.sub)+' · ':''}${s.qs.length} frågor${ex?` · ${ex} att förklara`:''}${ms?` · <span class="miss-tag">${ms} ${ms===1?'miss':'missar'}</span>`:''}</small></span><span class="medal m${md}" aria-label="${md?MEDAL[md]:'Ingen medalj än'}">${md?MEDAL[md]:'–'}</span></span></button>`};
   $('#trail').innerHTML=STATIONS.map(node).join('');
-  ensureLevels(QZ,P);ensureFilms(QZ);
+  ensureLevels(QZ,P);
   $('#lvBox').innerHTML=[2,3].map(n=>{
     const ls=levelSt(QZ,n),open=lvOpen(QZ,P,n),req=LVREQ[QZ.id+':'+n];
     if(n===3&&!levelSt(QZ,2).length)return '';
@@ -2119,7 +2138,7 @@ function startRound(mode,opt={}){
   else if(mode==='miss')items=shuffle(misses(QZ,P)).slice(0,12).map(x=>mk(QZ,x));
   else if(mode==='rep')items=shuffle(dues(QZ,P)).slice(0,15).map(x=>mk(QZ,x));
   else if(mode==='boss')items=interleave(baseQ(QZ).filter(x=>x.q.t!=='explain')).slice(0,15).map(x=>mk(QZ,x));
-  else if(mode==='daily'){const pool=[];Store.all().forEach(qz=>dues(qz,getP(qz.id)).forEach(x=>pool.push(mk(qz,x))));items=shuffle(pool).slice(0,15)}
+  else if(mode==='daily')items=dailyPool();
   if(!items.length){toast('Inga frågor att köra här just nu');return}
   R={mode,sid:opt.sid,boss:mode==='boss',items,i:0,firstN:items.length,correct:0,streak:0,lives:3,joker:false,jokerNow:false,xp:0,res:[],
      kinds:{},missed:[],flawless:true,readyBefore:QZ&&mode!=='daily'?readiness(QZ,P):null,xpStart:G.xp,
@@ -2266,8 +2285,8 @@ function timeout(){
 }
 function renderStreak(){const c=$('#streak');const m=Math.min(R.streak,5)*10;c.textContent=R.streak?`${R.streak} i rad${m?` · +${m} %`:''}`:'0 i rad';c.classList.toggle('hot',R.streak>=3)}
 const CHEERS=['Rätt!','Snyggt!','Klockrent!','Precis!'];
-const KIND_HEAD={fix:'Fixat!',review:'Den satt kvar!',early:'Rätt!',second:'Bra, nu sitter den bättre'};
-const KIND_SUB={fix:'Du hade fel på den här förut. 1,5× XP.',review:'Repetition efter en paus ger dubbla XP.',early:'Den här kan du redan idag. Mest XP ger nya frågor, missar och repetitioner.'};
+const KIND_HEAD={fix:'Fixat!',review:'Den satt kvar!',early:'Rätt!',cram:'Rätt!',second:'Bra, nu sitter den bättre'};
+const KIND_SUB={fix:'Du hade fel på den här förut. 1,5× XP.',review:'Repetition efter en paus ger dubbla XP.',early:'Den här kan du redan idag. Mest XP ger nya frågor, missar och repetitioner.',cram:'Inför provet: bra att plocka fram det en gång till.'};
 function answer(ok,extra='',o={}){
   const it=R.items[R.i],q=it.q;R.answered=true;clearInterval(R.tick);R.res[R.i]=ok;
   const g=grade(it.ref,q,ok,{second:!!it.second,joker:R.jokerNow});R.jokerNow=false;
@@ -2286,7 +2305,7 @@ function answer(ok,extra='',o={}){
   if(G.fixed>=10)award('fix10');if(G.reviews>=25)award('rev25');
   // Fel svar: kommer tillbaka i slutet, helst som en annan fråga om samma begrepp.
   const qzo=it.qzObj||QZ,kc=!ok?conceptOf(qzo,q):null;
-  if(kc)wantVideo(qzo,kc);
+  if(kc){wantVideo(qzo,kc);wantFilm(qzo,kc)}
   const requeue=!ok&&!it.second&&!R.boss;let sib=null;
   if(requeue){
     // Syskonfrågor som redan väntar längre fram i rundan räknas inte; då kommer samma fråga igen.
@@ -2313,7 +2332,7 @@ function answer(ok,extra='',o={}){
   }
 }
 function finish(){
-  clearInterval(R.tick);
+  clearInterval(R.tick);flushFilms();
   const n=R.firstN,c=R.correct,pct=c/n,touched=[...new Set(R.items.map(x=>x.qzObj))];
   let medal=null,bossWin=false;
   const rst=R.mode==='station'?stById(QZ,R.sid):null;
@@ -2330,7 +2349,7 @@ function finish(){
   else if(R.mode==='rep'||R.mode==='daily'){title=`${c} av ${n} satt kvar`;msg=pct>=.8?'Bra minne! Nästa repetition kommer om några dagar.':'Det du glömt blev missar som du kan fixa.'}
   else{title=bossWin?'Provklar!':'Slut på liv';msg=bossWin?`Du klarade slutprovet med ${R.lives} liv kvar.`:'Fixa dina missar och försök igen.'}
   const ra=R.readyBefore!==null?readiness(QZ,getP(QZ.id)):null;
-  const kinds=[['new','Nya'],['fix','Fixade'],['review','Repeterade'],['early','Redan kunde'],['second','Andra chansen']].filter(([k])=>R.kinds[k]).map(([k,l])=>`<span>${l} ${R.kinds[k]}</span>`).join('');
+  const kinds=[['new','Nya'],['fix','Fixade'],['review','Repeterade'],['cram','Inför provet'],['early','Redan kunde'],['second','Andra chansen']].filter(([k])=>R.kinds[k]).map(([k,l])=>`<span>${l} ${R.kinds[k]}</span>`).join('');
   const nb=newBadges.map(id=>BADGES.find(b=>b.id===id).n);
   const mdNow=rst?(P.medals[rst.id]||0):0;
   $('#resBox').innerHTML=`<h2>${esc(title)}</h2>
@@ -2349,7 +2368,7 @@ function finish(){
   $('#home2').onclick=()=>{if(mode==='daily'){renderLib();show('lib')}else{renderHome();show('home')}};
   show('result');if((medal&&medal.to>medal.from)||bossWin)confetti(medal&&medal.to===3?140:90);
 }
-$('#quitBtn').onclick=()=>{clearInterval(R&&R.tick);if(R&&R.mode==='daily'||!QZ){renderLib();show('lib')}else{renderHome();show('home')}};
+$('#quitBtn').onclick=()=>{clearInterval(R&&R.tick);flushFilms();if(R&&R.mode==='daily'||!QZ){renderLib();show('lib')}else{renderHome();show('home')}};
 
 /* ---------- Förklara-kort ---------- */
 function fmtAns(a){
