@@ -703,34 +703,71 @@ const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}
 const Say=(()=>{
   const ok=!!(window.speechSynthesis&&window.SpeechSynthesisUtterance);
   const PREF=/natural|neural|online|google|premium|enhanced|sofie|mattias|alva|klara/i;
-  const SV=/[åäöÅÄÖ]|\b(vad|vilken|vilket|vilka|vem|varför|hur|när|och|är|betyder|översätt|ordet|meningen|skriv|välj|sant|falskt|rätt|svar|alternativen|engelska|svenska)\b/i;
-  let tok=0,cur=null;
+  // Språkkänning: svenska ord mot ord i läxans främmande språk. Ä och ö finns även i tyska och räknas inte där.
+  const W=s=>new RegExp('(^|[^\\p{L}])('+s+')(?=[^\\p{L}]|$)','giu');
+  const SVW=W('vad|vilken|vilket|vilka|vem|varför|hur|när|var|och|är|betyder|betyda|översätt|översätta|ordet|orden|meningen|skriv|välj|sant|falskt|rätt|fel|svar|svaret|alternativen|ordning|engelska|svenska|tyska|spanska|franska|det|jag|han|hon|vi|ni|som|på|av|för|med|inte|till|har|kan|ska|eller|också|bra|säger|heter|frågan');
+  const FW={
+    en:{re:W('the|a|an|is|are|was|what|you|i|and|to|of|in|it|this|that|do|does|my|your|he|she|we|they|have|has|can|not|with'),ch:/[]/},
+    de:{re:W('der|die|das|dem|des|ich|und|ist|nicht|ein|eine|einen|einem|wir|sie|er|es|mit|von|zu|auf|haben|habe|hat|bin|bist|sind|heißt|heiße|wie|was|wo|wer|wohnst|wohne|gut|danke|bitte|guten|tag|morgen|abend|nein|mein|meine|dein|deine|sehr|auch|kein|keine|im|am|zum|zur'),ch:/[üÜß]/},
+    es:{re:W('el|la|los|las|es|un|una|y|que|hola|gracias|yo|tú|soy|eres|está|estoy|muy|por|para|con|mi|tu|llamo|qué|cómo|dónde'),ch:/[ñÑ¿¡áíóú]/},
+    fr:{re:W('le|la|les|un|une|et|est|je|tu|il|elle|nous|vous|ils|bonjour|merci|oui|non|avec|pour|dans|très|suis|mon|ma|mes|ton|ta|qui|quoi|comment|où|au|aux|du|ne|pas|appelle|habite'),ch:/[çÇéèêëàâîïôûœ]/}
+  };
+  const cnt=(re,t)=>(String(t).match(re)||[]).length;
+  // Läxans främmande språk: engelska efter ämnet, annars efter titeln eller frågorna (t.ex. tyska under Övrigt).
+  const CTX=new Map();
+  function ctx(qz){
+    if(!qz)return null;if(qz.subject==='en')return 'en';
+    if(CTX.has(qz.id))return CTX.get(qz.id);
+    const head=`${qz.title||''} ${qz.summary||''}`;let l=null;
+    if(/tysk|deutsch/i.test(head))l='de';else if(/spansk|español/i.test(head))l='es';else if(/fransk|français/i.test(head))l='fr';
+    if(!l){let txt='';try{txt=allQ(qz).map(x=>{const q=x.q;return [q.q,...(q.opts||[]),...(q.acc||[]),...(q.items||[])].join(' ')}).join(' ')}catch(e){}
+      const sc=['de','es','fr'].map(k=>[k,cnt(FW[k].re,txt)+2*cnt(new RegExp(FW[k].ch.source,'gu'),txt)]).sort((a,b)=>b[1]-a[1])[0];
+      if(sc[1]>=6&&sc[1]>cnt(SVW,txt)*.5)l=sc[0]}
+    if(qz.id)CTX.set(qz.id,l);return l;
+  }
+  // En bit text: svensk om den har tydligare svenska drag än drag av läxans språk. Helt neutral text (ett ensamt ord som alternativ) får läxans språk.
+  function langOf(t,fl){
+    if(!fl)return 'sv';const f=FW[fl];
+    const sv=cnt(SVW,t)+(/[åÅ]/.test(t)?2:0)+(fl!=='de'&&/[äöÄÖ]/.test(t)?2:0),fo=cnt(f.re,t)+(f.ch.test(t)?2:0);
+    if(sv>0&&sv>=fo)return 'sv';if(fo>0)return fl;
+    // Neutral text i en tysk läxa: tyska substantiv har stor bokstav, svenska ord står oftast med liten ("hund" mot "Hund").
+    if(fl==='de'){const w=t.match(/\p{L}+/gu)||[];if(w.slice(1).some(x=>/^\p{Lu}/u.test(x)))return 'de';if(w[0]&&/^\p{Ll}/u.test(w[0]))return 'sv'}
+    return fl;
+  }
+  // Citerade ord ("der Hund") läses för sig, så att svenska frågor med främmande ord får två röster.
+  const QUOTE=/(^|[\s(:])["“„«‘'’]([^"“”„«»‘’]+?)["”“»’'](?=[\s.,!?:;)]|$)/g;
+  function segs(t,fl){
+    const out=[],add=x=>(x.match(/[^.!?:;]+[.!?:;]*/g)||[]).forEach(y=>{y=y.trim();if(y)out.push({x:y,l:langOf(y,fl)})});
+    if(!fl){add(t,false);return out}
+    let last=0;t.replace(QUOTE,(m,pre,inner,off)=>{add(t.slice(last,off+pre.length),false);add(inner,true);last=off+m.length;return m});
+    add(t.slice(last),false);return out;
+  }
+  let tok=0,cur=null;const warned={};
   function voice(l){if(!ok)return null;try{const re=new RegExp('^'+l,'i'),vs=speechSynthesis.getVoices().filter(v=>re.test(v.lang));
     return vs.find(v=>PREF.test(v.name))||vs[0]||null}catch(e){return null}}
-  const langOf=(t,subj)=>subj==='en'&&!SV.test(t)?'en':'sv';
   function mark(b){if(cur&&cur!==b){cur.classList.remove('on');cur.setAttribute('aria-pressed','false')}cur=b||null;if(cur){cur.classList.add('on');cur.setAttribute('aria-pressed','true')}}
   function stop(){tok++;mark(null);try{if(ok)speechSynthesis.cancel()}catch(e){}}
-  function play(parts,subj,b){
+  function play(parts,qz,b){
     if(!ok)return;stop();const my=tok;mark(b);
     // Korta bitar: Chrome tystnar annars efter cirka 15 sekunder.
-    const q=[];parts.filter(Boolean).forEach(p=>{const t=String(p).replace(/\s+/g,' ').trim(),l=langOf(t,subj);
-      (t.match(/[^.!?:;]+[.!?:;]*/g)||[]).forEach(x=>{x=x.trim();if(x)q.push({x,l})})});
+    const fl=ctx(qz),q=[];parts.filter(Boolean).forEach(p=>q.push(...segs(String(p).replace(/\s+/g,' ').trim(),fl)));
     let i=0;
     const next=()=>{if(my!==tok)return;if(i>=q.length){mark(null);return}
       const {x,l}=q[i++],v=voice(l)||voice('sv');
+      if(l!=='sv'&&!voice(l)&&!warned[l]){warned[l]=1;toast(`Enheten saknar ${{en:'engelsk',de:'tysk',es:'spansk',fr:'fransk'}[l]} röst. Läser med svensk.`)}
       if(!v){mark(null);toast('Den här enheten saknar en svensk röst för uppläsning');return}
       const u=new SpeechSynthesisUtterance(x);u.voice=v;u.lang=v.lang;u.rate=.95;u.pitch=1;
       u.onend=next;u.onerror=()=>{if(my===tok)mark(null)};
       try{speechSynthesis.speak(u)}catch(e){mark(null)}};
     next();
   }
-  const toggle=(b,parts,subj)=>{if(b&&cur===b)stop();else play(parts,subj,b)};
+  const toggle=(b,parts,qz)=>{if(b&&cur===b)stop();else play(parts,qz,b)};
   const auto=()=>ok&&LS.get('laxmotorn:autoread',false)===true;
   const btn=(id,label)=>ok?`<button class="icon-btn say" id="${id}" aria-label="${label}" aria-pressed="false">${svg('speaker')}</button>`:'';
   const text=el=>{if(!el)return '';const c=el.cloneNode(true);c.querySelectorAll('button,.pts,.row').forEach(x=>x.remove());
     c.querySelectorAll('li,p,h3').forEach(x=>x.append('. '));return c.textContent.replace(/\.\s*\./g,'.')};
   if(ok)try{speechSynthesis.getVoices();speechSynthesis.addEventListener('voiceschanged',()=>{})}catch(e){}
-  return {ok,play,stop,toggle,auto,btn,text};
+  return {ok,play,stop,toggle,auto,btn,text,ctx,segs};
 })();
 
 /* ---------- Framsteg (repetition med lådor, Leitner) ---------- */
@@ -2204,7 +2241,7 @@ function sayQ(){
   if(q.t==='tf')parts.push('Sant eller falskt?');
   else{const os=[...$('#qbody').querySelectorAll('.opt:not(.gone)')].map(x=>x.textContent.trim()).filter(Boolean);
     if(os.length){parts.push(q.t==='order'?'Sätt i rätt ordning:':'Alternativen är:');os.forEach(o=>parts.push(/[.!?]$/.test(o)?o:o+'.'))}}
-  Say.toggle($('#sayQ'),parts,(it.qzObj||QZ||{}).subject);
+  Say.toggle($('#sayQ'),parts,it.qzObj||QZ);
 }
 $('#sayQ').innerHTML=svg('speaker');$('#sayQ').hidden=!Say.ok;$('#sayQ').onclick=sayQ;
 {const a=$('#autoRead');const draw=()=>{const on=Say.auto();a.setAttribute('aria-pressed',String(on));a.textContent=on?'Läs upp: på':'Läs upp: av'};
@@ -2263,7 +2300,7 @@ function answer(ok,extra='',o={}){
   $('#nextBtn').focus({preventScroll:true});
   $('#feedback').scrollIntoView({behavior:'smooth',block:'nearest'});
   $('#nextBtn').onclick=()=>{if(nextLast)finish();else{R.i++;renderQ()}};
-  const sayFb=()=>Say.toggle($('#sayFb'),[Say.text($('#feedback .fb'))],(it.qzObj||QZ||{}).subject);
+  const sayFb=()=>Say.toggle($('#sayFb'),[Say.text($('#feedback .fb'))],it.qzObj||QZ);
   if($('#sayFb'))$('#sayFb').onclick=sayFb;
   if(Say.auto())sayFb();
   if(kc){
@@ -2333,7 +2370,7 @@ function renderCard(){
   $('#flash').innerHTML=`<div class="qhead"><div class="qtype">Förklara med egna ord${k in P.known?' · repetition':''}</div>${Say.btn('sayCard',F.open?'Läs upp svaret':'Läs upp frågan')}</div><div class="qtext">${esc(c.q)}</div>
    ${F.open?`<div class="ans pop">${fmtAns(c.a)}</div><p class="parent">För den som förhör: fick hen med det viktigaste?</p><div class="row"><button class="btn" id="knew">Kunde det</button><button class="btn ghost" id="practice">Öva mer</button></div>`
    :`<p class="hint">Försök säga svaret högt först. Sedan visar du svaret.</p><div class="row"><button class="btn" id="reveal">Visa svar</button></div>`}`;
-  if($('#sayCard'))$('#sayCard').onclick=()=>Say.toggle($('#sayCard'),F.open?[Say.text($('#flash .ans'))]:[c.q],QZ&&QZ.subject);
+  if($('#sayCard'))$('#sayCard').onclick=()=>Say.toggle($('#sayCard'),F.open?[Say.text($('#flash .ans'))]:[c.q],QZ);
   if(!F.open)$('#reveal').onclick=()=>{F.open=true;renderCard()};
   else{
     $('#knew').onclick=()=>{const td=dayKey(),prev=P.known[k];const xp=prev===undefined?20:prev!==td?10:0;P.known[k]=td;saveP(QZ.id);markDay();if(xp){addXP(xp);toast(`+${xp} XP`)}nextCard()};

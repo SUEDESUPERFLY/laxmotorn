@@ -14,7 +14,7 @@ Gamifierat läxförhör: fota läxan, Claude gör ett förhör med stationer, me
 
 Frågor, alternativ, återkoppling och förklara-kort kan läsas upp (högtalarknappen). Med "Läs upp: på" läses varje ny fråga och återkopplingen upp direkt, bra för barn som inte läser flytande än. Inställningen sparas per enhet.
 
-Rösten är webbläsarens inbyggda talsyntes: gratis, ingen server och inga API-anrop. Bäst låter Edge på Windows (Sofie, Mattias) och Chrome/Android (Google svenska). I engelska läxor läses engelska delar med engelsk röst. Saknar enheten röst döljs knapparna.
+Rösten är webbläsarens inbyggda talsyntes: gratis, ingen server och inga API-anrop. Bäst låter Edge på Windows (Sofie, Mattias) och Chrome/Android (Google svenska). I språkläxor läses de främmande delarna med det språkets röst: engelska efter ämnet, tyska (och spanska/franska) efter titeln eller frågorna. Citerade ord läses för sig, så "Vad betyder 'der Hund'?" får svensk och tysk röst. I tyska läxor läses ensamma ord med liten bokstav som svenska ("hund"), med stor som tyska ("Hund"). Saknar enheten rösten läses texten med svensk röst. Saknar enheten röst döljs knapparna.
 
 ## Skolmejl (Unikum)
 
