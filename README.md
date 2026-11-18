@@ -10,6 +10,12 @@ Gamifierat läxförhör: fota läxan, Claude gör ett förhör med stationer, me
 - `supabase/functions/generate/` – gammal funktion, numera en stängd stub (410).
 - `apps-script/LaxmotornMejl.gs` – Apps Script som skickar Unikum-mejl till Läxmotorn en gång per dygn (cirka kl. 06).
 
+## Uppläsning
+
+Frågor, alternativ, återkoppling och förklara-kort kan läsas upp (högtalarknappen). Med "Läs upp: på" läses varje ny fråga och återkopplingen upp direkt, bra för barn som inte läser flytande än. Inställningen sparas per enhet.
+
+Rösten är webbläsarens inbyggda talsyntes: gratis, ingen server och inga API-anrop. Bäst låter Edge på Windows (Sofie, Mattias) och Chrome/Android (Google svenska). I engelska läxor läses engelska delar med engelsk röst. Saknar enheten röst döljs knapparna.
+
 ## Skolmejl (Unikum)
 
 1. Barnen får klasskoder i appen (Byt barn → Koppla skolmejlen), t.ex. `RG16C`. Koden matchas mot ämnesraden.
