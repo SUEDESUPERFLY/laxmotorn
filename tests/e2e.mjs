@@ -289,6 +289,9 @@ else {
   check(await page.textContent('#autoRead') === 'Läs upp: på', 'autoläget kan slås på');
   await page.click('#autoRead');
   check(await page.textContent('#autoRead') === 'Läs upp: av', 'autoläget kan slås av');
+  const segs = await page.evaluate(() => [Say.segs("Vad betyder 'der Hund'?", 'de'), Say.ctx({ id: 'tysk', title: 'Tyska kapitel 3', subject: 'annat' }), Say.ctx(QZ)]);
+  check(segs[0].map((x) => x.l).join() === 'sv,de', 'tyska ord i en svensk fråga läses med tysk röst');
+  check(segs[1] === 'de' && segs[2] === null, 'tyska läxor känns igen, NO-läxan läses på svenska');
 }
 let gotClip = false;
 for (let i = 0; i < 4; i++) {
