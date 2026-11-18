@@ -273,7 +273,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 /* Quiz */
 .qtop{display:flex;justify-content:space-between;align-items:center;gap:10px}
 .back{background:var(--surface);border:2px solid var(--line);border-radius:12px;padding:8px 12px;font-weight:800}
-.chips{display:flex;gap:8px;align-items:center}
+.chips{display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end}
 .chip{background:var(--surface);border:2px solid var(--line);border-radius:99px;padding:4px 12px;font-weight:800;font-size:14px;font-variant-numeric:tabular-nums;white-space:nowrap}
 .chip.hot{background:var(--kant-soft);border-color:var(--kant)}
 .hearts{color:var(--lingon);letter-spacing:2px}
@@ -282,6 +282,11 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .pips i.ok{background:var(--ok)} .pips i.no{background:var(--lingon)} .pips i.now{background:var(--kant)}
 .qcard{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:20px;display:flex;flex-direction:column;gap:16px}
 .qtype{text-transform:uppercase;letter-spacing:.08em;font-size:12px;font-weight:800;color:var(--muted)}
+.qhead{display:flex;justify-content:space-between;align-items:center;gap:8px;margin:-8px -8px -8px 0}
+.icon-btn.say{color:var(--ink)}
+.icon-btn.say.on{background:var(--moss);color:var(--moss-ink)}
+.chip.say-auto{cursor:pointer;color:var(--ink);font-family:inherit}
+.chip.say-auto[aria-pressed="true"]{background:var(--moss);border-color:var(--moss);color:var(--moss-ink)}
 .qtext{font:600 clamp(20px,5.5vw,26px)/1.25 "Bricolage Grotesque",sans-serif;overflow-wrap:anywhere}
 .opts{display:grid;gap:10px}
 .opts.two{grid-template-columns:1fr 1fr}
@@ -578,13 +583,14 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
       <button class="back" id="quitBtn">← Läxan</button>
       <div class="chips">
         <span class="chip hearts" id="lives" hidden></span>
+        <button class="chip say-auto" id="autoRead" aria-pressed="false" hidden>Läs upp</button>
         <span class="chip" id="streak">0 i rad</span>
       </div>
     </div>
     <div class="pips" id="pips"></div>
     <div class="timer" id="timer" hidden><i id="timerBar"></i></div>
     <div class="qcard" id="qcard">
-      <div class="qtype" id="qtype"></div>
+      <div class="qhead"><div class="qtype" id="qtype"></div><button class="icon-btn say" id="sayQ" aria-label="Läs upp frågan" aria-pressed="false" hidden></button></div>
       <div class="qtext" id="qtext"></div>
       <div id="qbody"></div>
       <div class="row" id="qactions"></div>
@@ -663,9 +669,10 @@ const ICONS={
  flame:'<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 1.6 1.2 2.6 2.5 3 0-3-1-5.5 0-8z"/>',
  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
- camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>'
+ camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
+ speaker:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>'
 };
-const UI_ICONS=['cards','boss','plus','trash','upload','doc','x','play','link','check','camera','flame','target','lock'];
+const UI_ICONS=['cards','boss','plus','trash','upload','doc','x','play','link','check','camera','flame','target','lock','speaker'];
 const ICON_KEYS=Object.keys(ICONS).filter(k=>!UI_ICONS.includes(k));
 const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||ICONS.book}</svg>`;
 const STAR='M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z';
@@ -689,6 +696,42 @@ const TYPE_LABEL={mc:'Flerval',tf:'Sant/falskt',multi:'Välj alla',order:'Ordnin
 const $=s=>document.querySelector(s);
 const shuffle=a=>{a=a.slice();for(let i=a.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[a[i],a[j]]=[a[j],a[i]]}return a};
 const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch(e){return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){}}};
+
+/* ---------- Uppläsning ----------
+   Webbläsarens egen talsyntes (gratis, ingen server). Frågor, återkoppling och kort kan läsas upp.
+   I engelska läxor läses engelska delar med engelsk röst, svenska delar med svensk. */
+const Say=(()=>{
+  const ok=!!(window.speechSynthesis&&window.SpeechSynthesisUtterance);
+  const PREF=/natural|neural|online|google|premium|enhanced|sofie|mattias|alva|klara/i;
+  const SV=/[åäöÅÄÖ]|\b(vad|vilken|vilket|vilka|vem|varför|hur|när|och|är|betyder|översätt|ordet|meningen|skriv|välj|sant|falskt|rätt|svar|alternativen|engelska|svenska)\b/i;
+  let tok=0,cur=null;
+  function voice(l){if(!ok)return null;try{const re=new RegExp('^'+l,'i'),vs=speechSynthesis.getVoices().filter(v=>re.test(v.lang));
+    return vs.find(v=>PREF.test(v.name))||vs[0]||null}catch(e){return null}}
+  const langOf=(t,subj)=>subj==='en'&&!SV.test(t)?'en':'sv';
+  function mark(b){if(cur&&cur!==b){cur.classList.remove('on');cur.setAttribute('aria-pressed','false')}cur=b||null;if(cur){cur.classList.add('on');cur.setAttribute('aria-pressed','true')}}
+  function stop(){tok++;mark(null);try{if(ok)speechSynthesis.cancel()}catch(e){}}
+  function play(parts,subj,b){
+    if(!ok)return;stop();const my=tok;mark(b);
+    // Korta bitar: Chrome tystnar annars efter cirka 15 sekunder.
+    const q=[];parts.filter(Boolean).forEach(p=>{const t=String(p).replace(/\s+/g,' ').trim(),l=langOf(t,subj);
+      (t.match(/[^.!?:;]+[.!?:;]*/g)||[]).forEach(x=>{x=x.trim();if(x)q.push({x,l})})});
+    let i=0;
+    const next=()=>{if(my!==tok)return;if(i>=q.length){mark(null);return}
+      const {x,l}=q[i++],v=voice(l)||voice('sv');
+      if(!v){mark(null);toast('Den här enheten saknar en svensk röst för uppläsning');return}
+      const u=new SpeechSynthesisUtterance(x);u.voice=v;u.lang=v.lang;u.rate=.95;u.pitch=1;
+      u.onend=next;u.onerror=()=>{if(my===tok)mark(null)};
+      try{speechSynthesis.speak(u)}catch(e){mark(null)}};
+    next();
+  }
+  const toggle=(b,parts,subj)=>{if(b&&cur===b)stop();else play(parts,subj,b)};
+  const auto=()=>ok&&LS.get('laxmotorn:autoread',false)===true;
+  const btn=(id,label)=>ok?`<button class="icon-btn say" id="${id}" aria-label="${label}" aria-pressed="false">${svg('speaker')}</button>`:'';
+  const text=el=>{if(!el)return '';const c=el.cloneNode(true);c.querySelectorAll('button,.pts,.row').forEach(x=>x.remove());
+    c.querySelectorAll('li,p,h3').forEach(x=>x.append('. '));return c.textContent.replace(/\.\s*\./g,'.')};
+  if(ok)try{speechSynthesis.getVoices();speechSynthesis.addEventListener('voiceschanged',()=>{})}catch(e){}
+  return {ok,play,stop,toggle,auto,btn,text};
+})();
 
 /* ---------- Framsteg (repetition med lådor, Leitner) ---------- */
 const DAY=864e5;
@@ -742,7 +785,7 @@ function getP(id){
 const saveP=id=>{dirtyP.add(id);scheduleFlush()};
 let QZ=null,STATIONS=[],FLASH=[],P=null;
 
-function show(id){['auth','loading','kids','overview','lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);
+function show(id){Say.stop();['auth','loading','kids','overview','lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);
   const pre=['auth','loading','kids'].includes(id);$('#hud').hidden=pre||id==='overview';$('#kidbar').hidden=pre;window.scrollTo(0,0)}
 const TQ=[];let tBusy=false;
 function toast(msg){if(TQ[TQ.length-1]===msg)return;if(TQ.length>=3)TQ.shift();TQ.push(msg);if(!tBusy)nextToast()}
@@ -1979,7 +2022,7 @@ const Explainer=(()=>{
     last=0;raf=requestAnimationFrame(vtick);
     vplay();$('#xpGo').focus({preventScroll:true});
   }
-  async function open(k,opt={}){
+  async function open(k,opt={}){Say.stop();
     K=k;onClose=opt.onClose||null;
     $('#xpTitle').textContent=k.name;$('#xpIc').innerHTML=svg(PROPS[k.icon]?k.icon:'book');$('#xpCap').textContent='';$('#xpCap').dataset.h='';
     $('#xpOv').dataset.subj=opt.subj||((QZ&&QZ.subject)||(DRAFT&&DRAFT.subject)||'annat');
@@ -2046,7 +2089,7 @@ function startRound(mode,opt={}){
   show('quiz');renderQ();
 }
 function renderQ(){
-  const it=R.items[R.i],q=it.q;R.answered=false;
+  const it=R.items[R.i],q=it.q;R.answered=false;Say.stop();
   $('#pips').innerHTML=R.items.map((x,k)=>`<i class="${k<R.i?(R.res[k]?'ok':'no'):k===R.i?'now':''}${x.second?' sec':''}"></i>`).join('');
   $('#lives').hidden=!R.boss;$('#lives').textContent='♥'.repeat(R.lives)+'♡'.repeat(3-R.lives);
   renderStreak();
@@ -2152,7 +2195,20 @@ function renderQ(){
     };
   }
   startTimer();
+  if(Say.auto())sayQ();
 }
+// Läser frågan och de svar som syns, i den ordning de står på skärmen.
+function sayQ(){
+  if(!R||!R.items[R.i])return;const it=R.items[R.i],q=it.q;
+  const parts=[$('#qtext').textContent];
+  if(q.t==='tf')parts.push('Sant eller falskt?');
+  else{const os=[...$('#qbody').querySelectorAll('.opt:not(.gone)')].map(x=>x.textContent.trim()).filter(Boolean);
+    if(os.length){parts.push(q.t==='order'?'Sätt i rätt ordning:':'Alternativen är:');os.forEach(o=>parts.push(/[.!?]$/.test(o)?o:o+'.'))}}
+  Say.toggle($('#sayQ'),parts,(it.qzObj||QZ||{}).subject);
+}
+$('#sayQ').innerHTML=svg('speaker');$('#sayQ').hidden=!Say.ok;$('#sayQ').onclick=sayQ;
+{const a=$('#autoRead');const draw=()=>{const on=Say.auto();a.setAttribute('aria-pressed',String(on));a.textContent=on?'Läs upp: på':'Läs upp: av'};
+  a.hidden=!Say.ok;draw();a.onclick=()=>{LS.set('laxmotorn:autoread',!Say.auto());draw();if(Say.auto()&&R&&!R.answered)sayQ();else Say.stop()}}
 const norm=s=>String(s).toLowerCase().trim().replace(/[.,!?"'–\-:;()]/g,'').replace(/\s+/g,' ');
 function lev(a,b){const d=Array.from({length:a.length+1},(_,i)=>[i]);for(let j=1;j<=b.length;j++)d[0][j]=j;
   for(let i=1;i<=a.length;i++)for(let j=1;j<=b.length;j++)d[i][j]=Math.min(d[i-1][j]+1,d[i][j-1]+1,d[i-1][j-1]+(a[i-1]===b[j-1]?0:1));return d[a.length][b.length]}
@@ -2203,10 +2259,13 @@ function answer(ok,extra='',o={}){
   const head=ok?(KIND_HEAD[g.kind]||CHEERS[Math.floor(Math.random()*CHEERS.length)]):(o.head||'Inte riktigt');
   const sub=ok?(KIND_SUB[g.kind]||''):(requeue?(sib?'En liknande fråga kommer i slutet av rundan.':'Frågan kommer tillbaka i slutet av rundan.'):'');
   const nextLast=R.i===R.items.length-1||(R.boss&&R.lives<=0);
-  $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span>${pts>0?`<span class="pts">+${pts} XP</span>`:''}</h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${nextLast?'Se resultat':'Nästa fråga →'}</button>${kc?`<button class="btn ghost" id="xpBtn">${svg('play')}Förklaring: ${esc(kc.name)}</button>`:''}</div></div>`;
+  $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span>${pts>0?`<span class="pts">+${pts} XP</span>`:''}</h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${nextLast?'Se resultat':'Nästa fråga →'}</button>${Say.btn('sayFb','Läs upp')}${kc?`<button class="btn ghost" id="xpBtn">${svg('play')}Förklaring: ${esc(kc.name)}</button>`:''}</div></div>`;
   $('#nextBtn').focus({preventScroll:true});
   $('#feedback').scrollIntoView({behavior:'smooth',block:'nearest'});
   $('#nextBtn').onclick=()=>{if(nextLast)finish();else{R.i++;renderQ()}};
+  const sayFb=()=>Say.toggle($('#sayFb'),[Say.text($('#feedback .fb'))],(it.qzObj||QZ||{}).subject);
+  if($('#sayFb'))$('#sayFb').onclick=sayFb;
+  if(Say.auto())sayFb();
   if(kc){
     $('#xpBtn').onclick=()=>Explainer.open(kc,{onClose:()=>$('#nextBtn').focus({preventScroll:true})});
     // Första missen på ett begrepp i rundan: klippet startar direkt (inte i slutprovet).
@@ -2270,9 +2329,11 @@ function startCards(){newBadges=[];const all=shuffle(FLASH.map((_,k)=>k));F={ord
 function renderCard(){
   const k=F.order[F.i],c=FLASH[k];
   $('#cardCount').textContent=`Kort ${F.i+1} av ${FLASH.length}`;
-  $('#flash').innerHTML=`<div class="qtype">Förklara med egna ord${k in P.known?' · repetition':''}</div><div class="qtext">${esc(c.q)}</div>
+  Say.stop();
+  $('#flash').innerHTML=`<div class="qhead"><div class="qtype">Förklara med egna ord${k in P.known?' · repetition':''}</div>${Say.btn('sayCard',F.open?'Läs upp svaret':'Läs upp frågan')}</div><div class="qtext">${esc(c.q)}</div>
    ${F.open?`<div class="ans pop">${fmtAns(c.a)}</div><p class="parent">För den som förhör: fick hen med det viktigaste?</p><div class="row"><button class="btn" id="knew">Kunde det</button><button class="btn ghost" id="practice">Öva mer</button></div>`
    :`<p class="hint">Försök säga svaret högt först. Sedan visar du svaret.</p><div class="row"><button class="btn" id="reveal">Visa svar</button></div>`}`;
+  if($('#sayCard'))$('#sayCard').onclick=()=>Say.toggle($('#sayCard'),F.open?[Say.text($('#flash .ans'))]:[c.q],QZ&&QZ.subject);
   if(!F.open)$('#reveal').onclick=()=>{F.open=true;renderCard()};
   else{
     $('#knew').onclick=()=>{const td=dayKey(),prev=P.known[k];const xp=prev===undefined?20:prev!==td?10:0;P.known[k]=td;saveP(QZ.id);markDay();if(xp){addXP(xp);toast(`+${xp} XP`)}nextCard()};

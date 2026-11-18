@@ -274,6 +274,22 @@ check(await page.locator('.clip').count() === 3, 'hemskärmen visar förklarings
 step('fel svar → klipp startar → liknande fråga köas');
 await page.click('[data-sid="s1"]');
 await page.waitForSelector('#quiz:not([hidden])');
+if (process.env.NOVOICE) check(await page.locator('#sayQ').isHidden() && await page.locator('#autoRead').isHidden(), 'utan röst döljs uppläsningen');
+else {
+  // Uppläsning: knappen läser frågan och alternativen, autoläge läser nästa fråga direkt.
+  const q0 = (await page.textContent('#qtext')).trim();
+  await page.evaluate(() => { window.__spoken.length = 0; });
+  await page.click('#sayQ');
+  const said = await page.evaluate(() => window.__spoken.join(' '));
+  check(said.includes(q0.split(/[.!?]/)[0]), 'läs upp-knappen läser frågan');
+  check(await page.getAttribute('#sayQ', 'aria-pressed') === 'true', 'knappen visar att den läser');
+  await page.click('#sayQ');
+  check(await page.getAttribute('#sayQ', 'aria-pressed') === 'false', 'andra trycket stoppar uppläsningen');
+  await page.click('#autoRead');
+  check(await page.textContent('#autoRead') === 'Läs upp: på', 'autoläget kan slås på');
+  await page.click('#autoRead');
+  check(await page.textContent('#autoRead') === 'Läs upp: av', 'autoläget kan slås av');
+}
 let gotClip = false;
 for (let i = 0; i < 4; i++) {
   const type = await page.textContent('#qtype'), qtext = await page.textContent('#qtext');
