@@ -91,6 +91,15 @@ Nästa nivå görs av Claude i bakgrunden redan när barnet har brons på nivån
 
 Nivå 2 och 3 har **förklaringsfrågor**: barnet skriver en till tre meningar och Claude (snabb modell, `CLAUDE_FAST_MODEL`) bedömer svaret mot nyckelpunkter (ja / delvis / nej) och ger kort återkoppling, följt av ett modellsvar. Går rättningen inte att nå jämför barnet själv med modellsvaret. Barnkonton får anropa `level` och `grade`, men bara för läxor de själva ser.
 
+## Installera som app (PWA)
+
+Läxmotorn går att installera på hemskärmen och öppnas då i helskärm utan webbläsarfält.
+
+- **iPhone:** öppna https://suedesuperfly.github.io/laxmotorn/ i Safari → Dela → Lägg till på hemskärmen.
+- **Android:** öppna adressen i Chrome → menyn (⋮) → Installera app (eller Lägg till på startskärmen).
+
+Filerna: `src/manifest.json`, `src/sw.js` och ikonerna i `src/icons/` (`icon.svg` är originalet; PNG-filerna är gjorda av den). Service workern rör bara appens egna filer: sidan hämtas alltid från nätet först, och anrop till Supabase och CDN:er går aldrig via cachen. Ändras ikonerna eller manifestet: byt `VERSION` i `sw.js`.
+
 ## Publicering
 
 `src/` publiceras på GitHub Pages vid varje push till `main` (`.github/workflows/pages.yml`).
