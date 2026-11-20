@@ -232,12 +232,18 @@ await page.click('[data-kid="k2"]');
 await page.waitForSelector('#lib:not([hidden])');
 
 step('inkorgen och barnfiltret (Erik)');
-check(await page.locator('#inboxBox .qz.inb').count() === 2, 'inkorgen visar båda väntande proven');
+check(await page.locator('#inboxBox .qz.inb').count() === 1, 'inkorgen visar bara Eriks väntande prov');
+check(!(await page.textContent('#inboxBox')).includes('Lag och rätt'), 'Isabelles förslag syns inte hos Erik');
 check(await page.locator('#libList [data-open]').count() === 1, 'barnet ser bara den godkända gemensamma läxan');
 check((await page.textContent('#inboxBox')).includes('Behöver underlag: häftet om skogen'), 'saknat underlag visas');
 await shot('e2e-2-inbox');
 
 step('granska och godkänn förslag (Isabelles prov)');
+await page.click('#switchKid');
+await page.waitForSelector('#kids:not([hidden])');
+await page.click('[data-kid="k1"]');
+await page.waitForSelector('#lib:not([hidden])');
+check(await page.locator('#inboxBox .qz.inb').count() === 1, 'Isabelle har ett förslag i inkorgen');
 await page.click('[data-inb="qDraft"]');
 await page.waitForSelector('#review:not([hidden])');
 check((await page.textContent('#saveBtn')).trim() === 'Godkänn', 'knappen heter Godkänn');
@@ -250,10 +256,18 @@ check(await page.locator('#xpStage .fe').count() > 0 && await page.locator('#xpS
 await shot('e2e-3-clip-review');
 await page.click('#xpGo');
 await page.click('#saveBtn');
+await page.waitForSelector('#home:not([hidden])');
+await page.click('#homeBack');
 await page.waitForSelector('#lib:not([hidden])');
 const appr = db.quizzes.find((q) => q.id === 'qDraft');
 check(appr.status === 'ready' && appr.child_id === 'k1', 'godkänt förhör blir ready för Isabelle');
-check(await page.locator('#inboxBox .qz.inb').count() === 1, 'inkorgen har ett kvar');
+check(await page.locator('#inboxBox .qz.inb').count() === 0, 'Isabelles inkorg är tom');
+check(await page.locator('#libList [data-open]').count() === 2, 'Isabelle ser sin nya och den gemensamma läxan');
+await page.click('#switchKid');
+await page.waitForSelector('#kids:not([hidden])');
+await page.click('[data-kid="k2"]');
+await page.waitForSelector('#lib:not([hidden])');
+check(await page.locator('#inboxBox .qz.inb').count() === 1, 'Eriks prov finns kvar i hans inkorg');
 check(await page.locator('#libList [data-open]').count() === 1, 'Erik ser inte Isabelles läxa');
 
 step('väntande prov → förifyllt formulär → förhör för Erik');

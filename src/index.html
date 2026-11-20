@@ -992,8 +992,8 @@ const rowToQuiz=r=>({...(r.content||{}),id:r.id,title:r.title,subject:r.subject,
 const Store={db:true,remote:[],ready:false,
   // Det barnet ser: godkända läxor för barnet eller för alla.
   all(){return this.remote.filter(q=>q.status==='ready'&&(!q.childId||q.childId===KID))},
-  // Vuxnas inkorg: kommande prov från skolmejl och förslag som väntar på godkännande.
-  inbox(){return this.remote.filter(q=>q.status==='pending'||q.status==='draft')},
+  // Vuxnas inkorg: kommande prov från skolmejl och förslag som väntar på godkännande, för det valda barnet.
+  inbox(){return this.remote.filter(q=>(q.status==='pending'||q.status==='draft')&&(!KID||!q.childId||q.childId===KID))},
   async load(){
     const {data,error}=await sb.from('quizzes').select(QZ_COLS).order('created_at',{ascending:false});
     if(error)toast('Kunde inte hämta läxorna.');else this.remote=data.map(rowToQuiz);
@@ -1151,7 +1151,7 @@ function renderLib(){
     const pb=$('#pastBox');if(pb)pb.addEventListener('toggle',()=>{pastOpen=pb.open;LS.set('laxmotorn:pastOpen',pastOpen)});
   }
   $('#badges').innerHTML=BADGES.map(b=>`<div class="badge ${G.badges.includes(b.id)?'':'locked'}"><span class="b-ic">${b.ic}</span><div><b>${b.n}</b><span>${b.d}</span></div></div>`).join('');
-  $('#libWhere').textContent=booted?'Läxorna delas av hela familjen. XP, medaljer och märken sparas per barn.':'';
+  $('#libWhere').textContent=booted?'Du ser läxorna för det valda barnet. XP, medaljer och märken sparas per barn.':'';
 }
 $('#dailyBox').addEventListener('click',e=>{if(e.target.closest('#dailyBtn')){QZ=null;startRound('daily')}});
 
