@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" fill="#0F6A73"/>
+  <path d="M0 0" fill="none"/>
+  <g transform="translate(256 266) scale(.92)">
+    <!-- uppslagen bok -->
+    <path d="M-150 -110 Q-75 -140 0 -105 L0 115 Q-75 85 -150 112 Z" fill="#FBFCFD"/>
+    <path d="M150 -110 Q75 -140 0 -105 L0 115 Q75 85 150 112 Z" fill="#E8EBEF"/>
+    <path d="M-120 -60 Q-70 -78 -25 -58 M-120 -20 Q-70 -38 -25 -18 M-120 20 Q-70 2 -25 22" stroke="#0F6A73" stroke-width="12" stroke-linecap="round" fill="none" opacity=".55"/>
+    <!-- stjärna -->
+    <path d="M75 -78 l19 39 43 6 -31 30 7 43 -38 -20 -38 20 7 -43 -31 -30 43 -6z" fill="#E3A400"/>
+  </g>
+</svg>

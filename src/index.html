@@ -1,4 +1,4 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><link rel="manifest" href="manifest.json"><meta name="theme-color" content="#E8EBEF" media="(prefers-color-scheme: light)"><meta name="theme-color" content="#0F1217" media="(prefers-color-scheme: dark)"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="default"><meta name="apple-mobile-web-app-title" content="Läxmotorn"><meta name="application-name" content="Läxmotorn"><link rel="apple-touch-icon" href="icons/apple-touch-icon.png"><link rel="icon" type="image/svg+xml" href="icons/icon.svg"><link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 <title>Läxmotorn</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700;12..96,800&family=Nunito:wght@400;600;700;800&display=swap">
@@ -40,7 +40,9 @@
 
 *{box-sizing:border-box}
 [hidden]{display:none!important}
-body{background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;color:var(--ink);font:16px/1.5 "Nunito",system-ui,sans-serif;padding-inline:16px;padding-block:16px 48px}
+body{background-color:var(--bg);background-image:linear-gradient(var(--grid) 1px,transparent 1px),linear-gradient(90deg,var(--grid) 1px,transparent 1px);background-size:24px 24px;color:var(--ink);font:16px/1.5 "Nunito",system-ui,sans-serif;padding-inline:max(16px,env(safe-area-inset-left,0px)) max(16px,env(safe-area-inset-right,0px));padding-block:16px 48px;-webkit-tap-highlight-color:transparent}
+/* Installerad app (helskärm): ingen gummibandsstuds bakom statusfältet. */
+@media (display-mode:standalone){html,body{overscroll-behavior-y:none}}
 .wrap{max-width:640px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
 section.wrap{padding:0;width:100%}
 h1,h2,h3,.disp{font-family:"Bricolage Grotesque","Nunito",system-ui,sans-serif;text-wrap:balance;margin:0;line-height:1.15}
@@ -387,7 +389,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .qz.kid .lvl{width:44px;height:44px;font-size:18px}
 .qz.kid.cur{border-color:var(--moss)}
 /* Förklaringsfilm */
-.xp-ov{position:fixed;inset:0;background:rgba(10,14,20,.6);z-index:30;display:grid;place-items:center;padding:16px}
+.xp-ov{position:fixed;inset:0;background:rgba(10,14,20,.6);z-index:30;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
 .xp-card{width:min(900px,100%);max-height:calc(100dvh - 32px);overflow:auto;background:var(--surface);border:3px solid var(--ink);border-radius:22px;box-shadow:0 6px 0 rgba(0,0,0,.25);padding:14px;display:flex;flex-direction:column;gap:10px;animation:xpIn .3s ease-out}
 @keyframes xpIn{from{transform:translateY(18px);opacity:0}to{transform:none;opacity:1}}
 .xp-band{display:flex;align-items:center;gap:10px}
@@ -413,7 +415,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .xp-ctl .icon-btn svg{width:24px;height:24px}
 .xp-ctl [aria-pressed="true"]{background:var(--kant-soft);border-color:var(--ink)}
 .xp-ov:not(.end) #xpGo{opacity:.85}
-@media (max-width:560px){.xp-ov{padding:6px}.xp-card{padding:10px;border-radius:16px}.xp-band h3{font-size:18px}.xp-kick{display:none}}
+@media (max-width:560px){.xp-ov{padding:calc(6px + env(safe-area-inset-top,0px)) calc(6px + env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) calc(6px + env(safe-area-inset-left,0px))}.xp-card{padding:10px;border-radius:16px}.xp-band h3{font-size:18px}.xp-kick{display:none}}
 .clips{display:flex;flex-wrap:wrap;gap:8px}
 .clip{display:inline-flex;align-items:center;gap:6px;background:var(--surface);border:2px solid var(--line);border-radius:99px;padding:6px 12px 6px 8px;font-weight:800;font-size:14px}
 .clip:hover{border-color:var(--moss)}
@@ -2586,6 +2588,11 @@ async function boot(){
 }
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&booted){resetState();show('auth')}});
 boot();
+
+// PWA: service workern gör appen installerbar. Bara över https (inte i test via file://).
+if('serviceWorker' in navigator&&location.protocol==='https:'){
+  addEventListener('load',()=>{navigator.serviceWorker.register('sw.js',{scope:'./'}).catch(()=>{})});
+}
 </script>
 
 </body></html>
