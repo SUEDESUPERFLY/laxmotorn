@@ -9,7 +9,8 @@
 // Alla i hushållet (även barn, för läxor de får se), JSON:
 //   {action:"level", quiz_id, level}       fördjupningsnivå 2 eller 3; görs i bakgrunden (202) och sparas i content.levels
 //   {action:"grade", quiz_id, qid, answer} bedömer ett förklaringssvar: {result:"ja"|"delvis"|"nej", feedback}
-//   {action:"films", quiz_id}              ritade förklaringsfilmer till begrepp som saknar film (några åt gången, i bakgrunden)
+//   {action:"films", quiz_id, concept_ids} ritade förklaringsfilmer till begrepp som barnet har svarat fel på och som saknar film
+//                                          (högst fyra åt gången, i bakgrunden; utan concept_ids görs inget)
 // Fel: JSON {code} med status ≥ 400, eller "\n\u0000ERR:<code>" sist i strömmen.
 //
 // Vuxenkonton (JSON), bara för e-post i ALLOWED_EMAILS:
@@ -25,6 +26,7 @@
 //   {action:"ingest", token, message:{id, subject, date, body}}  Unikum-mejl → kommande prov hos rätt barn
 //   {action:"todo", token}                                      väntande prov som kan bli förslag
 //   {action:"prepare", token, quiz_id}                          gör förhörsförslag i bakgrunden (202)
+//   {action:"waiting", token}                                   prov som väntar på en vuxen (för påminnelsemejlet)
 //
 // Hemligheter: ANTHROPIC_API_KEY, ALLOWED_EMAILS, valfria CLAUDE_MODEL och CLAUDE_EFFORT.
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
@@ -246,7 +248,8 @@ async function ingest(hh: { id: string }, m: Any) {
     const low = s.toLowerCase();
     return Object.entries(LANGS).some(([sv, words]) => !mine.includes(sv) && words.some((w) => low.includes(w)));
   };
-  const parsed = extractJson(await complete([{ type: "text", text: prompt }], { effort: "low", maxTokens: 6000 }));
+  // Att hitta prov, datum och ämne i ett mejl är en enkel uppgift: snabb modell räcker.
+  const parsed = extractJson(await complete([{ type: "text", text: prompt }], { model: FAST_MODEL, effort: "low", maxTokens: 6000 }));
   if (!parsed || !Array.isArray(parsed.items)) throw new ClaudeError("invalid_json");
 
   const out: Any[] = [];
@@ -291,6 +294,25 @@ async function ingest(hh: { id: string }, m: Any) {
   }
   await log({ items: out }, child.id);
   return json({ child: child.name, items: out });
+}
+
+// ---------- Påminnelse: prov som väntar på en vuxen ----------
+// draft = förslag att granska och godkänna, need = behöver underlag, failed = förslaget misslyckades.
+// Prov som görs automatiskt (wait) och prov vars datum har passerat tas inte med.
+async function waiting(hh: { id: string }) {
+  const today = new Date().toLocaleDateString("sv-SE", { timeZone: "Europe/Stockholm" });
+  const [{ data: rows }, { data: kids }] = await Promise.all([
+    admin.from("quizzes").select("id,title,status,test_date,child_id,source").eq("household_id", hh.id).in("status", ["draft", "pending"]),
+    admin.from("children").select("id,name").eq("household_id", hh.id),
+  ]);
+  const name = (id: string | null) => (kids ?? []).find((k: Any) => k.id === id)?.name ?? "";
+  const items = (rows ?? []).filter((r: Any) => !r.test_date || r.test_date >= today).map((r: Any) => {
+    const s = r.source ?? {};
+    const state = r.status === "draft" ? "draft" : s.prepare_error ? "failed" : s.enough ? "wait" : "need";
+    return { id: r.id, title: r.title, child: name(r.child_id), test_date: r.test_date, state, missing: state === "need" ? str(s.missing, 200) : "" };
+  }).filter((it: Any) => it.state !== "wait");
+  items.sort((a: Any, b: Any) => (a.test_date ?? "9999").localeCompare(b.test_date ?? "9999"));
+  return json({ items });
 }
 
 // ---------- Förhörsförslag i bakgrunden ----------
@@ -398,12 +420,15 @@ async function makeLevel(userId: string, b: Any) {
 
 // ---------- Förklaringsfilmer ----------
 const FILM_BATCH = 4;
-async function makeFilms(q: Any) {
+// Bara begrepp som barnet har svarat fel på (appen skickar deras id). Begrepp som aldrig missas får ingen film,
+// och appen ritar då en enklare film av klippets bildtyp.
+async function makeFilms(q: Any, only: unknown) {
   const c = q.content ?? {};
-  const todo = ((c.concepts ?? []) as Any[]).filter((k) => !k.film);
+  const want = new Set((Array.isArray(only) ? only : []).filter((x: unknown) => typeof x === "string").slice(0, 20));
+  const todo = ((c.concepts ?? []) as Any[]).filter((k) => !k.film && want.has(k.id));
   if (!todo.length) return json({ ready: true });
   const gen = c.filmgen ?? {};
-  if (gen.at && Date.now() - Date.parse(gen.at) < 4 * 60_000) return json({ started: true, remaining: todo.length });
+  if (gen.at && Date.now() - Date.parse(gen.at) < 4 * 60_000) return json({ started: true, busy: true, remaining: todo.length });
   if (gen.failed_at && Date.now() - Date.parse(gen.failed_at) < 10 * 60_000) return json({ error: gen.error ?? "upstream" });
   const setGen = async (g: Any, films: Record<string, Any> = {}) => {
     const { data: cur } = await admin.from("quizzes").select("content").eq("id", q.id).single();
@@ -459,7 +484,7 @@ Deno.serve(async (req) => {
   const action = body?.action;
 
   try {
-    if (action === "ping" || action === "ingest" || action === "prepare" || action === "todo") {
+    if (action === "ping" || action === "ingest" || action === "prepare" || action === "todo" || action === "waiting") {
       const hh = await tokenAuth(body.token);
       if (!hh) return fail(401, "bad_token");
       if (action === "ping") {
@@ -479,6 +504,7 @@ Deno.serve(async (req) => {
         }).map((r: Any) => ({ quiz_id: r.id, title: r.title }));
         return json({ items: ids });
       }
+      if (action === "waiting") return await waiting(hh);
       if (action === "ingest") return await ingest(hh, body.message);
       return await prepare(hh, body.quiz_id);
     }
@@ -509,7 +535,7 @@ Deno.serve(async (req) => {
     }
     if (action === "films") {
       const q = await visibleQuiz(who.user.id, body.quiz_id, true);
-      return q ? await makeFilms(q) : fail(404, "not_found");
+      return q ? await makeFilms(q, body.concept_ids) : fail(404, "not_found");
     }
     // Bara föräldrar: barnkonton får aldrig skapa förhör eller konton.
     const { count } = await admin.from("household_members").select("user_id", { count: "exact", head: true })

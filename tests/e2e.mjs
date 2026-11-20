@@ -190,12 +190,13 @@ await page.route('**/*', async (route) => {
     if (b.action === 'films') {
       const q = db.quizzes.find((x) => x.id === b.quiz_id);
       if (!q) return json({ code: 'not_found' }, 404);
-      calls.push(`  films quiz=${b.quiz_id}`);
+      const want = new Set(Array.isArray(b.concept_ids) ? b.concept_ids : []);
+      calls.push(`  films quiz=${b.quiz_id} begrepp=${[...want].join(',')}`);
       const cs = q.content.concepts || [];
-      if (!cs.some((k) => !k.film)) return json({ ready: true });
+      if (!cs.some((k) => !k.film && want.has(k.id))) return json({ ready: true });
       const foto = golden.find((g) => g.id === 'g4').film;
-      q.content = { ...q.content, concepts: cs.map((k) => k.film ? k : { ...k, film: k.name === 'Fotosyntes' ? { v: 1, ...foto } : { v: 1, steps: [] } }) };
-      return json({ started: true, remaining: cs.length }, 202);
+      q.content = { ...q.content, concepts: cs.map((k) => k.film || !want.has(k.id) ? k : { ...k, film: k.name === 'Fotosyntes' ? { v: 1, ...foto } : { v: 1, steps: [] } }) };
+      return json({ started: true, remaining: want.size }, 202);
     }
     if (b.action === 'concepts') {
       const map = {}; b.quiz.stations.forEach((s, si) => s.qs.forEach((q, qi) => { map[`${si}.${qi}`] = ['k1', 'k1', 'k2', 'k3'][qi] || 'k1'; }));
@@ -324,8 +325,15 @@ const queued = await page.textContent('#qtext');
 check(/fotosyntes|koldioxid/.test(queued), `den köade frågan gäller samma begrepp ("${queued.slice(0, 40)}")`);
 
 step('ritad förklaringsfilm från servern');
-check(calls.some((c) => /films quiz=qPend/.test(c)), 'appen beställer filmer till läxan');
-await page.waitForFunction(() => (QZ && (QZ.concepts || []).every((k) => k.film)), null, { timeout: 15000 });
+check(!calls.some((c) => /films quiz=qPend/.test(c)), 'inga filmer beställs innan rundan är slut');
+await page.evaluate(() => flushFilms());
+await page.waitForTimeout(300);
+const fcall = calls.find((c) => /films quiz=qPend/.test(c)) || '';
+const fotoId = await page.evaluate(() => QZ.concepts.find((k) => k.name === 'Fotosyntes').id);
+check(new RegExp(`begrepp=.*\\b${fotoId}\\b`).test(fcall), `appen beställer film bara till missade begrepp (${fcall.trim()})`);
+check((await page.evaluate(() => QZ.concepts.length)) > fcall.split('begrepp=')[1].split(',').length, 'begrepp som inte missats beställs inte');
+await page.evaluate(() => refreshQuiz(QZ.id));
+await page.waitForFunction(() => (QZ && QZ.concepts.find((k) => k.name === 'Fotosyntes').film), null, { timeout: 15000 });
 await page.evaluate(() => Explainer.open(QZ.concepts.find((k) => k.name === 'Fotosyntes')));
 await page.waitForSelector('#xpOv:not([hidden])');
 await page.waitForFunction(() => document.querySelectorAll('#xpStage .fe').length >= 10);
@@ -484,6 +492,41 @@ await page.click('#home2');
 await page.waitForSelector('#lvBox [data-sid="L3s1"]', { timeout: 15000 });
 check(!/Låst/.test(await page.textContent('#lvBox')), 'Expert är öppen efter silver på Fördjupning');
 await shot('e2e-12-level3');
+
+step('provdatum styr repetitionen');
+const td = await page.evaluate(() => {
+  const iso = (n) => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return dayKey(d.getTime()); };
+  const now = Date.now(), t0 = dayStart(now), days = (t) => Math.round((t - t0) / DAY);
+  const q5 = { testDate: iso(5) }, q1 = { testDate: iso(1) }, q0 = { testDate: iso(0) };
+  const st = (box, extra = {}) => ({ box, r: 1, w: 0, last: 0, due: t0 + 9 * DAY, day: '', dn: 0, ...extra });
+  return {
+    noTest: days(nextDueAt({}, 4, now)), capped: days(nextDueAt(q5, 4, now)), eve: days(nextDueAt(q1, 3, now)),
+    cramEve: cramDue(q1, st(2), now), cramBox3: cramDue(q1, st(3), now), cramFar: cramDue(q5, st(2), now),
+    cramTwice: cramDue(q1, st(1, { day: dayKey(now), dn: 2 }), now), cramToday: cramDue(q0, st(1), now),
+    past: isPast({ testDate: iso(-1) }), notPast: isPast(q0),
+  };
+});
+check(td.noTest === 7, `utan prov: låda 4 kommer om 7 dagar (${td.noTest})`);
+check(td.capped === 4, `prov om 5 dagar: repetitionen flyttas till dagen före (${td.capped})`);
+check(td.eve === 1, `prov i morgon: nästa repetition tidigast i morgon (${td.eve})`);
+check(td.cramEve && !td.cramBox3 && !td.cramFar, 'kvällen före är låda 1–2 redo, men inte låda 3 och inte långt före provet');
+check(!td.cramTwice && td.cramToday, 'högst två gånger per fråga och dag, även på provdagen');
+check(td.past && !td.notPast, 'prov vars datum har passerat räknas som tidigare prov');
+const dp = await page.evaluate(() => {
+  const iso = (n) => { const d = new Date(); d.setHours(12, 0, 0, 0); d.setDate(d.getDate() + n); return dayKey(d.getTime()); };
+  const mkq = (id, testDate) => ({ id, title: id, status: 'ready', childId: null, testDate, stations: [{ id: 's1', name: 'A', qs: Array.from({ length: 12 }, (_, i) => ({ t: 'tf', q: 'Q' + i, a: true })) }] });
+  const saved = Store.remote, old = mkq('tOld', iso(-3)), cur = mkq('tCur', iso(10));
+  [old, cur].forEach((q) => { const p = getP(q.id); q.stations[0].qs.forEach((_, i) => { p.q['s1.' + i] = { box: 1, r: 1, w: 0, last: 0, due: 0, day: '', dn: 0 }; }); });
+  Store.remote = [...saved, old, cur];
+  const pool = dailyPool();
+  renderLib();
+  const pastBox = document.querySelector('#pastBox'), inPast = pastBox ? pastBox.textContent.includes('tOld') : false;
+  const curOutside = [...document.querySelectorAll('#libList > .qz-wrap h3')].some((h) => h.textContent === 'tCur');
+  Store.remote = saved; delete PC.tOld; delete PC.tCur; renderLib();
+  return { n: pool.length, old: pool.filter((x) => x.ref.qz === 'tOld').length, inPast, curOutside };
+});
+check(dp.n <= 15 && dp.old > 0 && dp.old <= 3, `Dagens repetition: högst 15 frågor, varav 1–3 från tidigare prov (${dp.old} av ${dp.n})`);
+check(dp.inPast && dp.curOutside, 'tidigare prov ligger under Tidigare prov, kommande läxor utanför');
 
 step('vuxenkonto för en tillåten e-postadress');
 await page.click('#logoutBtn');
