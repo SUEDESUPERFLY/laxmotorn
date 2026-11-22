@@ -116,6 +116,16 @@ Provdatumet styr pauserna, eftersom den bästa pausen beror på hur långt det �
 Läxor vars provdatum har passerat ligger under **Tidigare prov** i biblioteket. Dagens repetition tar i första hand frågor från kommande läxor; tidigare prov får högst tre platser per runda, så att de kommer tillbaka glest.
 
 
+## Spelglädje: XP, milstolpar, butik och familjemål
+
+Allt räknas uppåt i barnets egen takt. Det finns inga svitar som bryts om barnet vilar några dagar, eftersom en bruten svit gör att man övar mindre efteråt ([Silverman och Barasch 2023](https://www.psychologytoday.com/us/blog/ulterior-motives/202306/how-broken-streaks-sap-motivation)).
+
+- **Milstolpar** på startsidan: övningspass, övningsdagar, guldmedaljer och guldläxor (guld på alla stationer). Nästa milstolpe visas (5, 10, 25, 50 … pass). Profiler från före milstolparna får sina pass uppskattade en gång från framstegen, så att ingen börjar på noll.
+- **Kombo** i rundan: +10 % XP per rätt i rad (upp till +50 %), och dessutom en bonus med skylt och konfetti vid 3 (+5), 5 (+10) och 10 rätt i rad (+25, sedan vid varje tiotal). Ett fel nollställer bara kombon i rundan.
+- **Konfetti** (ren canvas, inget bibliotek) när barnet tar brons, silver eller guld (i medaljens färger), går upp en nivå, når en milstolpe eller köper något. Den visas inte om enheten har bett om mindre rörelse.
+- **Figur och butik**: barnet väljer en figur och köper bakgrunder, ramar och prylar för sin XP. `stats.xp` är all intjänad XP och styr nivån, och köp sparas i `stats.spent`. Därför går nivån och familjemålet aldrig ner när barnet handlar. Figuren sparas i `stats.avatar`, och köpen i `stats.owned`.
+- **Familjemål**: en förälder sätter ett XP-mål och en belöning under Byt barn → Familjemål. Barnen ser en gemensam mätare som fylls på av allt som någon av dem övar, men inte vem som har bidragit med vad, för gemensamma mål ger bättre resultat än tävlan ([Roseth m.fl. 2008](https://sciencedaily.com/releases/2008/03/080327172216.htm)). Föräldrar ser varje barns del. Målet ligger i `households.goal` och läses och skrivs bara via funktionerna `family_goal()` och `set_family_goal()` (migreringen `20261122000100_family_goal.sql`).
+
 ## Publicering
 
 `src/` publiceras på GitHub Pages vid varje push till `main` (`.github/workflows/pages.yml`).
