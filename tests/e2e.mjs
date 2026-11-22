@@ -126,6 +126,19 @@ await page.route('**/*', async (route) => {
   if (p === '/auth/v1/user') return json(isKid ? kidUser : isKatrin ? katrin : user);
   if (p === '/auth/v1/logout') return route.fulfill({ status: 204 });
   if (p === '/rest/v1/household_members') return json(db.members.filter((m) => !eq('user_id') || m.user_id === eq('user_id')));
+  if (p === '/rest/v1/rpc/family_goal' || p === '/rest/v1/rpc/set_family_goal') {
+    if (p.endsWith('set_family_goal')) {
+      if (isKid) return json({ message: 'bara föräldrar' }, 400);
+      const b = req.postDataJSON() || {};
+      db.goal = b.p_target ? { target: b.p_target, reward: b.p_reward, set_at: new Date().toISOString(), base: Object.fromEntries(db.children.map((c) => [c.id, c.stats.xp || 0])) } : null;
+      calls.push(`  set_family_goal ${b.p_target} "${b.p_reward}"`);
+    }
+    const g = db.goal;
+    if (!g) return json(null);
+    const kids = db.children.map((c) => ({ id: c.id, name: c.name, earned: Math.max(0, (c.stats.xp || 0) - (g.base[c.id] || 0)) }));
+    const earned = kids.reduce((a, k) => a + k.earned, 0);
+    return json({ target: g.target, reward: g.reward, set_at: g.set_at, earned, done: earned >= g.target, kids: isKid ? null : kids });
+  }
   if (p === '/rest/v1/rpc/get_ingest_token') return json(isKid ? null : db.households[0].ingest_token);
   if (p === '/rest/v1/kid_logins') return json(isKid ? [] : db.logins.map((l) => ({ child_id: l.child_id, username: l.username })));
   if (p === '/rest/v1/households') { const h = db.households.find((x) => x.id === eq('id')); return json(single ? h : [h]); }
@@ -422,6 +435,24 @@ check(/Lag och rätt/.test(ov) && /Behöver öva inför provet/.test(ov), 'prov 
 await shot('e2e-7-overview');
 await page.click('#ovBack');
 
+step('familjemål (vuxen)');
+await page.waitForSelector('#famBox #famAdd');
+check(true, 'vuxna får en knapp för att sätta ett familjemål');
+check(/Övningspass/.test(await page.textContent('#meBox')) && /Guldmedaljer/.test(await page.textContent('#meBox')), 'startsidan visar övningspass och guldmedaljer');
+check(!/i rad/.test(await page.textContent('#hud')), 'inga dagar i rad i HUD');
+await page.click('#famAdd');
+await page.waitForSelector('#kids:not([hidden]) #famSave');
+check(await page.evaluate(() => document.querySelector('#famSetup').open), 'rutan Familjemål öppnas');
+await page.fill('#famTarget', '5000');
+await page.fill('#famReward', 'Fredagsmys');
+await page.click('#famSave');
+await page.waitForSelector('#famForm .fam');
+check(db.goal?.target === 5000 && db.goal?.reward === 'Fredagsmys', 'målet sparas via set_family_goal');
+await page.click('#kidsBack');
+await page.waitForSelector('#famBox .fam');
+const famTxt = await page.textContent('#famBox');
+check(/Fredagsmys/.test(famTxt) && /av 5\s000 XP/.test(famTxt), `barnens mätare visar belöningen och målet (${famTxt.replace(/\s+/g, ' ').trim().slice(0, 80)})`);
+
 step('skapa inloggning för Erik');
 await page.click('#switchKid');
 await page.waitForSelector('#kids:not([hidden])');
@@ -541,6 +572,68 @@ const dp = await page.evaluate(() => {
 });
 check(dp.n <= 15 && dp.old > 0 && dp.old <= 3, `Dagens repetition: högst 15 frågor, varav 1–3 från tidigare prov (${dp.old} av ${dp.n})`);
 check(dp.inPast && dp.curOutside, 'tidigare prov ligger under Tidigare prov, kommande läxor utanför');
+
+step('spelglädje: milstolpar, kombo, butik och familjemål (Erik)');
+await page.evaluate(() => { renderLib(); show('lib'); });
+await page.waitForSelector('#famBox .fam');
+check(!(await page.locator('#famBox .fam.done').count()), 'familjemålet är inte nått än');
+const meTxt = await page.textContent('#meBox');
+check(/Hej Erik/.test(meTxt) && /Övningspass/.test(meTxt) && /Övningsdagar/.test(meTxt), 'Eriks startsida visar milstolparna');
+check(Number((await page.textContent('#meBox .mile b')).replace(/\D/g, '')) >= 1, 'övningspassen räknas (aldrig noll för ett barn som har övat)');
+check(!(await page.locator('#famAdd').count()) && /Fredagsmys/.test(await page.textContent('#famBox')), 'barnet ser familjemålet men kan inte ändra det');
+check(!/Isabelle/.test(await page.textContent('#famBox')), 'barnet ser bara den gemensamma summan');
+check(/övningsdag/.test(await page.textContent('#dayChip')), 'HUD visar övningsdagar, som aldrig nollställs');
+const co = await page.evaluate(() => [comboOf(3)?.xp, comboOf(4), comboOf(5)?.xp, comboOf(10)?.xp, comboOf(20)?.xp]);
+check(co[0] === 5 && co[1] === null && co[2] === 10 && co[3] === 25 && co[4] === 25, `kombobonus vid 3, 5, 10 och varje tiotal (${co})`);
+const roundsBefore = await page.evaluate(() => G.rounds);
+await page.evaluate(() => {
+  QZ = { id: 'tCombo', title: 'Kombo', subject: 'no', status: 'ready', childId: null, stations: [{ id: 's1', name: 'A', qs: Array.from({ length: 4 }, (_, i) => ({ t: 'tf', q: 'Påstående ' + i, a: true, why: '' })) }], flash: [], links: [], concepts: [] };
+  P = getP(QZ.id); STATIONS = QZ.stations; startRound('station', { sid: 's1' });
+});
+const xp0 = await page.evaluate(() => G.xp);
+for (let i = 0; i < 3; i++) {
+  await page.click('#qbody .opt[data-v="1"]');
+  if (i < 2) await page.click('#nextBtn');
+}
+check(await page.locator('.combo-fx').count() === 1, 'skylten Kombo 3! visas');
+check(/Kombo 3! \+5/.test(await page.textContent('#feedback')), 'återkopplingen visar kombobonusen');
+const xp1 = await page.evaluate(() => G.xp);
+check(xp1 - xp0 >= 5 + 3 * 6, `kombobonusen läggs på XP (${xp1 - xp0})`);
+await shot('e2e-14-combo');
+await page.click('#nextBtn');
+await page.click('#qbody .opt[data-v="1"]');
+await page.click('#nextBtn');
+await page.waitForSelector('#result:not([hidden])');
+check(await page.evaluate(() => G.rounds) === roundsBefore + 1, 'ett klart pass räknas');
+await page.evaluate(() => { delete PC.tCombo; QZ = null; });
+await page.click('#home2');
+await page.evaluate(() => { G.xp += 6000; saveG(); updateHUD(); FAM.at = 0; renderLib(); show('lib'); });
+const lvBefore = await page.textContent('#lvlNum');
+await page.click('#meAva');
+await page.waitForSelector('#shop:not([hidden])');
+await page.click('#shopTabs [data-cat="acc"]');
+const w0 = await page.evaluate(() => wallet());
+await page.click('[data-it="glasses"]');
+await page.click('[data-yes="glasses"]');
+const av = await page.evaluate(() => ({ spent: G.spent, acc: G.avatar.acc, owned: G.owned, w: wallet() }));
+check(av.acc === 'glasses' && av.owned.includes('acc:glasses') && av.w === w0 - 500, `glasögonen köps för 500 XP (${JSON.stringify(av)})`);
+check(await page.textContent('#lvlNum') === lvBefore, 'nivån går inte ner när barnet handlar');
+const keep = await page.evaluate(() => { const k = G.spent; G.spent = G.xp - 100; renderShop(); return k; });
+await page.click('[data-it="crown"]');
+check(!(await page.locator('[data-yes="crown"]').count()) && /XP kvar/.test(await page.textContent('#shopGrid')), 'för dyr pryl går inte att köpa och visar hur mycket som är kvar');
+await page.evaluate((k) => { G.spent = k; renderShop(); }, keep);
+await page.click('#shopTabs [data-cat="a"]');
+await page.click('[data-it="owl"]');
+check(await page.evaluate(() => G.avatar.a) === 'owl', 'gratis figurer kan väljas direkt');
+await shot('e2e-15-shop');
+await page.evaluate(() => flush());
+await page.waitForTimeout(300);
+const ek = db.children.find((c) => c.id === 'k2').stats;
+check(ek.spent === 500 && ek.avatar?.a === 'owl' && ek.avatar?.acc === 'glasses', 'köp och figur sparas i barnets stats');
+await page.click('#shopBack');
+await page.waitForSelector('#famBox .fam.done');
+check(/klarade det/.test(await page.textContent('#famBox')), 'familjemålet fylls på och firas när det är nått');
+await shot('e2e-16-me');
 
 step('vuxenkonto för en tillåten e-postadress');
 await page.click('#logoutBtn');

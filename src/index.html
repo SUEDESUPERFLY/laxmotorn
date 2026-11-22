@@ -162,7 +162,7 @@ textarea.inp{resize:vertical;min-height:90px;line-height:1.45}
 .mlink.done .ml-check{background:var(--ok);border-color:var(--ok)!important;color:#fff}
 .hud-sub{display:flex;justify-content:space-between;gap:8px;margin-top:6px;font-size:12px;font-weight:700;color:var(--muted);flex-wrap:wrap}
 .streakc{display:inline-flex;align-items:center;gap:4px;color:var(--ink);font-weight:800}
-.streakc svg{width:14px;height:14px;color:var(--lingon)}
+.streakc svg{width:14px;height:14px;color:var(--moss)}
 .ready{background:var(--surface);border:2px solid var(--moss);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px}
 .ready-top{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
 .ready-top b{font:800 34px/1 "Bricolage Grotesque",sans-serif;color:var(--moss);font-variant-numeric:tabular-nums}
@@ -368,6 +368,66 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .qz.inb.busy .st{color:var(--moss)}
 .qz.inb.need .st{color:var(--muted)}
 .qz.inb.wait .st{color:var(--moss)}
+/* Profil, milstolpar, kombo, familjemål */
+#meBox:empty,#famBox:empty,#inboxBox:empty,#dailyBox:empty{display:none}
+.ava{display:block;width:100%;height:100%}
+.hud-ava{position:relative;width:56px;height:56px;flex:none;border:0;background:none;padding:0;border-radius:50%}
+.hud-ava .lvl{position:absolute;right:-6px;bottom:-4px;width:26px;height:26px;font-size:13px;border:2px solid var(--surface)}
+.me{background:var(--surface);border:2px solid var(--line);border-radius:20px;padding:14px;display:grid;grid-template-columns:auto 1fr;gap:12px 14px;align-items:center}
+.me-ava{position:relative;width:84px;height:84px;border:0;background:none;padding:0;border-radius:50%}
+.me-ava .ava{transition:transform .2s}
+.me-ava:hover .ava,.me-ava:focus-visible .ava{transform:scale(1.05)}
+.me-edit{position:absolute;left:50%;bottom:-6px;transform:translateX(-50%);background:var(--moss);color:var(--moss-ink);font-size:11px;font-weight:800;border-radius:99px;padding:2px 9px;white-space:nowrap}
+.me-main{min-width:0}
+.me-main h2{font-size:24px;color:var(--moss)}
+.me-main .hint{margin-top:2px}
+.me-wallet{display:inline-flex;align-items:center;gap:6px;margin:6px 0 0;font-weight:800;font-size:14px;background:var(--kant-soft);border-radius:99px;padding:3px 12px}
+.me-wallet svg{width:16px;height:16px;color:var(--kant)}
+.me-wallet.center{align-self:center}
+.miles{grid-column:1/-1;display:grid;grid-template-columns:repeat(4,1fr);gap:8px}
+.mile{background:var(--surface2);border-radius:14px;padding:8px 6px;text-align:center;min-width:0}
+.mile b{display:block;font:800 24px/1.1 "Bricolage Grotesque",sans-serif;font-variant-numeric:tabular-nums;color:var(--ink)}
+.mile span{display:block;font-size:11px;font-weight:800;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;overflow-wrap:anywhere}
+.mile.gold{background:var(--kant-soft)}
+@media (max-width:420px){.miles{grid-template-columns:repeat(2,1fr)}.me-ava{width:72px;height:72px}}
+.fam{background:var(--surface);border:2px solid var(--ok);border-radius:18px;padding:14px;display:flex;flex-direction:column;gap:8px}
+.fam.done{background:var(--ok-soft)}
+.fam-top{display:flex;gap:10px;align-items:center}
+.fam-top svg{width:28px;height:28px;color:var(--ok);flex:none}
+.fam-top .lbl{display:block;font-size:12px;font-weight:800;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}
+.fam-top b{display:block;font:700 20px/1.2 "Bricolage Grotesque",sans-serif;overflow-wrap:anywhere}
+.fam-bar{height:16px;border-radius:99px;background:var(--surface2);border:1px solid var(--line);overflow:hidden}
+.fam-bar i{display:block;height:100%;border-radius:99px;background:linear-gradient(90deg,var(--ok),var(--kant));transition:width .8s}
+.fam-txt{margin:0;font-size:14px;font-weight:700;color:var(--muted)}
+.fam-txt b{color:var(--ink)}
+.fam-add{display:flex;gap:12px;align-items:center;text-align:left;width:100%;background:transparent;border:2px dashed var(--line);border-radius:18px;padding:12px 14px}
+.fam-add svg{width:26px;height:26px;color:var(--ok);flex:none}
+.fam-add b{display:block}.fam-add small{display:block;color:var(--muted);font-weight:600;font-size:13px}
+#famForm{display:flex;flex-direction:column;gap:12px;margin-top:10px}
+.shop-prev{width:150px;height:150px;margin:0 auto}
+.center{text-align:center;margin-left:auto;margin-right:auto}
+.tabs{display:flex;gap:6px;background:var(--surface2);border-radius:14px;padding:4px;overflow-x:auto}
+.tab{flex:1;border:0;background:transparent;border-radius:10px;padding:10px 8px;font-weight:800;white-space:nowrap;color:var(--muted)}
+.tab[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:var(--shadow)}
+.shop-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(92px,1fr));gap:8px}
+.item{position:relative;display:flex;flex-direction:column;align-items:stretch;gap:4px}
+.item-b{display:flex;flex-direction:column;align-items:center;gap:4px;background:var(--surface);border:2px solid var(--line);border-radius:16px;padding:10px 6px 8px;width:100%}
+.item-b .ava{width:64px;height:64px}
+@media (max-width:420px){.item-b .ava{width:54px;height:54px}.item-b{padding:8px 4px 6px}.shop-prev{width:124px;height:124px}}
+.item-b b{font-size:13px;line-height:1.2}
+.item.on .item-b{border-color:var(--moss);box-shadow:0 0 0 2px var(--moss) inset}
+.item.locked .item-b .ava{filter:grayscale(.7);opacity:.55}
+.item small{font-size:11px;color:var(--muted);font-weight:700;text-align:center}
+.tag{font-size:11px;font-weight:800;border-radius:99px;padding:1px 8px;background:var(--surface2);color:var(--muted)}
+.tag.on{background:var(--moss);color:var(--moss-ink)}
+.tag.price{background:var(--kant-soft);color:var(--ink)}
+.tag.price.far{background:var(--surface2);color:var(--muted)}
+.buy-q{display:flex;flex-direction:column;gap:6px;align-items:center;font-size:13px;font-weight:800;background:var(--kant-soft);border:2px solid var(--kant);border-radius:12px;padding:8px}
+.combo-fx{position:fixed;left:50%;top:38%;transform:translate(-50%,-50%);z-index:16;pointer-events:none;text-align:center;font:800 clamp(28px,9vw,46px)/1.05 "Bricolage Grotesque",sans-serif;color:var(--kant);-webkit-text-stroke:1.5px var(--bark);text-shadow:0 3px 0 rgba(0,0,0,.18);animation:comboIn 1.4s ease-out forwards}
+.combo-fx small{display:block;font:800 18px "Nunito",sans-serif;-webkit-text-stroke:0;color:var(--ink);background:var(--kant-soft);border:2px solid var(--kant);border-radius:99px;padding:2px 12px;margin-top:6px;display:inline-block}
+@keyframes comboIn{0%{opacity:0;transform:translate(-50%,-50%) scale(.5)}15%{opacity:1;transform:translate(-50%,-50%) scale(1.12)}30%{transform:translate(-50%,-50%) scale(1)}75%{opacity:1}100%{opacity:0;transform:translate(-50%,-80%) scale(1)}}
+@media (prefers-reduced-motion:reduce){.combo-fx{animation:comboFade 1.4s forwards}@keyframes comboFade{0%,80%{opacity:1}100%{opacity:0}}}
+.pts.combo{background:var(--kant);color:#161A21}
 .kidmode .adult-only{display:none!important}
 .ov{gap:12px}
 .ov-head{display:flex;gap:12px;align-items:center}
@@ -387,6 +447,10 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 .kidbar b{color:var(--ink)}
 .qz.kid{width:100%;text-align:left;padding:0}
 .qz.kid .lvl{width:44px;height:44px;font-size:18px}
+.qz.kid .kid-ava{position:relative;width:52px;height:52px;flex:none}
+.qz.kid .kid-ava .lvl{position:absolute;right:-6px;bottom:-4px;width:24px;height:24px;font-size:12px;border:2px solid var(--surface)}
+.ov-ava{position:relative;width:52px;height:52px;flex:none}
+.ov-ava .lvl{position:absolute;right:-6px;bottom:-4px;width:24px;height:24px;font-size:12px;border:2px solid var(--surface)}
 .qz.kid.cur{border-color:var(--moss)}
 /* Förklaringsfilm */
 .xp-ov{position:fixed;inset:0;background:rgba(10,14,20,.6);z-index:30;display:grid;place-items:center;padding:calc(16px + env(safe-area-inset-top,0px)) calc(16px + env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) calc(16px + env(safe-area-inset-left,0px))}
@@ -452,6 +516,10 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
         <button class="btn" id="kidAdd" type="submit">Lägg till barn</button>
       </form>
     </div>
+    <details class="adult" id="famSetup"><summary>Familjemål</summary>
+      <p class="hint" style="margin:8px 0 0">Ett gemensamt XP-mål för alla barn, med en riktig belöning. Barnen ser en mätare som fylls på varje gång någon övar. XP som barnen handlar för i butiken räknas också.</p>
+      <div id="famForm"></div>
+    </details>
     <details class="adult" id="loginSetup"><summary>Barnens inloggning</summary>
       <p class="hint" style="margin:8px 0">Barnen loggar in med användarnamn och lösenord. De ser bara sina egna godkända läxor, inte Från skolan, och kan inte godkänna förslag eller byta barn.</p>
       <div id="loginList" class="mats"></div>
@@ -467,11 +535,11 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
 
   <div class="kidbar" id="kidbar" hidden><span><span id="kidLabel">Övar:</span> <b id="kidNow"></b></span><span class="row"><button class="btn ghost small adult-only" id="overviewBtn">Översikt</button><button class="btn ghost small adult-only" id="switchKid">Byt barn</button><button class="btn ghost small" id="logoutBtn">Logga ut</button></span></div>
   <div class="hud" id="hud" hidden>
-    <div class="lvl" id="lvlNum">1</div>
+    <button class="hud-ava" id="hudAva" aria-label="Din figur och butiken"><span id="hudAvaImg"></span><span class="lvl" id="lvlNum">1</span></button>
     <div class="hud-main">
       <div class="hud-top"><span class="lvl-name" id="lvlName">Nybörjare I</span><span class="xp" id="xpText">0 XP</span></div>
       <div class="bar"><i id="xpBar" style="width:0%"></i></div>
-      <div class="hud-sub"><span id="rankInfo"></span><span class="streakc" id="streakChip" hidden></span></div>
+      <div class="hud-sub"><span id="rankInfo"></span><span class="streakc" id="dayChip" hidden></span></div>
     </div>
   </div>
 
@@ -492,11 +560,24 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
       <button class="btn" id="newBtn" hidden></button>
     </div>
     <p class="hint" id="libNote"></p>
+    <div id="meBox"></div>
+    <div id="famBox"></div>
     <div id="inboxBox"></div>
     <div id="dailyBox"></div>
     <div class="lib-list" id="libList"></div>
     <div class="sect"><h2>Märken</h2><div class="badges" id="badges"></div></div>
     <p class="where" id="libWhere"></p>
+  </section>
+
+  <!-- PROFIL OCH BUTIK -->
+  <section id="shop" class="wrap" hidden>
+    <div class="qtop"><button class="back" id="shopBack">← Läxorna</button></div>
+    <div class="panel">
+      <h2>Din figur</h2>
+      <div id="shopTop" style="display:flex;flex-direction:column;gap:6px"></div>
+      <div class="tabs" id="shopTabs" role="tablist" aria-label="Vad vill du ändra?"></div>
+      <div class="shop-grid" id="shopGrid"></div>
+    </div>
   </section>
 
   <!-- CREATE -->
@@ -586,7 +667,7 @@ details.adult ul{margin:8px 0 0;padding-left:20px;font-size:14px;font-weight:600
       <div class="chips">
         <span class="chip hearts" id="lives" hidden></span>
         <button class="chip say-auto" id="autoRead" aria-pressed="false" hidden>Läs upp</button>
-        <span class="chip" id="streak">0 i rad</span>
+        <span class="chip combo" id="streak">Kombo 0</span>
       </div>
     </div>
     <div class="pips" id="pips"></div>
@@ -668,13 +749,15 @@ const ICONS={
  pause:'<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7M14 8.5v7"/>',
  link:'<path d="M10 14a4 4 0 0 0 5.7 0l3-3a4 4 0 0 0-5.7-5.7l-1 1"/><path d="M14 10a4 4 0 0 0-5.7 0l-3 3a4 4 0 0 0 5.7 5.7l1-1"/>',
  check:'<path d="m5 12 5 5 9-10"/>',
+ star2:'<path d="M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z"/>',
+ cal:'<rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/><path d="m9 15 2 2 4-4"/>',
  flame:'<path d="M12 3c1 3.5 5 5.5 5 10a5 5 0 0 1-10 0c0-2.5 1.5-4 2.5-5 .3 1.6 1.2 2.6 2.5 3 0-3-1-5.5 0-8z"/>',
  target:'<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="5"/><circle cx="12" cy="12" r="1"/>',
  lock:'<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/>',
  camera:'<path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/>',
  speaker:'<path d="M4 9v6h4l5 4V5L8 9z"/><path d="M16.5 8.5a5 5 0 0 1 0 7"/><path d="M19 6a8.5 8.5 0 0 1 0 12"/>'
 };
-const UI_ICONS=['cards','boss','plus','trash','upload','doc','x','play','link','check','camera','flame','target','lock','speaker'];
+const UI_ICONS=['cards','boss','plus','trash','upload','doc','x','play','link','check','camera','flame','target','lock','speaker','star2','cal'];
 const ICON_KEYS=Object.keys(ICONS).filter(k=>!UI_ICONS.includes(k));
 const svg=k=>`<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[k]||ICONS.book}</svg>`;
 const STAR='M12 2.5l2.9 6 6.6.9-4.8 4.6 1.2 6.5L12 17.4l-5.9 3.1 1.2-6.5-4.8-4.6 6.6-.9z';
@@ -788,9 +871,214 @@ const sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:true,a
 let HH=null,KIDS=[],KID=null;   // familj, barn, barnet som övar nu
 let ROLE=null,LOGINS={};        // 'parent' eller 'child'; barnens användarnamn (child_id → username)
 
+/* ---------- Profil: figur, bakgrund, ram och pryl (köps för intjänad XP) ----------
+   G.xp är all XP barnet har tjänat och styr nivån; köp dras från en egen summa (G.spent),
+   så nivån och familjemålet aldrig går ner när barnet handlar. */
+const EYES='<circle cx="40" cy="55" r="3.6" fill="#161A21"/><circle cx="60" cy="55" r="3.6" fill="#161A21"/><circle cx="41.2" cy="53.8" r="1.2" fill="#fff"/><circle cx="61.2" cy="53.8" r="1.2" fill="#fff"/>';
+const SMILE='<path d="M44 67q6 5 12 0" fill="none" stroke="#161A21" stroke-width="2.4" stroke-linecap="round"/>';
+const BLUSH='<ellipse cx="31" cy="64" rx="5" ry="3" fill="#F49A9A" opacity=".55"/><ellipse cx="69" cy="64" rx="5" ry="3" fill="#F49A9A" opacity=".55"/>';
+const AV_ART={
+  fox:`<path d="M24 46 30 16 46 34Z" fill="#E8742B"/><path d="M76 46 70 16 54 34Z" fill="#E8742B"/><path d="M29 38 31 24 40 34Z" fill="#FBD4B0"/><path d="M71 38 69 24 60 34Z" fill="#FBD4B0"/>
+    <ellipse cx="50" cy="58" rx="28" ry="25" fill="#E8742B"/><path d="M23 60Q34 84 50 82Q66 84 77 60Q64 70 50 68Q36 70 23 60Z" fill="#FFF4E8"/>${EYES}<ellipse cx="50" cy="65" rx="3.6" ry="2.8" fill="#161A21"/>${SMILE}`,
+  cat:`<path d="M25 46 27 20 44 34Z" fill="#8E97A8"/><path d="M75 46 73 20 56 34Z" fill="#8E97A8"/><path d="M30 38 31 27 39 34Z" fill="#F6B6C2"/><path d="M70 38 69 27 61 34Z" fill="#F6B6C2"/>
+    <ellipse cx="50" cy="58" rx="28" ry="25" fill="#8E97A8"/><path d="M40 36q2 6 0 10M50 34v10M60 36q-2 6 0 10" stroke="#6B7384" stroke-width="2.4" fill="none" stroke-linecap="round"/>
+    <ellipse cx="50" cy="69" rx="11" ry="8" fill="#E9ECF1"/>${EYES}<path d="M47 64h6l-3 3.4z" fill="#E66A86"/><path d="M28 64h-12M28 68l-11 3M72 64h12M72 68l11 3" stroke="#4C5363" stroke-width="1.6" stroke-linecap="round"/>${SMILE}`,
+  owl:`<path d="M27 40 30 24 41 34Z" fill="#7A4E33"/><path d="M73 40 70 24 59 34Z" fill="#7A4E33"/>
+    <ellipse cx="50" cy="60" rx="27" ry="27" fill="#9A6644"/><ellipse cx="50" cy="72" rx="15" ry="13" fill="#E9C9A5"/>
+    <circle cx="40" cy="54" r="9" fill="#fff"/><circle cx="60" cy="54" r="9" fill="#fff"/><circle cx="40" cy="55" r="4" fill="#161A21"/><circle cx="60" cy="55" r="4" fill="#161A21"/><circle cx="41.3" cy="53.6" r="1.3" fill="#fff"/><circle cx="61.3" cy="53.6" r="1.3" fill="#fff"/>
+    <path d="M46 62h8l-4 7z" fill="#F2A33A"/><path d="M44 77l2 2M50 76l0 3M56 77l-2 2" stroke="#B88A62" stroke-width="2" stroke-linecap="round"/>`,
+  frog:`<circle cx="36" cy="40" r="11" fill="#5DB85C"/><circle cx="64" cy="40" r="11" fill="#5DB85C"/><ellipse cx="50" cy="62" rx="31" ry="22" fill="#5DB85C"/>
+    <circle cx="36" cy="40" r="6.5" fill="#fff"/><circle cx="64" cy="40" r="6.5" fill="#fff"/><circle cx="36" cy="41" r="3.4" fill="#161A21"/><circle cx="64" cy="41" r="3.4" fill="#161A21"/>
+    <path d="M34 64q16 12 32 0" fill="none" stroke="#1F5E2A" stroke-width="2.6" stroke-linecap="round"/><circle cx="45" cy="55" r="1.4" fill="#1F5E2A"/><circle cx="55" cy="55" r="1.4" fill="#1F5E2A"/>${BLUSH}`,
+  panda:`<circle cx="28" cy="36" r="10" fill="#22252B"/><circle cx="72" cy="36" r="10" fill="#22252B"/><ellipse cx="50" cy="58" rx="28" ry="25" fill="#fff" stroke="#DDE1E7" stroke-width="1.5"/>
+    <ellipse cx="39" cy="55" rx="7.5" ry="9" transform="rotate(-25 39 55)" fill="#22252B"/><ellipse cx="61" cy="55" rx="7.5" ry="9" transform="rotate(25 61 55)" fill="#22252B"/>
+    <circle cx="40" cy="55" r="2.8" fill="#fff"/><circle cx="60" cy="55" r="2.8" fill="#fff"/><ellipse cx="50" cy="65" rx="4" ry="3" fill="#22252B"/>${SMILE}`,
+  bunny:`<ellipse cx="38" cy="26" rx="7" ry="20" fill="#F1E6EF"/><ellipse cx="62" cy="26" rx="7" ry="20" fill="#F1E6EF"/><ellipse cx="38" cy="27" rx="3.5" ry="14" fill="#F6B6C2"/><ellipse cx="62" cy="27" rx="3.5" ry="14" fill="#F6B6C2"/>
+    <ellipse cx="50" cy="60" rx="27" ry="24" fill="#F1E6EF"/>${EYES}<path d="M47 63h6l-3 3.4z" fill="#E66A86"/><path d="M50 66v3" stroke="#161A21" stroke-width="2"/>${SMILE}${BLUSH}`,
+  bear:`<circle cx="28" cy="38" r="10" fill="#8A5A3C"/><circle cx="72" cy="38" r="10" fill="#8A5A3C"/><circle cx="28" cy="38" r="5" fill="#C99872"/><circle cx="72" cy="38" r="5" fill="#C99872"/>
+    <ellipse cx="50" cy="59" rx="28" ry="25" fill="#8A5A3C"/><ellipse cx="50" cy="68" rx="12" ry="9" fill="#D8AE87"/>${EYES}<ellipse cx="50" cy="64" rx="4" ry="3" fill="#161A21"/>${SMILE}`,
+  robot:`<path d="M50 30V20" stroke="#5A6170" stroke-width="3" stroke-linecap="round"/><circle cx="50" cy="18" r="4" fill="#F2C230"/>
+    <rect x="22" y="30" width="56" height="50" rx="14" fill="#B9C3D1"/><rect x="29" y="42" width="42" height="22" rx="8" fill="#1F2A44"/>
+    <circle cx="40" cy="53" r="4" fill="#6CE0E8"/><circle cx="60" cy="53" r="4" fill="#6CE0E8"/><path d="M40 71h20" stroke="#5A6170" stroke-width="3" stroke-linecap="round"/>
+    <rect x="15" y="48" width="7" height="14" rx="3" fill="#8E97A8"/><rect x="78" y="48" width="7" height="14" rx="3" fill="#8E97A8"/>`,
+  dino:`<path d="M30 38 36 26 42 36M44 33 50 20 56 33M58 36 64 26 70 38" fill="#3E9B5A"/><ellipse cx="50" cy="60" rx="29" ry="25" fill="#5FC27A"/>
+    <ellipse cx="50" cy="71" rx="16" ry="9" fill="#BFE9C9"/>${EYES}<circle cx="45" cy="67" r="1.4" fill="#1F5E2A"/><circle cx="55" cy="67" r="1.4" fill="#1F5E2A"/>
+    <path d="M42 73q8 5 16 0" fill="none" stroke="#1F5E2A" stroke-width="2.4" stroke-linecap="round"/><circle cx="33" cy="49" r="2" fill="#3E9B5A"/><circle cx="68" cy="47" r="2.4" fill="#3E9B5A"/>`
+};
+const ACC_ART={
+  glasses:'<g fill="none" stroke="#161A21" stroke-width="2.6"><circle cx="40" cy="55" r="8.5"/><circle cx="60" cy="55" r="8.5"/><path d="M48.5 55h3M31.5 54l-7-2M68.5 54l7-2"/></g>',
+  bow:'<g transform="translate(70 30) rotate(15)"><path d="M0 0-13-8-13 8ZM0 0 13-8 13 8Z" fill="#E6507A"/><circle r="4" fill="#B8335A"/></g>',
+  beanie:'<path d="M21 46Q22 18 50 16Q78 18 79 46Z" fill="#C9343B"/><rect x="19" y="40" width="62" height="10" rx="5" fill="#F2F4F7"/><circle cx="50" cy="14" r="6.5" fill="#F2F4F7"/>',
+  phones:'<path d="M22 56Q22 22 50 22Q78 22 78 56" fill="none" stroke="#3A4250" stroke-width="5" stroke-linecap="round"/><rect x="15" y="50" width="12" height="18" rx="6" fill="#0F6A73"/><rect x="73" y="50" width="12" height="18" rx="6" fill="#0F6A73"/>',
+  party:'<g transform="rotate(-12 50 22)"><path d="M38 34 50 4 62 34Z" fill="#7C5CD6"/><circle cx="46" cy="24" r="2.2" fill="#F2C230"/><circle cx="53" cy="16" r="2" fill="#6CE0E8"/><circle cx="55" cy="29" r="2.2" fill="#F49A9A"/><circle cx="50" cy="4" r="4" fill="#F2C230"/></g>',
+  mask:'<path d="M24 50Q50 42 76 50L74 61Q50 55 26 61Z" fill="#1F4E8C"/><ellipse cx="40" cy="55" rx="5.5" ry="4" fill="#fff"/><ellipse cx="60" cy="55" rx="5.5" ry="4" fill="#fff"/><circle cx="40" cy="55" r="2.6" fill="#161A21"/><circle cx="60" cy="55" r="2.6" fill="#161A21"/>',
+  crown:'<path d="M30 36 32 18 41 28 50 14 59 28 68 18 70 36Z" fill="#F2C230" stroke="#B98300" stroke-width="2" stroke-linejoin="round"/><circle cx="50" cy="29" r="3" fill="#C9343B"/><circle cx="38" cy="31" r="2" fill="#2E6FB0"/><circle cx="62" cy="31" r="2" fill="#2E6FB0"/>'
+};
+// Grodan har ögonen högt upp: prylar för ansiktet och huvudet flyttas upp så att de hamnar rätt.
+const ACC_FACE=['glasses','mask'],ACC_DY={frog:{face:-15,top:-11}};
+const accDy=(a,acc)=>{const o=ACC_DY[a];return o?(ACC_FACE.includes(acc)?o.face:o.top):0};
+const STAR5=(x,y,r,c)=>{let d='';for(let i=0;i<10;i++){const a=-Math.PI/2+i*Math.PI/5,rr=i%2?r*.45:r;d+=(i?'L':'M')+(x+rr*Math.cos(a)).toFixed(1)+' '+(y+rr*Math.sin(a)).toFixed(1)}return `<path d="${d}Z" fill="${c}"/>`};
+const SHOP={
+  a:{name:'Figur',items:[
+    {id:'fox',n:'Räv',p:0},{id:'cat',n:'Katt',p:0},{id:'owl',n:'Uggla',p:0},{id:'frog',n:'Groda',p:0},{id:'panda',n:'Panda',p:0},{id:'bunny',n:'Kanin',p:0},{id:'bear',n:'Björn',p:0},
+    {id:'robot',n:'Robot',p:1200},{id:'dino',n:'Dino',p:2500}]},
+  bg:{name:'Bakgrund',items:[
+    {id:'mint',n:'Mint',p:0,c:'#BFE8D8'},{id:'sky',n:'Himmel',p:0,c:'#C4DDF4'},{id:'sand',n:'Sand',p:0,c:'#F3E2C0'},
+    {id:'lila',n:'Lila',p:400,c:'#D9C8F2'},{id:'koral',n:'Korall',p:400,c:'#F7C1B5'},{id:'natt',n:'Natthimmel',p:1000,c:'#24305A'},
+    {id:'regnb',n:'Regnbåge',p:2000,g:['#F7A6A6','#F7D58C','#B5E3A1','#9FD3F2','#C7B0F2']},{id:'rymd',n:'Rymden',p:3000,c:'#16123A'}]},
+  fr:{name:'Ram',items:[
+    {id:'none',n:'Ingen',p:0},{id:'ring',n:'Enkel',p:0},{id:'dots',n:'Prickar',p:600},{id:'gold',n:'Guld',p:1500},{id:'rainbow',n:'Regnbåge',p:2500},{id:'stars',n:'Stjärnor',p:4000}]},
+  acc:{name:'Pryl',items:[
+    {id:'none',n:'Ingen',p:0},{id:'glasses',n:'Glasögon',p:500},{id:'bow',n:'Rosett',p:500},{id:'beanie',n:'Mössa',p:800},{id:'phones',n:'Hörlurar',p:1200},
+    {id:'party',n:'Partyhatt',p:1500},{id:'mask',n:'Hjältemask',p:2000},{id:'crown',n:'Krona',p:5000}]}
+};
+const AV_DEF={a:'fox',bg:'mint',fr:'ring',acc:'none'};
+const shopItem=(cat,id)=>SHOP[cat].items.find(x=>x.id===id);
+const ownKey=(cat,id)=>cat+':'+id;
+const owns=(cat,id,g=G)=>{const it=shopItem(cat,id);return !!it&&(it.p===0||(g.owned||[]).includes(ownKey(cat,id)))};
+const wallet=(g=G)=>Math.max(0,Math.round(g.xp-(g.spent||0)));
+function normAv(av){const o={...AV_DEF,...(av&&typeof av==='object'?av:{})};Object.keys(AV_DEF).forEach(c=>{if(!shopItem(c,o[c]))o[c]=AV_DEF[c]});return o}
+let avSeq=0;
+function avatarSVG(av,o={}){
+  av=normAv(av);const id='av'+(++avSeq),bg=shopItem('bg',av.bg);let defs='',fill=bg.c||'#BFE8D8',extra='';
+  if(bg.g){defs+=`<linearGradient id="${id}g" x1="0" y1="0" x2="1" y2="1">${bg.g.map((c,i)=>`<stop offset="${i/(bg.g.length-1)}" stop-color="${c}"/>`).join('')}</linearGradient>`;fill=`url(#${id}g)`}
+  if(av.bg==='natt')extra=[[20,24],[78,20],[84,46],[16,70],[70,84],[30,86]].map(([x,y],i)=>`<circle cx="${x}" cy="${y}" r="${i%2?1.4:1}" fill="#fff" opacity=".8"/>`).join('');
+  if(av.bg==='rymd')extra=`<circle cx="18" cy="26" r="7" fill="#F2A33A"/><ellipse cx="18" cy="26" rx="11" ry="3" fill="none" stroke="#F7D58C" stroke-width="1.5"/><circle cx="84" cy="74" r="5" fill="#7FA9E6"/>`+[[76,18],[88,40],[12,58],[26,86],[60,90]].map(([x,y])=>`<circle cx="${x}" cy="${y}" r="1.2" fill="#fff"/>`).join('');
+  let frame='';
+  if(av.fr==='ring')frame='<circle cx="50" cy="50" r="47.5" fill="none" stroke="var(--line,#C9CFD8)" stroke-width="3"/>';
+  if(av.fr==='dots')frame='<circle cx="50" cy="50" r="46.5" fill="none" stroke="#2E6FB0" stroke-width="5" stroke-dasharray="0.1 9" stroke-linecap="round"/>';
+  if(av.fr==='gold')frame='<circle cx="50" cy="50" r="46.5" fill="none" stroke="#E3A400" stroke-width="5"/><circle cx="50" cy="50" r="43.2" fill="none" stroke="#F7D58C" stroke-width="1.5"/>';
+  if(av.fr==='rainbow'){defs+=`<linearGradient id="${id}r" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#E5484D"/><stop offset=".25" stop-color="#F2A33A"/><stop offset=".5" stop-color="#4CB05C"/><stop offset=".75" stop-color="#2E6FB0"/><stop offset="1" stop-color="#7C5CD6"/></linearGradient>`;frame=`<circle cx="50" cy="50" r="46.5" fill="none" stroke="url(#${id}r)" stroke-width="6"/>`}
+  if(av.fr==='stars')frame='<circle cx="50" cy="50" r="46.5" fill="none" stroke="#E3A400" stroke-width="4"/>'+[0,1,2,3,4,5,6,7].map(i=>{const a=i*Math.PI/4-Math.PI/2;return STAR5(50+46.5*Math.cos(a),50+46.5*Math.sin(a),5.5,'#F2C230')}).join('');
+  const lab=o.label?`<title>${esc(o.label)}</title>`:'';
+  return `<svg class="ava" viewBox="0 0 100 100" ${o.label?'role="img"':'aria-hidden="true"'}>${lab}<defs>${defs}<clipPath id="${id}c"><circle cx="50" cy="50" r="48"/></clipPath></defs>
+    <circle cx="50" cy="50" r="48" fill="${fill}"/><g clip-path="url(#${id}c)">${extra}<g transform="translate(0 6)">${AV_ART[av.a]||AV_ART.fox}${ACC_ART[av.acc]?`<g transform="translate(0 ${accDy(av.a,av.acc)})">${ACC_ART[av.acc]}</g>`:''}</g></g>${frame}</svg>`;
+}
+// Barn som inte har valt figur än får var sin (räknas fram från id:t), så att syskon inte ser likadana ut.
+function defAv(id){let h=0;for(const ch of String(id||''))h=(h*31+ch.charCodeAt(0))>>>0;const fa=SHOP.a.items.filter(x=>!x.p),fb=SHOP.bg.items.filter(x=>!x.p);return {...AV_DEF,a:fa[h%fa.length].id,bg:fb[(h>>3)%fb.length].id}}
+const avOf=k=>k&&k.stats&&k.stats.avatar?normAv(k.stats.avatar):defAv(k&&k.id);
+
+/* ---------- Milstolpar: räknas bara uppåt, i barnets egen takt ---------- */
+const MILES=[1,5,10,25,50,75,100,150,200,300,400,500,750,1000];
+const nextMile=n=>MILES.find(m=>m>n)||Math.ceil((n+1)/500)*500;
+function golds(){
+  let medals=0,done=0;
+  Store.all().forEach(q=>{const p=getP(q.id),st=q.stations||[];
+    allSt(q).forEach(s=>{if((p.medals[s.id]||0)>=3)medals++});
+    if(st.length&&st.every(s=>(p.medals[s.id]||0)>=3))done++});
+  return {medals,done};
+}
+// Gamla profiler har inga räknade pass: uppskatta en gång från det som redan finns, så att ingen börjar på noll.
+function estRounds(raws,days){
+  let st=0,ans=0;Object.values(raws||{}).forEach(r=>{const p=normP(r);st+=Object.keys(p.played).length+(p.bossBest>0?1:0);Object.values(p.q).forEach(s=>{ans+=(s.r||0)+(s.w||0)})});
+  return Math.max(days||0,st,Math.round(ans/10));
+}
+function countRound(){
+  const before=G.rounds||0;G.rounds=before+1;saveG();
+  if(G.rounds>=25)award('pass25');if(G.rounds>=100)award('pass100');
+  if(MILES.includes(G.rounds)&&G.rounds>1){toast(`Milstolpe: ${G.rounds} övningspass!`);confetti(80,{colors:['#0F6A73','#E3A400','#7C5CD6','#4CB05C']})}
+}
+function renderMe(){
+  const box=$('#meBox');if(!box)return;if(!KID){box.innerHTML='';return}
+  const k=KIDS.find(x=>x.id===KID),{medals,done}=golds(),r=G.rounds||0,nm=nextMile(r),days=G.dayCount||0;
+  box.innerHTML=`<div class="me">
+    <button class="me-ava" id="meAva" aria-label="Anpassa din figur">${avatarSVG(G.avatar)}<span class="me-edit">Anpassa</span></button>
+    <div class="me-main"><h2>Hej ${esc(k?k.name:'')}!</h2>
+      <p class="hint">${r?`${nm-r} pass kvar till nästa milstolpe: <b>${nm} pass</b>.`:'Kör ditt första pass, så börjar det räknas.'}</p>
+      <p class="me-wallet">${svg('star2')}<b>${fmt(wallet())}</b> XP att handla för</p></div>
+    <div class="miles">
+      <div class="mile"><b>${fmt(r)}</b><span>Övningspass</span></div>
+      <div class="mile"><b>${fmt(days)}</b><span>Övningsdagar</span></div>
+      <div class="mile gold"><b>${fmt(medals)}</b><span>Guldmedaljer</span></div>
+      <div class="mile"><b>${fmt(done)}</b><span>Guldläxor</span></div>
+    </div></div>`;
+  $('#meAva').onclick=()=>openShop();
+}
+
+/* ---------- Butiken ---------- */
+let shopCat='a',shopBuy=null;
+function openShop(cat){if(cat)shopCat=cat;shopBuy=null;renderShop();show('shop')}
+function renderShop(){
+  const w=wallet(),av=normAv(G.avatar);
+  $('#shopTop').innerHTML=`<div class="shop-prev">${avatarSVG(av,{label:'Din figur'})}</div>
+    <p class="me-wallet center">${svg('star2')}<b>${fmt(w)}</b> XP att handla för</p>
+    <p class="hint center">Nivån påverkas inte när du handlar. All XP du har tjänat finns kvar.</p>`;
+  $('#shopTabs').innerHTML=Object.entries(SHOP).map(([c,v])=>`<button class="tab" role="tab" aria-selected="${c===shopCat}" data-cat="${c}">${v.name}</button>`).join('');
+  $('#shopGrid').innerHTML=SHOP[shopCat].items.map(it=>{
+    const own=owns(shopCat,it.id),on=av[shopCat]===it.id,pv={...av,[shopCat]:it.id},can=w>=it.p;
+    const tag=on?'<span class="tag on">Vald</span>':own?'<span class="tag">Din</span>':`<span class="tag price ${can?'':'far'}">${fmt(it.p)} XP</span>`;
+    const conf=shopBuy===it.id?`<span class="buy-q">Köp för ${fmt(it.p)} XP?<span class="row"><button class="btn small" data-yes="${it.id}">Köp</button><button class="btn ghost small" data-no="1">Nej</button></span></span>`:'';
+    return `<div class="item ${on?'on':''} ${!own&&!can?'locked':''}"><button class="item-b" data-it="${it.id}" aria-label="${esc(it.n)}${own?'':`, ${it.p} XP`}">${avatarSVG(pv)}<b>${esc(it.n)}</b>${tag}</button>${own||can?'':`<small>${fmt(it.p-w)} XP kvar</small>`}${conf}</div>`;
+  }).join('');
+}
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#shop'))return;
+  const t=e.target.closest('[data-cat]');if(t){shopCat=t.dataset.cat;shopBuy=null;renderShop();return}
+  const y=e.target.closest('[data-yes]');if(y){buy(shopCat,y.dataset.yes);return}
+  if(e.target.closest('[data-no]')){shopBuy=null;renderShop();return}
+  const b=e.target.closest('[data-it]');if(!b)return;const id=b.dataset.it,it=shopItem(shopCat,id);
+  if(owns(shopCat,id)){G.avatar={...normAv(G.avatar),[shopCat]:id};saveG();updateHUD();renderShop();return}
+  if(wallet()>=it.p){shopBuy=id;renderShop()}else toast(`Du behöver ${fmt(it.p-wallet())} XP till. Öva så kommer de!`);
+});
+function buy(cat,id){
+  const it=shopItem(cat,id);if(!it||owns(cat,id)||wallet()<it.p)return;
+  G.spent=(G.spent||0)+it.p;G.owned=[...(G.owned||[]),ownKey(cat,id)];G.avatar={...normAv(G.avatar),[cat]:id};saveG();
+  shopBuy=null;updateHUD();renderShop();toast(`${it.n} är din!`);confetti(60,{colors:['#E3A400','#7C5CD6','#0F6A73','#E6507A']});
+}
+
+/* ---------- Familjemål (gemensam XP för alla barn, sätts av en förälder) ---------- */
+let FAM={at:0,g:null,ok:true,busy:null};
+async function loadFam(force){
+  if(!force&&Date.now()-FAM.at<20000)return FAM;
+  if(FAM.busy)return FAM.busy;
+  FAM.busy=(async()=>{try{await flush();const {data,error}=await sb.rpc('family_goal');
+    if(error){FAM={at:Date.now(),g:null,ok:false,busy:null};return FAM}
+    FAM={at:Date.now(),g:data||null,ok:true,busy:null}}catch(e){FAM={at:Date.now(),g:null,ok:false,busy:null}}return FAM})();
+  return FAM.busy;
+}
+function famHtml(g,adult){
+  const pc=Math.min(100,Math.round(g.earned/g.target*100)),left=Math.max(0,g.target-g.earned);
+  return `<div class="fam ${g.done?'done':''}"><div class="fam-top">${svg('heart')}<div><span class="lbl">Familjemål</span><b>${esc(g.reward)}</b></div></div>
+    <div class="fam-bar" role="progressbar" aria-valuemin="0" aria-valuemax="${g.target}" aria-valuenow="${Math.min(g.earned,g.target)}" aria-label="Familjemålet"><i style="width:${pc}%"></i></div>
+    <p class="fam-txt"><b>${fmt(Math.min(g.earned,g.target))} av ${fmt(g.target)} XP</b> · ${g.done?'Ni klarade det tillsammans!':`${fmt(left)} kvar. Allt som någon i familjen övar fyller på.`}</p>
+    ${adult&&g.kids&&g.kids.length?`<p class="hint">${g.kids.map(k=>`${esc(k.name)} ${fmt(k.earned)}`).join(' · ')}</p>`:''}</div>`;
+}
+async function renderFam(){
+  const box=$('#famBox');if(!box)return;
+  if(!FAM.at)box.innerHTML='';
+  const f=await loadFam();if(!$('#famBox'))return;
+  const adult=ROLE!=='child',g=f.g;
+  if(!f.ok||!g){box.innerHTML=adult&&f.ok?`<button class="fam-add" id="famAdd">${svg('heart')}<span><b>Sätt ett familjemål</b><small>Ett XP-mål för hela familjen med en riktig belöning, som att välja fredagsfilm.</small></span></button>`:'';
+    const a=$('#famAdd');if(a)a.onclick=()=>{showKids();const d=$('#famSetup');if(d){d.open=true;d.scrollIntoView({block:'start'})}};return}
+  box.innerHTML=famHtml(g,adult);
+  if(g.done){const k='laxmotorn:famDone:'+g.set_at+':'+(KID||'');if(!LS.get(k,false)){LS.set(k,true);toast(`Familjemålet är klart: ${g.reward}!`);confetti(140)}}
+}
+async function renderFamSetup(){
+  const box=$('#famForm');if(!box)return;
+  const f=await loadFam(true),g=f.g;
+  if(!f.ok){box.innerHTML='<p class="hint">Familjemålet kräver en uppdatering av databasen (migreringen family_goal).</p>';return}
+  box.innerHTML=`${g?famHtml(g,true):''}
+    <div class="grid2"><label class="field" for="famTarget"><span>Mål i XP</span><input class="inp" id="famTarget" type="number" inputmode="numeric" min="100" max="1000000" step="100" value="${g?g.target:5000}"></label>
+    <label class="field" for="famReward"><span>Belöning</span><input class="inp" id="famReward" type="text" maxlength="80" placeholder="T.ex. Välja fredagsfilm" value="${g?esc(g.reward):''}"></label></div>
+    <p class="hint">En dags övning brukar ge några hundra till tusen XP per barn. Mätaren börjar om från noll när du sparar ett nytt mål.</p>
+    <div class="row"><button class="btn small" id="famSave" type="button">${g?'Spara nytt mål':'Starta målet'}</button>${g?'<button class="btn ghost small" id="famDel" type="button">Ta bort målet</button>':''}</div>`;
+  $('#famSave').onclick=async()=>{
+    const t=Math.round(+$('#famTarget').value),r=$('#famReward').value.trim();
+    if(!(t>=100&&t<=1000000)){toast('Välj ett mål mellan 100 och 1 000 000 XP.');return}
+    if(!r){toast('Skriv vad belöningen är.');$('#famReward').focus();return}
+    $('#famSave').disabled=true;await flush();const {error}=await sb.rpc('set_family_goal',{p_target:t,p_reward:r});
+    if(error){toast('Kunde inte spara familjemålet.');$('#famSave').disabled=false;return}
+    toast('Familjemålet är startat!');FAM.at=0;renderFamSetup();
+  };
+  const d=$('#famDel');if(d)d.onclick=async()=>{const {error}=await sb.rpc('set_family_goal',{p_target:null,p_reward:null});if(error){toast('Kunde inte ta bort målet.');return}FAM.at=0;renderFamSetup()};
+}
+
 /* XP och märken per barn (children.stats), framsteg per barn och läxa (progress.state) */
-const freshG=()=>({xp:0,days:[],badges:[],fixed:0,reviews:0});
-function normG(s){const g=Object.assign(freshG(),s&&typeof s==='object'?s:{});if(!Array.isArray(g.days))g.days=[];if(!Array.isArray(g.badges))g.badges=[];g.xp=Number(g.xp)||0;return g}
+// xp = all intjänad XP (styr nivån), spent = det som har handlats för i butiken, rounds = genomförda övningspass,
+// dayCount = antal olika dagar barnet har övat. Inget av det nollställs.
+const freshG=()=>({xp:0,days:[],badges:[],fixed:0,reviews:0,spent:0,rounds:0,dayCount:0,avatar:{...AV_DEF},owned:[]});
+function normG(s){const src=s&&typeof s==='object'?s:{},g=Object.assign(freshG(),src);if(!Array.isArray(g.days))g.days=[];if(!Array.isArray(g.badges))g.badges=[];if(!Array.isArray(g.owned))g.owned=[];
+  g.xp=Number(g.xp)||0;g.spent=Math.max(0,Number(g.spent)||0);g.rounds=src.rounds==null?null:Math.max(0,Number(src.rounds)||0);g.dayCount=Math.max(Number(g.dayCount)||0,g.days.length);g.avatar=normAv(g.avatar);return g}
 let G=freshG();
 let RAW={};const PC={};
 const dirtyP=new Set();let gDirty=false,flushT=null,failT=null,failShown=false;
@@ -824,7 +1112,7 @@ function getP(id){
 const saveP=id=>{dirtyP.add(id);scheduleFlush()};
 let QZ=null,STATIONS=[],FLASH=[],P=null;
 
-function show(id){Say.stop();['auth','loading','kids','overview','lib','create','review','home','quiz','result','cards'].forEach(x=>$('#'+x).hidden=x!==id);
+function show(id){Say.stop();['auth','loading','kids','overview','lib','create','review','home','quiz','result','cards','shop'].forEach(x=>$('#'+x).hidden=x!==id);
   const pre=['auth','loading','kids'].includes(id);$('#hud').hidden=pre||id==='overview';$('#kidbar').hidden=pre;window.scrollTo(0,0)}
 const TQ=[];let tBusy=false;
 function toast(msg){if(TQ[TQ.length-1]===msg)return;if(TQ.length>=3)TQ.shift();TQ.push(msg);if(!tBusy)nextToast()}
@@ -837,15 +1125,17 @@ function levelOf(xp){let L=1;while(L<MAXL&&xp>=xpFor(L+1))L++;return L}
 const rankOf=L=>Math.floor((L-1)/5);
 const levelName=L=>`${RANKS[rankOf(L)]} ${ROMAN[(L-1)%5]}`;
 const fmt=n=>Math.round(n).toLocaleString('sv-SE');
-function streak(){const set=new Set(G.days);let n=0,t=Date.now();if(!set.has(dayKey(t)))t-=DAY;while(set.has(dayKey(t))){n++;t-=DAY}return n}
-function markDay(){const k=dayKey();if(G.days.includes(k))return;G.days.push(k);G.days=G.days.slice(-90);saveG();const s=streak();if(s>=3)award('streak3');if(s>=7)award('streak7');updateHUD()}
+// Inga svitar som bryts: varje ny dag barnet övar läggs till, och det går aldrig att tappa något genom att vila.
+function markDay(){const k=dayKey();if(G.days.includes(k))return;G.days.push(k);G.days=G.days.slice(-90);G.dayCount=(G.dayCount||0)+1;saveG();
+  const d=G.dayCount;if(d>=3)award('streak3');if(d>=7)award('streak7');if(d>=20)award('days20');updateHUD()}
 function updateHUD(){
   const L=levelOf(G.xp),cur=xpFor(L),nxt=L<MAXL?xpFor(L+1):null,r=rankOf(L);
   $('#lvlNum').textContent=L;$('#lvlName').textContent=levelName(L);
   $('#xpText').textContent=nxt?`${fmt(G.xp)} / ${fmt(nxt)} XP`:`${fmt(G.xp)} XP`;
   $('#xpBar').style.width=(nxt?Math.min(100,(G.xp-cur)/(nxt-cur)*100):100)+'%';
   $('#rankInfo').textContent=r<RANKS.length-1?`Nästa rang: ${RANKS[r+1]} på nivå ${(r+1)*5+1}`:L<MAXL?'Högsta rangen. Fortsätt mot nivå 30.':'Högsta nivån!';
-  const s=streak(),c=$('#streakChip');c.hidden=s<1;c.innerHTML=`${svg('flame')}${s} ${s===1?'dag':'dagar'} i rad`;
+  const d=G.dayCount||0,c=$('#dayChip');c.hidden=d<1;c.innerHTML=`${svg('cal')}${fmt(d)} ${d===1?'övningsdag':'övningsdagar'}`;
+  $('#hudAvaImg').innerHTML=avatarSVG(G.avatar);
 }
 function addXP(n){
   n=Math.round(n);if(!n)return;const before=levelOf(G.xp);G.xp+=n;saveG();updateHUD();const after=levelOf(G.xp);
@@ -856,8 +1146,12 @@ const BADGES=[
  {id:'combo10',n:'Oslagbar',d:'10 rätt i rad',ic:'10'},
  {id:'fix10',n:'Felfixare',d:'Fixa 10 missar',ic:'F'},
  {id:'rev25',n:'Minnesmästare',d:'25 repetitioner i rätt tid',ic:'R'},
- {id:'streak3',n:'Tre i rad',d:'Öva tre dagar i rad',ic:'3'},
- {id:'streak7',n:'Hela veckan',d:'Öva sju dagar i rad',ic:'7'},
+ {id:'streak3',n:'Tre dagar',d:'Öva tre olika dagar',ic:'3'},
+ {id:'streak7',n:'Sju dagar',d:'Öva sju olika dagar',ic:'7'},
+ {id:'days20',n:'Trägen',d:'Öva 20 olika dagar',ic:'20'},
+ {id:'pass25',n:'Flitig',d:'25 övningspass',ic:'25'},
+ {id:'pass100',n:'Hundra pass',d:'100 övningspass',ic:'100'},
+ {id:'gold10',n:'Guldsamlare',d:'10 guldmedaljer',ic:'G'},
  {id:'gold',n:'Första guldet',d:'Guld på en station',ic:'G'},
  {id:'boss',n:'Provklar',d:'Klara ett slutprov',ic:'P'},
  {id:'allgold',n:'Guldläxa',d:'Guld på alla stationer i en läxa',ic:'★'},
@@ -931,7 +1225,7 @@ function updateMedal(qz,st,flawless){
     else if(m===1&&flawless&&bx.every(b=>b>=1)){m=2;go=true}
     else if(m===2&&bx.every(b=>b>=2)){m=3;go=true}}
   if(m>cur){p.medals[st.id]=m;saveP(qz.id);let b=0;for(let k=cur+1;k<=m;k++)b+=MEDAL_XP[k];addXP(b);
-    if(m===3)award('gold');if(!st.lv&&qz.stations.every(s=>(p.medals[s.id]||0)>=3))award('allgold');
+    if(m===3){award('gold');if(golds().medals>=10)award('gold10')}if(!st.lv&&qz.stations.every(s=>(p.medals[s.id]||0)>=3))award('allgold');
     if(st.lv&&allMed(levelSt(qz,st.lv),p,1))award(st.lv===2?'deep':'expert')}
   return {from:cur,to:m};
 }
@@ -1150,6 +1444,7 @@ function renderLib(){
       +(past.length?`<details class="adult past-tests" id="pastBox" ${pastOpen?'open':''}><summary>Tidigare prov (${past.length})</summary><p class="hint" style="margin:8px 0 10px">Några frågor härifrån kommer tillbaka i Dagens repetition då och då, så att det sitter kvar till terminens slut.</p><div class="lib-list">${past.map(card).join('')}</div></details>`:'');
     const pb=$('#pastBox');if(pb)pb.addEventListener('toggle',()=>{pastOpen=pb.open;LS.set('laxmotorn:pastOpen',pastOpen)});
   }
+  renderMe();renderFam();
   $('#badges').innerHTML=BADGES.map(b=>`<div class="badge ${G.badges.includes(b.id)?'':'locked'}"><span class="b-ic">${b.ic}</span><div><b>${b.n}</b><span>${b.d}</span></div></div>`).join('');
   $('#libWhere').textContent=booted?'Du ser läxorna för det valda barnet. XP, medaljer och märken sparas per barn.':'';
 }
@@ -2283,25 +2578,36 @@ function timeout(){
   const extra=q.t==='order'?`<p>Tiden tog slut. Rätt ordning:</p><ol>${q.items.map(x=>`<li>${esc(x)}</li>`).join('')}</ol>`:`<p>Tiden tog slut. Rätt svar: <b>${esc(ansText(q))}</b></p>`;
   answer(false,extra);
 }
-function renderStreak(){const c=$('#streak');const m=Math.min(R.streak,5)*10;c.textContent=R.streak?`${R.streak} i rad${m?` · +${m} %`:''}`:'0 i rad';c.classList.toggle('hot',R.streak>=3)}
+function renderStreak(){const c=$('#streak');const m=Math.min(R.streak,5)*10;c.textContent=R.streak?`Kombo ${R.streak}${m?` · +${m} %`:''}`:'Kombo 0';c.classList.toggle('hot',R.streak>=3)}
+// Kombo: extra XP och en peppande skylt vid 3, 5 och 10 rätt i rad (sedan vid varje ytterligare tiotal). Fel nollställer bara kombon i rundan.
+const COMBO={3:{xp:5,t:'Kombo 3!'},5:{xp:10,t:'Kombo 5!'},10:{xp:25,t:'Kombo 10!'}};
+const comboOf=n=>COMBO[n]||(n>10&&n%10===0?{xp:25,t:`Kombo ${n}!`}:null);
+function comboFx(c){
+  document.querySelectorAll('.combo-fx').forEach(x=>x.remove());
+  const el=document.createElement('div');el.className='combo-fx';el.setAttribute('aria-hidden','true');el.innerHTML=`${esc(c.t)}<br><small>+${c.xp} XP bonus</small>`;
+  document.body.appendChild(el);setTimeout(()=>el.remove(),1500);
+  const r=$('#streak').getBoundingClientRect();confetti(c.xp>=25?70:c.xp>=10?36:18,{x:r.left+r.width/2,y:r.top+r.height/2});
+}
 const CHEERS=['Rätt!','Snyggt!','Klockrent!','Precis!'];
 const KIND_HEAD={fix:'Fixat!',review:'Den satt kvar!',early:'Rätt!',cram:'Rätt!',second:'Bra, nu sitter den bättre'};
 const KIND_SUB={fix:'Du hade fel på den här förut. 1,5× XP.',review:'Repetition efter en paus ger dubbla XP.',early:'Den här kan du redan idag. Mest XP ger nya frågor, missar och repetitioner.',cram:'Inför provet: bra att plocka fram det en gång till.'};
 function answer(ok,extra='',o={}){
   const it=R.items[R.i],q=it.q;R.answered=true;clearInterval(R.tick);R.res[R.i]=ok;
   const g=grade(it.ref,q,ok,{second:!!it.second,joker:R.jokerNow});R.jokerNow=false;
-  let pts=g.xp;
+  let pts=g.xp,combo=null;
   if(ok&&!it.second){
     R.streak++;R.correct++;
     if(pts>0&&g.kind!=='early')pts=Math.round(pts*(1+Math.min(R.streak-1,5)*.1));
     if(R.boss&&R.left>15&&pts>0)pts+=3;
     if(R.streak>=5)award('combo5');if(R.streak>=10)award('combo10');
+    combo=comboOf(R.streak);
   }else if(!ok){
     R.streak=0;if(!it.second){R.flawless=false;R.missed.push(it)}if(R.boss)R.lives--;
     const c=$('#qcard');c.classList.remove('pop');void c.offsetWidth;c.classList.add('shake');
   }
   if(ok)R.kinds[g.kind]=(R.kinds[g.kind]||0)+1;
   markDay();if(pts>0){R.xp+=pts;addXP(pts)}
+  if(combo){R.xp+=combo.xp;addXP(combo.xp);comboFx(combo)}
   if(G.fixed>=10)award('fix10');if(G.reviews>=25)award('rev25');
   // Fel svar: kommer tillbaka i slutet, helst som en annan fråga om samma begrepp.
   const qzo=it.qzObj||QZ,kc=!ok?conceptOf(qzo,q):null;
@@ -2317,7 +2623,7 @@ function answer(ok,extra='',o={}){
   const head=ok?(KIND_HEAD[g.kind]||CHEERS[Math.floor(Math.random()*CHEERS.length)]):(o.head||'Inte riktigt');
   const sub=ok?(KIND_SUB[g.kind]||''):(requeue?(sib?'En liknande fråga kommer i slutet av rundan.':'Frågan kommer tillbaka i slutet av rundan.'):'');
   const nextLast=R.i===R.items.length-1||(R.boss&&R.lives<=0);
-  $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span>${pts>0?`<span class="pts">+${pts} XP</span>`:''}</h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${nextLast?'Se resultat':'Nästa fråga →'}</button>${Say.btn('sayFb','Läs upp')}${kc?`<button class="btn ghost" id="xpBtn">${svg('play')}Förklaring: ${esc(kc.name)}</button>`:''}</div></div>`;
+  $('#feedback').innerHTML=`<div class="fb ${ok?'ok':'no'} pop"><h3><span>${head}</span><span class="row" style="gap:6px">${combo?`<span class="pts combo">${esc(combo.t)} +${combo.xp}</span>`:''}${pts>0?`<span class="pts">+${pts} XP</span>`:''}</span></h3>${extra}${q.why?`<p>${esc(q.why)}</p>`:''}${sub?`<p class="sub">${sub}</p>`:''}<div class="row" style="margin-top:6px"><button class="btn" id="nextBtn">${nextLast?'Se resultat':'Nästa fråga →'}</button>${Say.btn('sayFb','Läs upp')}${kc?`<button class="btn ghost" id="xpBtn">${svg('play')}Förklaring: ${esc(kc.name)}</button>`:''}</div></div>`;
   $('#nextBtn').focus({preventScroll:true});
   $('#feedback').scrollIntoView({behavior:'smooth',block:'nearest'});
   $('#nextBtn').onclick=()=>{if(nextLast)finish();else{R.i++;renderQ()}};
@@ -2339,6 +2645,7 @@ function finish(){
   if(rst){P.played[rst.id]=1;saveP(QZ.id);medal=updateMedal(QZ,rst,R.flawless)}
   if(R.boss){bossWin=R.lives>0;if(bossWin){P.bossBest=Math.max(P.bossBest||0,R.lives);saveP(QZ.id);award('boss')}}
   touched.forEach(qz=>{const p=getP(qz.id);if((R.mode==='rep'||R.mode==='daily')&&pct>=.8&&!p.repDone){p.repDone=true;saveP(qz.id)}allSt(qz).forEach(st=>updateMedal(qz,st,false));checkGoals(qz)});
+  countRound();
   const bonus=G.xp-R.xpStart-R.xp;
   let title,msg;
   if(R.mode==='station'){
@@ -2366,7 +2673,8 @@ function finish(){
   // Ny nivå öppnad i den här rundan?
   if(QZ&&mode!=='daily'){const p=getP(QZ.id);[2,3].forEach(n=>{if(R.lvBefore&&!R.lvBefore[n]&&lvOpen(QZ,p,n)){toast(`Ny nivå: ${LV_NAME[n]}!`);confetti(120)}});ensureLevels(QZ,p)}
   $('#home2').onclick=()=>{if(mode==='daily'){renderLib();show('lib')}else{renderHome();show('home')}};
-  show('result');if((medal&&medal.to>medal.from)||bossWin)confetti(medal&&medal.to===3?140:90);
+  show('result');if((medal&&medal.to>medal.from)||bossWin)confetti(medal&&medal.to===3?140:90,medal&&medal.to>medal.from?{colors:MEDAL_COL[medal.to]}:{});
+  FAM.at=0;
 }
 $('#quitBtn').onclick=()=>{clearInterval(R&&R.tick);flushFilms();if(R&&R.mode==='daily'||!QZ){renderLib();show('lib')}else{renderHome();show('home')}};
 
@@ -2398,18 +2706,28 @@ function renderCard(){
     $('#practice').onclick=()=>{delete P.known[k];saveP(QZ.id);nextCard()};
   }
 }
-function nextCard(){F.open=false;F.i++;if(F.i>=FLASH.length){checkGoals(QZ);renderHome();show('home');toast(`Kort klara: ${FLASH.filter((_,i)=>i in P.known).length} av ${FLASH.length} kan`);return}renderCard()}
+function nextCard(){F.open=false;F.i++;if(F.i>=FLASH.length){countRound();FAM.at=0;checkGoals(QZ);renderHome();show('home');toast(`Kort klara: ${FLASH.filter((_,i)=>i in P.known).length} av ${FLASH.length} kan`);return}renderCard()}
 $('#quitCards').onclick=()=>{checkGoals(QZ);renderHome();show('home')};
 
 /* ---------- Konfetti ---------- */
-function confetti(n){
+// Lättviktig konfetti på en canvas (inget bibliotek). o.colors = färger, o.x/o.y = en smäll från en punkt i stället för regn.
+const MEDAL_COL={1:['#C8814A','#E3A57A','#8A5A3C','#F3D2B4'],2:['#B9C2CC','#E3E8EE','#8A94A6','#FFFFFF'],3:['#E3A400','#F7D58C','#B98300','#FFF1B8']};
+let FXP=[],fxRun=false;
+function confetti(n,o={}){
   if(matchMedia('(prefers-reduced-motion: reduce)').matches)return;
-  const cv=$('#fx'),ctx=cv.getContext('2d');cv.width=innerWidth;cv.height=innerHeight;
-  const cs=getComputedStyle($('#app'));const cols=[cs.getPropertyValue('--moss').trim()||'#0F6A73','#E3A400','#C9343B','#1E7A46','#8A94A6'];
-  const Pp=Array.from({length:n},()=>({x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.5,vx:(Math.random()-.5)*1.5,vy:2+Math.random()*2.5,r:Math.random()*6,vr:(Math.random()-.5)*.2,s:6+Math.random()*6,c:cols[Math.floor(Math.random()*cols.length)],w:Math.random()*6}));
-  let t=0;(function f(){ctx.clearRect(0,0,cv.width,cv.height);t++;
-    Pp.forEach(p=>{p.x+=p.vx+Math.sin((t+p.w*20)/20);p.y+=p.vy;p.r+=p.vr;ctx.save();ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/1.4,p.s,p.s*1.4);ctx.restore()});
-    if(t<200)requestAnimationFrame(f);else ctx.clearRect(0,0,cv.width,cv.height)})();
+  const cv=$('#fx');if(!cv||!cv.getContext)return;const ctx=cv.getContext('2d');if(!ctx)return;
+  if(!fxRun){cv.width=innerWidth;cv.height=innerHeight}
+  const cs=getComputedStyle($('#app'));const cols=o.colors||[cs.getPropertyValue('--moss').trim()||'#0F6A73','#E3A400','#C9343B','#1E7A46','#8A94A6'];
+  const burst=typeof o.x==='number';
+  for(let i=0;i<n;i++){const a=Math.random()*Math.PI*2,v=3+Math.random()*5;
+    FXP.push(burst?{x:o.x,y:o.y,vx:Math.cos(a)*v,vy:Math.sin(a)*v-3,g:.18,r:Math.random()*6,vr:(Math.random()-.5)*.3,s:5+Math.random()*5,c:cols[i%cols.length],w:Math.random()*6,t:0,life:90}
+      :{x:Math.random()*cv.width,y:-20-Math.random()*cv.height*.5,vx:(Math.random()-.5)*1.5,vy:2+Math.random()*2.5,g:0,r:Math.random()*6,vr:(Math.random()-.5)*.2,s:6+Math.random()*6,c:cols[i%cols.length],w:Math.random()*6,t:0,life:200})}
+  if(fxRun)return;fxRun=true;
+  (function f(){ctx.clearRect(0,0,cv.width,cv.height);
+    FXP.forEach(p=>{p.t++;p.vy+=p.g;p.x+=p.vx+(p.g?0:Math.sin((p.t+p.w*20)/20));p.y+=p.vy;if(p.g)p.vx*=.98;p.r+=p.vr;
+      ctx.save();ctx.globalAlpha=Math.min(1,(p.life-p.t)/25);ctx.translate(p.x,p.y);ctx.rotate(p.r);ctx.fillStyle=p.c;ctx.fillRect(-p.s/2,-p.s/1.4,p.s,p.s*1.4);ctx.restore()});
+    FXP=FXP.filter(p=>p.t<p.life&&p.y<cv.height+40);
+    if(FXP.length)requestAnimationFrame(f);else{fxRun=false;ctx.clearRect(0,0,cv.width,cv.height)}})();
 }
 
 /* ---------- Start ---------- */
@@ -2482,13 +2800,13 @@ async function afterLogin(){
 }
 function showKids(){
   $('#kidList').innerHTML=KIDS.length?KIDS.map(k=>{const L=levelOf(normG(k.stats).xp);
-    return `<button class="qz kid ${k.id===KID?'cur':''}" data-kid="${esc(k.id)}"><span class="qz-main"><span class="lvl">${L}</span><span class="qz-txt"><h3>${esc(k.name)}</h3><small>Årskurs ${k.grade} · ${esc(levelName(L))}</small></span></span></button>`}).join('')
+    return `<button class="qz kid ${k.id===KID?'cur':''}" data-kid="${esc(k.id)}"><span class="qz-main"><span class="kid-ava">${avatarSVG(avOf(k))}<span class="lvl">${L}</span></span><span class="qz-txt"><h3>${esc(k.name)}</h3><small>Årskurs ${k.grade} · ${esc(levelName(L))}</small></span></span></button>`}).join('')
     :'<div class="empty">Lägg till barnen som ska öva.</div>';
   $('#kidsBack').hidden=!KID;
   $('#codeList').innerHTML=KIDS.map(k=>`<div class="mat" style="padding:8px 12px"><span class="mat-txt" style="gap:6px"><b>${esc(k.name)}</b>
     <input class="inp sm" data-codes="${esc(k.id)}" value="${esc((k.class_codes||[]).join(', '))}" placeholder="Klasskoder, t.ex. RG16C" aria-label="Klasskoder för ${esc(k.name)}">
     <input class="inp sm" data-langs="${esc(k.id)}" value="${esc((k.languages||[]).join(', '))}" placeholder="Språkval, t.ex. tyska (tomt = alla)" aria-label="Språkval för ${esc(k.name)}"></span></div>`).join('');
-  renderLogins();
+  renderLogins();renderFamSetup();
   show('kids');
 }
 const slugName=n=>String(n||'').toLowerCase().normalize('NFKD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'').slice(0,20);
@@ -2547,7 +2865,6 @@ $('#tokenBtn').onclick=async()=>{
 $('#kidList').addEventListener('click',e=>{const b=e.target.closest('[data-kid]');if(b)selectKid(b.dataset.kid)});
 
 /* ---------- Översikt för vuxna ---------- */
-function streakOf(days){const set=new Set(days||[]);let n=0,t=Date.now();if(!set.has(dayKey(t)))t-=DAY;while(set.has(dayKey(t))){n++;t-=DAY}return n}
 function agoLabel(t){if(!t)return 'aldrig';const n=Math.round((dayStart()-dayStart(t))/DAY);return n<=0?'idag':n===1?'igår':`${n} dagar sedan`}
 async function renderOverview(){
   await flush();show('overview');
@@ -2555,7 +2872,7 @@ async function renderOverview(){
   if(k.error||pr.error){$('#ovBox').innerHTML='<div class="errbox">Kunde inte hämta översikten.</div>';return}
   const byKid={};pr.data.forEach(r=>{(byKid[r.child_id]=byKid[r.child_id]||{})[r.quiz_id]=r});
   $('#ovBox').innerHTML=k.data.map(kid=>{
-    const g=normG(kid.stats),L=levelOf(g.xp),st=streakOf(g.days),rows=byKid[kid.id]||{};
+    const g=normG(kid.stats),L=levelOf(g.xp),rows=byKid[kid.id]||{},rounds=g.rounds??estRounds(Object.fromEntries(Object.entries(rows).map(([k,v])=>[k,v.state])),g.days.length);
     const last=Math.max(0,...g.days.map(d=>parseDate(d)?parseDate(d).getTime():0));
     const qs=Store.remote.filter(q=>q.status==='ready'&&(!q.childId||q.childId===kid.id)).map(q=>{
       const r=rows[q.id],p=normP(r&&r.state),rd=Math.round(readiness(q,p)*100),m=misses(q,p).length,d=dues(q,p).length;
@@ -2566,7 +2883,7 @@ async function renderOverview(){
     }).sort((a,b)=>((a.n!==null&&a.n>=0)?a.n:999)-((b.n!==null&&b.n>=0)?b.n:999)||a.rd-b.rd);
     const warn=x=>x.n!==null&&x.n>=0&&x.n<=3&&x.rd<70;
     return `<div class="panel ov">
-      <div class="ov-head"><span class="lvl">${L}</span><div><h2>${esc(kid.name)}</h2><small>${esc(levelName(L))} · ${fmt(g.xp)} XP · ${st?`${svg('flame')}${st} ${st===1?'dag':'dagar'} i rad`:'ingen svit'} · övade senast ${agoLabel(last)}</small></div></div>
+      <div class="ov-head"><span class="ov-ava">${avatarSVG(avOf(kid))}<span class="lvl">${L}</span></span><div><h2>${esc(kid.name)}</h2><small>${esc(levelName(L))} · ${fmt(g.xp)} XP · ${fmt(rounds)} pass · ${fmt(g.dayCount)} ${g.dayCount===1?'övningsdag':'övningsdagar'} · övade senast ${agoLabel(last)}</small></div></div>
       ${qs.length?`<ul class="ov-list">${qs.map(x=>`<li class="${warn(x)?'warn':''}">
         <div class="ov-t"><span class="subj" data-subj="${esc(x.q.subject)}">${SUBJ[x.q.subject]||'Övrigt'}</span><b>${esc(x.q.title)}</b>${x.q.testDate?`<small>${esc(dateLabel(x.q.testDate))}</small>`:''}</div>
         <div class="ov-r"><span class="mini"><i style="width:${x.rd}%"></i></span><b>${x.rd} %</b></div>
@@ -2575,6 +2892,8 @@ async function renderOverview(){
     </div>`}).join('')||'<div class="empty">Inga barn än.</div>';
 }
 $('#overviewBtn').onclick=renderOverview;
+$('#shopBack').onclick=()=>{renderLib();show('lib')};
+$('#hudAva').onclick=()=>{if(KID)openShop()};
 $('#ovBack').onclick=()=>{renderLib();show('lib')};
 $('#kidsBack').onclick=()=>{renderLib();show('lib')};
 $('#switchKid').onclick=()=>{flush();showKids()};
@@ -2589,10 +2908,11 @@ $('#kidForm').addEventListener('submit',async e=>{
 async function selectKid(id){
   await flush();
   const k=KIDS.find(x=>x.id===id);if(!k)return showKids();
-  KID=id;LS.set('laxmotorn:kid',id);G=normG(k.stats);
+  KID=id;LS.set('laxmotorn:kid',id);G=normG(k.stats);if(!(k.stats&&k.stats.avatar))G.avatar=defAv(id);
   RAW={};Object.keys(PC).forEach(x=>delete PC[x]);
   const {data,error}=await sb.from('progress').select('quiz_id,state').eq('child_id',id);
   if(error)toast('Kunde inte hämta framstegen.');else data.forEach(r=>{RAW[r.quiz_id]=r.state});
+  if(G.rounds==null&&!error){G.rounds=estRounds(RAW,G.days.length);saveG()}
   $('#kidNow').textContent=k.name;$('#kidLabel').textContent=ROLE==='child'?'Hej':'Övar:';$('#gradeIn').value=String(k.grade);
   QZ=null;renderLib();updateGen();show('lib');
 }
