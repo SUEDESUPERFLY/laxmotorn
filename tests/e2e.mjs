@@ -583,6 +583,8 @@ check(Number((await page.textContent('#meBox .mile b')).replace(/\D/g, '')) >= 1
 check(!(await page.locator('#famAdd').count()) && /Fredagsmys/.test(await page.textContent('#famBox')), 'barnet ser familjemålet men kan inte ändra det');
 check(!/Isabelle/.test(await page.textContent('#famBox')), 'barnet ser bara den gemensamma summan');
 check(/övningsdag/.test(await page.textContent('#dayChip')), 'HUD visar övningsdagar, som aldrig nollställs');
+const da = await page.evaluate(() => ['98a7d983-f0da-4fd4-8243-e3a2a4a9c2c3', '48894550-5be0-4dda-8259-3362b8541131', '5ac06d06-7428-43f1-95a0-b841bc072145'].map((id) => { const a = defAv(id); return !!(shopItem('a', a.a) && shopItem('bg', a.bg)); }));
+check(da.every(Boolean), 'standardfiguren fungerar för riktiga barn-id:n (uuid)');
 const co = await page.evaluate(() => [comboOf(3)?.xp, comboOf(4), comboOf(5)?.xp, comboOf(10)?.xp, comboOf(20)?.xp]);
 check(co[0] === 5 && co[1] === null && co[2] === 10 && co[3] === 25 && co[4] === 25, `kombobonus vid 3, 5, 10 och varje tiotal (${co})`);
 const roundsBefore = await page.evaluate(() => G.rounds);

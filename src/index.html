@@ -955,7 +955,7 @@ function avatarSVG(av,o={}){
     <circle cx="50" cy="50" r="48" fill="${fill}"/><g clip-path="url(#${id}c)">${extra}<g transform="translate(0 6)">${AV_ART[av.a]||AV_ART.fox}${ACC_ART[av.acc]?`<g transform="translate(0 ${accDy(av.a,av.acc)})">${ACC_ART[av.acc]}</g>`:''}</g></g>${frame}</svg>`;
 }
 // Barn som inte har valt figur än får var sin (räknas fram från id:t), så att syskon inte ser likadana ut.
-function defAv(id){let h=0;for(const ch of String(id||''))h=(h*31+ch.charCodeAt(0))>>>0;const fa=SHOP.a.items.filter(x=>!x.p),fb=SHOP.bg.items.filter(x=>!x.p);return {...AV_DEF,a:fa[h%fa.length].id,bg:fb[(h>>3)%fb.length].id}}
+function defAv(id){let h=0;for(const ch of String(id||''))h=(h*31+ch.charCodeAt(0))>>>0;const fa=SHOP.a.items.filter(x=>!x.p),fb=SHOP.bg.items.filter(x=>!x.p);return {...AV_DEF,a:fa[h%fa.length].id,bg:fb[(h>>>3)%fb.length].id}}
 const avOf=k=>k&&k.stats&&k.stats.avatar?normAv(k.stats.avatar):defAv(k&&k.id);
 
 /* ---------- Milstolpar: räknas bara uppåt, i barnets egen takt ---------- */
@@ -2923,7 +2923,7 @@ document.addEventListener('visibilitychange',async()=>{
 
 async function boot(){
   const {data:{session}}=await sb.auth.getSession();
-  if(session)afterLogin();else show('auth');
+  if(session)afterLogin().catch(e=>{console.error(e);$('#loadMsg').textContent='Något gick fel när appen startade. Ladda om sidan.'});else show('auth');
 }
 sb.auth.onAuthStateChange(ev=>{if(ev==='SIGNED_OUT'&&booted){resetState();show('auth')}});
 boot();
